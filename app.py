@@ -131,5 +131,3 @@ st.download_button(
     file_name=f"transitos_{planeta_nome.lower()}_{periodo_label.replace('/','-')}.html",
     mime="text/html"
 )
-
-st.plotly_chart(fig, use_container_width=True)
