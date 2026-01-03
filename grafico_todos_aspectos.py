@@ -43,7 +43,11 @@ def generate_natal_aspects_chart():
         {"nome": "MERCÚRIO", "pos": "19.59", "cor": "#F3A384"},
         {"nome": "VÊNUS", "pos": "5.16", "cor": "#0A8F11"},
         {"nome": "MARTE", "pos": "8.48", "cor": "#F10808"},
-        {"nome": "JÚPITER", "pos": "8.57", "cor": "#1746C9"}
+        {"nome": "JÚPITER", "pos": "8.57", "cor": "#1746C9"},
+        {"nome": "SATURNO", "pos": "20.53", "cor": "#381094"},
+        {"nome": "URANO", "pos": "26.37", "cor": "#FF00FF"},
+        {"nome": "NETUNO", "pos": "22.50", "cor": "#1EFF00"},
+        {"nome": "PLUTÃO", "pos": "28.19", "cor": "#14F1F1"}
     ]
     
     # ==========================================
