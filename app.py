@@ -35,10 +35,17 @@ planeta_nome = st.sidebar.selectbox("Planeta em Trânsito:", list(dict_planetas.
 planeta_alvo = dict_planetas[planeta_nome]
 ano = st.sidebar.number_input("Ano da Análise:", value=2026)
 
+# Dicionário de meses para o título
+meses_nomes = {
+    1: "JANEIRO", 2: "FEVEREIRO", 3: "MARÇO", 4: "ABRIL",
+    5: "MAIO", 6: "JUNHO", 7: "JULHO", 8: "AGOSTO",
+    9: "SETEMBRO", 10: "OUTUBRO", 11: "NOVEMBRO", 12: "DEZEMBRO"
+}
+
 # Seletor de Mês (Apenas para a LUA)
 mes_alvo = 1
 if planeta_nome == "LUA":
-    mes_alvo = st.sidebar.slider("Selecione o Mês (Para a Lua):", 1, 12, 1)
+    mes_alvo = st.sidebar.select_slider("Selecione o Mês:", options=list(meses_nomes.keys()), format_func=lambda x: meses_nomes[x])
 
 st.sidebar.divider()
 st.sidebar.header("📍 Seus Pontos Natais")
@@ -64,7 +71,6 @@ for p in natal_config_base:
 # --- CÁLCULOS DE ALTA PRECISÃO ---
 @st.cache_data
 def get_data(planeta, ano_ref, mes_ref, pontos_natais):
-    # Passo de 0.01 = ~14 minutos
     step_size = 0.01 
     
     if planeta == swe.MOON:
@@ -95,9 +101,14 @@ def get_data(planeta, ano_ref, mes_ref, pontos_natais):
 df = get_data(planeta_alvo, ano, mes_alvo, natal_final)
 
 # --- GRÁFICO ---
-periodo_label = f"Mês {mes_alvo}/{ano}" if planeta_nome == "LUA" else str(ano)
+if planeta_nome == "LUA":
+    periodo_label = f"{meses_nomes[mes_alvo]} de {ano}"
+    file_label = f"{meses_nomes[mes_alvo].lower()}_{ano}"
+else:
+    periodo_label = str(ano)
+    file_label = str(ano)
+
 st.title(f"📊 Trânsitos de {planeta_nome} - {periodo_label}")
-st.caption("Alta Precisão Temporal (Amostragem a cada 14 minutos)")
 
 fig = go.Figure()
 for p in natal_final:
@@ -108,7 +119,6 @@ for p in natal_final:
         hovertemplate="<b>%{x|%d/%m %H:%M}</b><br>Força: %{y:.3f}<extra></extra>"
     ))
 
-    # Anotações de Picos
     peaks = df[(df[p['nome']] > 0.98) & (df[p['nome']] > df[p['nome']].shift(1)) & (df[p['nome']] > df[p['nome']].shift(-1))]
     for _, row in peaks.iterrows():
         fig.add_annotation(
@@ -128,7 +138,7 @@ html_string = fig.to_html(include_plotlyjs='cdn')
 st.download_button(
     label="📥 Baixar Gráfico Interativo (.html)",
     data=html_string,
-    file_name=f"transitos_{planeta_nome.lower()}_{periodo_label.replace('/','-')}.html",
+    file_name=f"transitos_{planeta_nome.lower()}_{file_label}.html",
     mime="text/html"
 )
 
