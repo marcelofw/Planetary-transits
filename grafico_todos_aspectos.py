@@ -24,26 +24,19 @@ def generate_natal_aspects_chart():
     # CONFIGURAÇÕES PRINCIPAIS
     # ==========================================
     ano = 2026
-    planeta_alvo = swe.MARS  # <--- ALTERE AQUI (ex: swe.MARS, swe.VENUS, swe.PLUTO)
+    planeta_alvo = swe.MERCURY  # Altere para o planeta desejado
+    mes_alvo = 1               # Usado apenas se for a LUA
     
-    # Dicionário para tradução automática
     planetas_nomes = {
-        swe.SUN: "SOL",
-        swe.MOON: "LUA",
-        swe.MERCURY: "MERCÚRIO",
-        swe.VENUS: "VÊNUS",
-        swe.MARS: "MARTE",
-        swe.JUPITER: "JÚPITER",
-        swe.SATURN: "SATURNO",
-        swe.URANUS: "URANO",
-        swe.NEPTUNE: "NETUNO",
+        swe.SUN: "SOL", swe.MOON: "LUA", swe.MERCURY: "MERCÚRIO",
+        swe.VENUS: "VÊNUS", swe.MARS: "MARTE", swe.JUPITER: "JÚPITER",
+        swe.SATURN: "SATURNO", swe.URANUS: "URANO", swe.NEPTUNE: "NETUNO",
         swe.PLUTO: "PLUTÃO"
     }
     
     nome_pt = planetas_nomes.get(planeta_alvo, "PLANETA")
     nome_arquivo = nome_pt.lower().replace("ú", "u").replace("â", "a").replace("õ", "o")
 
-    # Pontos do Mapa Natal
     natal_configs = [
         {"nome": "SOL", "pos": "27.0", "cor": "#FFF12E"},
         {"nome": "LUA", "pos": "6.20", "cor": "#C37DEB"},
@@ -54,11 +47,25 @@ def generate_natal_aspects_chart():
     ]
     
     # ==========================================
-    # PROCESSAMENTO
+    # LÓGICA DE PERÍODO E ALTA PRECISÃO GLOBAL
     # ==========================================
-    jd_start = swe.julday(ano, 1, 1)
-    jd_end = swe.julday(ano + 1, 1, 1)
-    steps = np.arange(jd_start, jd_end, 0.04)
+    # Definimos um passo de 0.01 para TODOS (Alta Precisão: ~14 minutos)
+    step_size = 0.01 
+
+    if planeta_alvo == swe.MOON:
+        # A Lua continua restrita a 1 mês por performance (muitos dados)
+        jd_start = swe.julday(ano, mes_alvo, 1)
+        prox_mes = mes_alvo + 1 if mes_alvo < 12 else 1
+        prox_ano = ano if mes_alvo < 12 else ano + 1
+        jd_end = swe.julday(prox_ano, prox_mes, 1)
+        periodo_txt = f"MÊS {mes_alvo}/{ano}"
+    else:
+        # Outros planetas: Ano completo com alta precisão
+        jd_start = swe.julday(ano, 1, 1)
+        jd_end = swe.julday(ano + 1, 1, 1)
+        periodo_txt = str(ano)
+
+    steps = np.arange(jd_start, jd_end, step_size)
     
     natal_points = []
     for p in natal_configs:
@@ -71,17 +78,14 @@ def generate_natal_aspects_chart():
     all_data = []
     for jd in steps:
         res, _ = swe.calc_ut(jd, planeta_alvo, swe.FLG_SWIEPH) 
-        lon = res[0]
-        deg_in_sign = lon % 30
-        
+        deg_in_sign = res[0] % 30
         y, m, d, h = swe.revjul(jd)
         dt = datetime(y, m, d, int(h), int((h%1)*60))
         
         row = {'date': dt}
         for p in natal_points:
             dist = abs(((deg_in_sign - p["grau"] + 15) % 30) - 15)
-            intensity = np.exp(-0.5 * (dist / 1.5)**2) if dist <= 5 else 0
-            row[p["nome"]] = intensity
+            row[p["nome"]] = np.exp(-0.5 * (dist / 1.5)**2) if dist <= 5 else 0
         all_data.append(row)
 
     df = pd.DataFrame(all_data)
@@ -92,41 +96,42 @@ def generate_natal_aspects_chart():
             x=df['date'], y=df[p['nome']],
             mode='lines', name=p['nome'],
             line=dict(color=p['cor'], width=2),
-            fill='tozeroy', fillcolor=hex_to_rgba(p['cor'], 0.15),
-            hovertemplate=f"<b>{p['nome']}</b><br>Data: %{{x}}<extra></extra>"
+            fill='tozeroy', fillcolor=hex_to_rgba(p['cor'], 0.12),
+            hovertemplate="<b>%{x|%d/%m %H:%M}</b><br>Força: %{y:.3f}<extra></extra>"
         ))
 
+    # Anotações de Picos com Hora e Minuto para todos
     for p in natal_points:
         name = p['nome']
         peak_mask = (df[name] > 0.98) & (df[name] > df[name].shift(1)) & (df[name] > df[name].shift(-1))
         picos = df[peak_mask]
+        
         for _, row in picos.iterrows():
             fig.add_annotation(
-                x=row['date'], y=row[name], text=f"{row['date'].strftime('%d/%m')}",
+                x=row['date'], y=row[name], 
+                text=row['date'].strftime('%d/%m %H:%M'),
                 showarrow=True, arrowhead=1, ax=0, ay=-25,
-                font=dict(color=p['cor'], size=11, family="Arial Black"),
-                bgcolor="rgba(255,255,255,0.8)", bordercolor=p['cor']
+                font=dict(color=p['cor'], size=9, family="Arial Black"),
+                bgcolor="rgba(255,255,255,0.85)", bordercolor=p['cor']
             )
 
-    # LAYOUT DINÂMICO
+    # LAYOUT
     fig.update_layout(
-        title=dict(text=f'<b>TRÂNSITOS DE {nome_pt} {ano}</b>', x=0.5), 
+        title=dict(text=f'<b>TRÂNSITOS DE {nome_pt} - {periodo_txt}</b><br><span style="font-size:11px">Alta Precisão Temporal (Amostragem: 14 min)</span>', x=0.5), 
         xaxis=dict(
-            rangeslider=dict(visible=True, thickness=0.07),
+            rangeslider=dict(visible=True, thickness=0.05),
             type='date',
-            range=[datetime(ano, 1, 1), datetime(ano, 1, 31)], 
-            tickformat='%d/%m\n%Y'
+            tickformat='%d/%m\n%H:%M'
         ),
-        yaxis=dict(title='Intensidade do Aspecto', range=[0, 1.2]),
+        yaxis=dict(title='Intensidade do Aspecto', range=[0, 1.3]),
         template='plotly_white',
         dragmode='pan',
         hovermode='x unified'
     )
 
-    # SALVAMENTO DINÂMICO
-    file_name = f"aspectos_{nome_arquivo}_{ano}.html"
+    file_name = f"aspectos_{nome_arquivo}_{ano}_alta_precisao.html"
     fig.write_html(file_name)
-    print(f"Sucesso! Gráfico de {nome_pt} gerado como '{file_name}'.")
+    print(f"Sucesso! Gráfico de alta precisão para {nome_pt} gerado.")
 
 if __name__ == "__main__":
     generate_natal_aspects_chart()
