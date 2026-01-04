@@ -6,16 +6,19 @@ import numpy as np
 from datetime import datetime
 
 # Configuração da Página
-st.set_page_config(page_title="Astrologia de Precisão", layout="wide")
+st.set_page_config(page_title="Scanner de Graus Zodiacais", layout="wide")
 
 # --- FUNÇÕES DE APOIO ---
-def dms_to_dec(dms_value):
+def dms_to_dec(dms_str):
+    if isinstance(dms_str, (int, float)):
+        return float(dms_str)
     try:
-        parts = str(dms_value).split('.')
+        parts = str(dms_str).split('.')
         degrees = float(parts[0])
         minutes = float(parts[1]) if len(parts) > 1 else 0
         return degrees + (minutes / 60)
-    except: return 0.0
+    except:
+        return 0.0
 
 def hex_to_rgba(hex_color, opacity):
     hex_color = hex_color.lstrip('#')
@@ -23,124 +26,113 @@ def hex_to_rgba(hex_color, opacity):
     return f'rgba({r}, {g}, {b}, {opacity})'
 
 # --- INTERFACE LATERAL ---
-st.sidebar.header("🛡️ Configurações do Trânsito")
-
-dict_planetas = {
-    "SOL": swe.SUN, "LUA": swe.MOON, "MERCÚRIO": swe.MERCURY, 
-    "VÊNUS": swe.VENUS, "MARTE": swe.MARS, "JÚPITER": swe.JUPITER, 
-    "SATURNO": swe.SATURN, "URANO": swe.URANUS, "NETUNO": swe.NEPTUNE, "PLUTÃO": swe.PLUTO
-}
-
-planeta_nome = st.sidebar.selectbox("Planeta em Trânsito:", list(dict_planetas.keys()))
-planeta_alvo = dict_planetas[planeta_nome]
+st.sidebar.header("🎯 Alvo Zodiacal")
+grau_input = st.sidebar.text_input("Digite o Grau (ex: 27.0 ou 6.20):", value="27.0")
 ano = st.sidebar.number_input("Ano da Análise:", value=2026)
 
-meses_nomes = {
-    1: "JANEIRO", 2: "FEVEREIRO", 3: "MARÇO", 4: "ABRIL",
-    5: "MAIO", 6: "JUNHO", 7: "JULHO", 8: "AGOSTO",
-    9: "SETEMBRO", 10: "OUTUBRO", 11: "NOVEMBRO", 12: "DEZEMBRO"
-}
-
-mes_alvo = 1
-if planeta_nome == "LUA":
-    mes_alvo = st.sidebar.select_slider("Selecione o Mês:", options=list(meses_nomes.keys()), format_func=lambda x: meses_nomes[x])
-
 st.sidebar.divider()
-st.sidebar.header("📍 Seus Pontos Natais")
+st.sidebar.markdown("""
+**Como funciona:**
+Este scanner monitora quando cada planeta do céu atinge o grau exato que você digitou em qualquer um dos 12 signos. 
+""")
 
-# Lista expandida de planetas conforme seu script
-natal_config_base = [
-    {"id": "SOL", "pos": "27.00", "cor": "#FFF12E"},
-    {"id": "LUA", "pos": "6.20", "cor": "#C37DEB"},
-    {"id": "MERCÚRIO", "pos": "19.59", "cor": "#F3A384"},
-    {"id": "VÊNUS", "pos": "5.16", "cor": "#0A8F11"},
-    {"id": "MARTE", "pos": "8.48", "cor": "#F10808"},
-    {"id": "JÚPITER", "pos": "8.57", "cor": "#1746C9"},
-    {"id": "SATURNO", "pos": "20.53", "cor": "#381094"},
-    {"id": "URANO", "pos": "26.37", "cor": "#FF00FF"},
-    {"id": "NETUNO", "pos": "22.50", "cor": "#1EFF00"},
-    {"id": "PLUTÃO", "pos": "28.19", "cor": "#14F1F1"}
-]
-
-natal_final = []
-for p in natal_config_base:
-    col1, col2 = st.sidebar.columns([2, 1])
-    with col1:
-        val = st.text_input(f"{p['id']}:", value=p['pos'], key=f"deg_{p['id']}")
-    with col2:
-        cor = st.color_picker("Cor:", value=p['cor'], key=f"col_{p['id']}", label_visibility="collapsed")
-    natal_final.append({"nome": f"{p['id']} ({val}°)", "grau": dms_to_dec(val), "cor": cor})
-
-# --- CÁLCULOS DE ALTA PRECISÃO (0.01 = 14 min) ---
+# --- CÁLCULO DE EFEMÉRIDES ---
 @st.cache_data
-def get_data(planeta, ano_ref, mes_ref, pontos_natais):
-    step_size = 0.01 
-    if planeta == swe.MOON:
-        jd_start = swe.julday(ano_ref, mes_ref, 1)
-        prox_mes = mes_ref + 1 if mes_ref < 12 else 1
-        prox_ano = ano_ref if mes_ref < 12 else ano_ref + 1
-        jd_end = swe.julday(prox_ano, prox_mes, 1)
-    else:
-        jd_start = swe.julday(ano_ref, 1, 1)
-        jd_end = swe.julday(ano_ref + 1, 1, 1)
+def get_transit_data(grau_alvo, ano_ref):
+    grau_decimal = dms_to_dec(grau_alvo)
     
+    planetas_monitorados = [
+        {"id": swe.SUN, "nome": "SOL", "cor": "#FFF12E"},
+        {"id": swe.MERCURY, "nome": "MERCÚRIO", "cor": "#F3A384"},
+        {"id": swe.VENUS, "nome": "VÊNUS", "cor": "#0A8F11"},
+        {"id": swe.MARS, "nome": "MARTE", "cor": "#F10808"},
+        {"id": swe.JUPITER, "nome": "JÚPITER", "cor": "#1746C9"},
+        {"id": swe.SATURN, "nome": "SATURNO", "cor": "#381094"},
+        {"id": swe.URANUS, "nome": "URANO", "cor": "#FF00FF"},
+        {"id": swe.NEPTUNE, "nome": "NETUNO", "cor": "#1EFF00"},
+        {"id": swe.PLUTO, "nome": "PLUTÃO", "cor": "#14F1F1"}
+    ]
+
+    jd_start = swe.julday(ano_ref, 1, 1)
+    jd_end = swe.julday(ano_ref + 1, 1, 1)
+    step_size = 0.01  # Alta precisão: ~14 min
     steps = np.arange(jd_start, jd_end, step_size)
+    
     results = []
     for jd in steps:
-        res, _ = swe.calc_ut(jd, planeta, swe.FLG_SWIEPH)
-        deg = res[0] % 30
         y, m, d, h = swe.revjul(jd)
         dt = datetime(y, m, d, int(h), int((h%1)*60))
         row = {'date': dt}
-        for p in pontos_natais:
-            dist = abs(((deg - p["grau"] + 15) % 30) - 15)
-            row[p["nome"]] = np.exp(-0.5 * (dist / 1.5)**2) if dist <= 5 else 0
+        
+        for p in planetas_monitorados:
+            res, _ = swe.calc_ut(jd, p["id"], swe.FLG_SWIEPH)
+            pos_no_signo = res[0] % 30
+            dist = abs(((pos_no_signo - grau_decimal + 15) % 30) - 15)
+            
+            if dist <= 5: # Orbe de 5 graus
+                row[p["nome"]] = np.exp(-0.5 * (dist / 1.2)**2)
+            else:
+                row[p["nome"]] = 0
         results.append(row)
-    return pd.DataFrame(results)
+    
+    return pd.DataFrame(results), planetas_monitorados
 
-df = get_data(planeta_alvo, ano, mes_alvo, natal_final)
+# Execução do Cálculo
+df, infos_planetas = get_transit_data(grau_input, ano)
 
-# --- GRÁFICO ---
-periodo_txt = f"{meses_nomes[mes_alvo]} de {ano}" if planeta_nome == "LUA" else str(ano)
-st.title(f"📊 Trânsitos de {planeta_nome} - {periodo_txt}")
+# --- CONSTRUÇÃO DO GRÁFICO ---
+st.title(f"✨ Scanner de Passagens: Grau {grau_input}°")
+st.subheader(f"Monitorando todos os planetas em {ano}")
 
 fig = go.Figure()
-for p in natal_final:
+
+for p in infos_planetas:
     fig.add_trace(go.Scatter(
-        x=df['date'], y=df[p['nome']], name=p['nome'],
-        mode='lines', line=dict(color=p['cor'], width=2),
-        fill='tozeroy', fillcolor=hex_to_rgba(p['cor'], 0.12),
-        hovertemplate="<b>%{x|%d/%m %H:%M}</b><br>Força: %{y:.3f}<extra></extra>"
+        x=df['date'], y=df[p['nome']],
+        mode='lines',
+        name=p['nome'],
+        line=dict(color=p['cor'], width=2),
+        fill='tozeroy',
+        fillcolor=hex_to_rgba(p['cor'], 0.12),
+        hovertemplate=f"<b>{p['nome']} em {grau_input}°</b><br>Data: %{{x|%d/%m %H:%M}}<extra></extra>"
     ))
 
-    # Anotações de Picos com Seta para Baixo (Vertical)
-    peaks = df[(df[p['nome']] > 0.98) & (df[p['nome']] > df[p['nome']].shift(1)) & (df[p['nome']] > df[p['nome']].shift(-1))]
-    for _, row in peaks.iterrows():
+    # Identificação de Picos (Seta Vertical)
+    peak_mask = (df[p['nome']] > 0.98) & (df[p['nome']] > df[p['nome']].shift(1)) & (df[p['nome']] > df[p['nome']].shift(-1))
+    picos = df[peak_mask]
+    
+    for _, row in picos.iterrows():
         fig.add_annotation(
-            x=row['date'], y=row[p['nome']], 
-            text=row['date'].strftime('%d/%m %H:%M'),
-            font=dict(color=p['cor'], size=9, family="Arial Black"),
-            showarrow=True, 
-            arrowhead=1, 
-            ax=0,     # Seta perfeitamente vertical
-            ay=-30,   # Distância acima do ponto
-            bgcolor="rgba(255,255,255,0.85)", 
-            bordercolor=p['cor']
+            x=row['date'], y=row[p['nome']],
+            text=row['date'].strftime('%d/%m'),
+            font=dict(color=p['cor'], size=10, family="Arial Black"),
+            showarrow=True, arrowhead=1, ax=0, ay=-30,
+            bgcolor="rgba(255,255,255,0.85)", bordercolor=p['cor']
         )
 
 fig.update_layout(
-    xaxis=dict(rangeslider=dict(visible=True, thickness=0.05), type='date', tickformat='%d/%m\n%H:%M'),
-    yaxis=dict(title='Intensidade do Aspecto', range=[0, 1.35]),
-    template='plotly_white', height=700, hovermode='x unified', dragmode='pan'
+    xaxis=dict(
+        title="Deslize lateralmente para navegar no tempo",
+        rangeslider=dict(visible=True, thickness=0.05),
+        type='date',
+        tickformat='%d/%m\n%Y'
+    ),
+    yaxis=dict(title="Intensidade da Conjunção", range=[0, 1.35], fixedrange=True),
+    template='plotly_white',
+    dragmode='pan',
+    hovermode='x unified',
+    height=700,
+    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
 )
 
-# Download
+# Renderização
+st.plotly_chart(fig, use_container_width=True, config={'scrollZoom': True})
+
+# Botão de Download
 html_string = fig.to_html(include_plotlyjs='cdn')
 st.download_button(
-    label="📥 Baixar Gráfico Interativo (.html)",
+    label="📥 Baixar Gráfico Interativo",
     data=html_string,
-    file_name=f"transitos_{planeta_nome.lower()}_{periodo_txt.replace(' ', '_').lower()}.html",
+    file_name=f"scanner_grau_{grau_input.replace('.','_')}_{ano}.html",
     mime="text/html"
 )
-
-st.plotly_chart(fig, use_container_width=True)
