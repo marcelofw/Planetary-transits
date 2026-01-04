@@ -3,7 +3,7 @@ import swisseph as swe
 import pandas as pd
 import plotly.graph_objects as go
 import numpy as np
-from datetime import datetime
+from datetime import datetime, date
 import io
 
 # Configuração da página
@@ -29,11 +29,29 @@ def hex_to_rgba(hex_color, opacity):
 st.sidebar.header("🔭 Configurações")
 ano = st.sidebar.number_input("Ano da Análise", min_value=1900, max_value=2100, value=2026)
 grau_input = st.sidebar.text_input("Grau Alvo Natal (ex: 27.0)", value="27.0")
+
+# Funcionalidade da Lua com Slider condicional
 incluir_lua = st.sidebar.checkbox("Quero analisar a Lua", value=False)
+meses_selecionados = (1, 12) # Padrão: ano todo
+
+if incluir_lua:
+    st.sidebar.info("A Lua move-se rápido. Selecione um intervalo de meses para melhor visualização:")
+    meses_selecionados = st.sidebar.slider(
+        "Intervalo de Meses", 
+        min_value=1, max_value=12, value=(1, 12)
+    )
+
+# --- TÍTULO AMPLIADO ---
+st.markdown(f"""
+    <h1 style='text-align: center; font-size: 3rem; color: #1E1E1E;'>
+        🔭 Revolução Planetária {ano}
+    </h1>
+    <h3 style='text-align: center; color: #666;'>Grau Alvo: {grau_input}°</h3>
+""", unsafe_allow_html=True)
 
 # --- LÓGICA DE DADOS COM CACHE ---
 @st.cache_data
-def get_planetary_data(ano_ref, grau_ref_str, analisar_lua):
+def get_planetary_data(ano_ref, grau_ref_str, analisar_lua, intervalo_meses):
     grau_dec = dms_to_dec(grau_ref_str)
     
     planetas = [
@@ -51,11 +69,17 @@ def get_planetary_data(ano_ref, grau_ref_str, analisar_lua):
     if analisar_lua:
         planetas.insert(1, {"id": swe.MOON, "nome": "LUA", "cor": "#A6A6A6"})
 
-    jd_start = swe.julday(ano_ref, 1, 1)
-    jd_end = swe.julday(ano_ref + 1, 1, 1)
+    # Definir início e fim baseado nos meses do slider
+    m_ini, m_fim = intervalo_meses
+    jd_start = swe.julday(ano_ref, m_ini, 1)
     
-    # Ajuste de performance: se incluir a lua, o passo precisa ser menor para suavidade
-    step_size = 0.01 if analisar_lua else 0.02 
+    # Determinar último dia do mês final para o Julian Day
+    prox_mes = m_fim + 1 if m_fim < 12 else 1
+    prox_ano = ano_ref if m_fim < 12 else ano_ref + 1
+    jd_end = swe.julday(prox_ano, prox_mes, 1)
+    
+    # Passo refinado para a Lua
+    step_size = 0.005 if analisar_lua else 0.02 
     steps = np.arange(jd_start, jd_end, step_size)
     
     all_data = []
@@ -73,15 +97,15 @@ def get_planetary_data(ano_ref, grau_ref_str, analisar_lua):
     return pd.DataFrame(all_data), planetas
 
 # Processamento
-df, lista_planetas = get_planetary_data(ano, grau_input, incluir_lua)
+df, lista_planetas = get_planetary_data(ano, grau_input, incluir_lua, meses_selecionados)
 
 # --- CONSTRUÇÃO DO GRÁFICO ---
 fig = go.Figure()
 
-# Traço invisível para Hover (Data/Hora)
+# Traço invisível para Hover (Data/Hora) na posição central do gráfico
 fig.add_trace(go.Scatter(
     x=df['date'], y=[0.65] * len(df),
-    mode='lines', line=dict(width=40), opacity=0,
+    mode='lines', line=dict(width=50), opacity=0,
     hoverinfo='x', showlegend=False, name=""
 ))
 
@@ -96,8 +120,8 @@ for p in lista_planetas:
         showlegend=True 
     ))
 
-    # Marcação de picos (apenas se não for a Lua para não poluir, ou todos se preferir)
-    if p['nome'] != "LUA" or not incluir_lua:
+    # Marcação de picos (oculta picos da Lua para evitar poluição visual, já que são muitos)
+    if p['nome'] != "LUA":
         peak_mask = (df[p['nome']] > 0.98) & (df[p['nome']] > df[p['nome']].shift(1)) & (df[p['nome']] > df[p['nome']].shift(-1))
         picos = df[peak_mask]
         for _, row in picos.iterrows():
@@ -110,7 +134,6 @@ for p in lista_planetas:
             )
 
 fig.update_layout(
-    title=dict(text=f'<b>🔭 Revolução Planetária {ano}: Grau {grau_input}°</b>', x=0.5),
     xaxis=dict(
         title='Arraste para navegar no tempo',
         rangeslider=dict(visible=True, thickness=0.08),
@@ -127,7 +150,7 @@ fig.update_layout(
     template='plotly_white',
     hovermode='x',
     dragmode='pan',
-    height=700,
+    height=750,
     hoverlabel=dict(bgcolor="white", font_size=13, namelength=0)
 )
 
@@ -139,7 +162,6 @@ st.divider()
 col1, col2 = st.columns(2)
 
 with col1:
-    # Download do Gráfico HTML
     buffer_html = io.StringIO()
     fig.write_html(buffer_html, config={'scrollZoom': True})
     grau_limpo = grau_input.replace('.', '_')
@@ -151,7 +173,6 @@ with col1:
     )
 
 with col2:
-    # Download dos Dados CSV
     csv = df.to_csv(index=False).encode('utf-8')
     st.download_button(
         label="📊 Baixar Dados da Análise (CSV)",
