@@ -19,7 +19,7 @@ def hex_to_rgba(hex_color, opacity):
 
 def generate_degree_transit_chart():
     # ==========================================
-    # 1. CONFIGURAÇÃO DO ALVO (O GRAU FIXO)
+    # 1. CONFIGURAÇÃO DO ALVO
     # ==========================================
     ano = 2026
     grau_alvo_natal = "27.0"  
@@ -38,38 +38,45 @@ def generate_degree_transit_chart():
     ]
 
     # ==========================================
-    # 2. PROCESSAMENTO TEMPORAL (ALTA PRECISÃO)
+    # 2. PROCESSAMENTO TEMPORAL
     # ==========================================
     jd_start = swe.julday(ano, 1, 1)
     jd_end = swe.julday(ano + 1, 1, 1)
-    step_size = 0.01  # Passo de 14 minutos para garantir curvas suaves
+    step_size = 0.02 
     steps = np.arange(jd_start, jd_end, step_size)
     
     all_data = []
-
     for jd in steps:
         y, m, d, h = swe.revjul(jd)
         dt = datetime(y, m, d, int(h), int((h%1)*60))
         row = {'date': dt}
-        
         for p in planetas_monitorados:
             res, _ = swe.calc_ut(jd, p["id"], swe.FLG_SWIEPH)
             pos_no_signo = res[0] % 30
             dist = abs(((pos_no_signo - grau_decimal + 15) % 30) - 15)
-            
-            if dist <= 5:
-                row[p["nome"]] = np.exp(-0.5 * (dist / 1.2)**2)
-            else:
-                row[p["nome"]] = 0
+            row[p["nome"]] = np.exp(-0.5 * (dist / 1.2)**2) if dist <= 5 else 0
         all_data.append(row)
 
     df = pd.DataFrame(all_data)
 
     # ==========================================
-    # 3. CONSTRUÇÃO DO GRÁFICO COM NAVEGAÇÃO LATERAL
+    # 3. CONSTRUÇÃO DO GRÁFICO
     # ==========================================
     fig = go.Figure()
 
+    # --- TRAÇO INVISÍVEL (ÂNCORA DO HOVER FLUTUANTE) ---
+    fig.add_trace(go.Scatter(
+        x=df['date'], 
+        y=[0.65] * len(df), 
+        mode='lines',
+        line=dict(width=40), 
+        opacity=0,           
+        hoverinfo='x',       
+        showlegend=False,
+        name=""
+    ))
+
+    # --- CAMADAS DOS PLANETAS ---
     for p in planetas_monitorados:
         fig.add_trace(go.Scatter(
             x=df['date'], y=df[p['nome']],
@@ -78,13 +85,13 @@ def generate_degree_transit_chart():
             line=dict(color=p['cor'], width=2),
             fill='tozeroy',
             fillcolor=hex_to_rgba(p['cor'], 0.15),
-            hovertemplate=f"<b>{p['nome']} em {grau_alvo_natal}°</b><br>Data: %{{x|%d/%m %H:%M}}<extra></extra>"
+            hoverinfo='skip', 
+            showlegend=True 
         ))
 
-        # Marcar picos com a seta vertical ajustada (ax=0)
+        # Marcar picos
         peak_mask = (df[p['nome']] > 0.98) & (df[p['nome']] > df[p['nome']].shift(1)) & (df[p['nome']] > df[p['nome']].shift(-1))
         picos = df[peak_mask]
-        
         for _, row in picos.iterrows():
             fig.add_annotation(
                 x=row['date'], y=row[p['nome']],
@@ -95,28 +102,42 @@ def generate_degree_transit_chart():
             )
 
     fig.update_layout(
-        title=dict(text=f'<b>PASSAGEM DOS PLANETAS PELO GRAU {grau_alvo_natal}° EM {ano}</b>', x=0.5),
+        title=dict(text=f'<b>🔭 Revolução planetária {ano}: Grau {grau_alvo_natal}°</b>', x=0.5),
         xaxis=dict(
             title='Arraste para os lados para navegar',
             rangeslider=dict(visible=True, thickness=0.08),
             type='date',
-            tickformat='%d/%m\n%Y'
+            tickformat='%d/%m\n%Y',
+            hoverformat='%d/%m/%Y %H:%M',
+            showspikes=True,
+            spikemode='across',
+            spikethickness=1,
+            spikedash='solid',
+            spikecolor="black" # Spike alterado para preto para melhor visibilidade
         ),
-        yaxis=dict(title='Intensidade', range=[0, 1.3], fixedrange=True), # fixedrange impede o deslize vertical indesejado
+        yaxis=dict(title='Intensidade', range=[0, 1.3], fixedrange=True),
         template='plotly_white',
-        hovermode='x unified',
-        
-        # --- CONFIGURAÇÃO DE DESLIZE LATERAL (PAN) ---
-        dragmode='pan', # Define o "mãozinha" como padrão ao clicar e arrastar
+        hovermode='x', 
+        dragmode='pan'
     )
 
-    # Habilita o zoom pelo scroll do mouse
-    config = {'scrollZoom': True, 'displayModeBar': True}
+    fig.update_layout(
+        hoverlabel=dict(
+            bgcolor="white",
+            font_size=13,
+            namelength=0
+        )
+    )
 
-    file_name = f"transitos_grau_{grau_alvo_natal.replace('.','_')}_pan.html"
+    # --- CONFIGURAÇÃO DE NOME DE ARQUIVO DINÂMICO (INCLUINDO ANO) ---
+    grau_limpo = grau_alvo_natal.replace('.', '_')
+    file_name = f"revolucao_planetaria_{ano}_grau_{grau_limpo}.html"
+
+    config = {'scrollZoom': True, 'displayModeBar': True}
     fig.write_html(file_name, config=config)
     
-    print(f"Sucesso! Navegação lateral ativada. Arquivo: {file_name}")
+    print(f"Sucesso! Gráfico gerado para o grau {grau_alvo_natal} em {ano}.")
+    print(f"Arquivo: {file_name}")
 
 if __name__ == "__main__":
     generate_degree_transit_chart()
