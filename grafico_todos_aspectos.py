@@ -132,6 +132,6 @@ def generate_degree_transit_chart():
     
     print(f"Sucesso! Gráfico gerado para o ano {ano} e grau {grau_alvo_natal}.")
     print(f"Arquivo salvo como: {file_name}")
-s
+
 if __name__ == "__main__":
     generate_degree_transit_chart()
