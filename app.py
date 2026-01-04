@@ -3,8 +3,9 @@ import swisseph as swe
 import pandas as pd
 import plotly.graph_objects as go
 import numpy as np
-from datetime import datetime, date
+from datetime import datetime
 import io
+import re
 
 # Configuração da página
 st.set_page_config(page_title="Revolução Planetária", layout="wide")
@@ -13,12 +14,15 @@ def dms_to_dec(dms_str):
     if isinstance(dms_str, (int, float)):
         return float(dms_str)
     try:
+        if not re.match(r"^\d+(\.\d+)?$", str(dms_str)):
+            return None
         parts = str(dms_str).split('.')
         degrees = float(parts[0])
         minutes = float(parts[1]) if len(parts) > 1 else 0
-        return degrees + (minutes / 60)
+        val = degrees + (minutes / 60)
+        return val if 0 <= val <= 30 else None
     except:
-        return 0.0
+        return None
 
 def hex_to_rgba(hex_color, opacity):
     hex_color = hex_color.lstrip('#')
@@ -26,34 +30,36 @@ def hex_to_rgba(hex_color, opacity):
     return f'rgba({r}, {g}, {b}, {opacity})'
 
 # --- INTERFACE LATERAL (Sidebar) ---
-st.sidebar.header("🔭 Configurações")
+st.sidebar.header("Configurações")
 ano = st.sidebar.number_input("Ano da Análise", min_value=1900, max_value=2100, value=2026)
-grau_input = st.sidebar.text_input("Grau Alvo Natal (ex: 27.0)", value="27.0")
+grau_input = st.sidebar.text_input("Grau Alvo Natal (0 a 30°)", value="27.0")
 
-# Funcionalidade da Lua com Slider condicional
+grau_decimal = dms_to_dec(grau_input)
+
 incluir_lua = st.sidebar.checkbox("Quero analisar a Lua", value=False)
-meses_selecionados = (1, 12) # Padrão: ano todo
+mes_selecionado = None
 
 if incluir_lua:
-    st.sidebar.info("A Lua move-se rápido. Selecione um intervalo de meses para melhor visualização:")
-    meses_selecionados = st.sidebar.slider(
-        "Intervalo de Meses", 
-        min_value=1, max_value=12, value=(1, 12)
+    mes_selecionado = st.sidebar.slider(
+        "Mês", 
+        min_value=1, max_value=12, value=1
     )
 
-# --- TÍTULO AMPLIADO ---
+# --- VALIDAÇÃO E TÍTULO ---
+if grau_decimal is None:
+    st.error("⚠️ Erro: Por favor, insira um valor numérico válido entre 0 e 30. (Exemplo: 27.0)")
+    st.stop()
+
 st.markdown(f"""
-    <h1 style='text-align: center; font-size: 3rem; color: #1E1E1E;'>
-        🔭 Revolução Planetária {ano}
-    </h1>
-    <h3 style='text-align: center; color: #666;'>Grau Alvo: {grau_input}°</h3>
+    <div style='text-align: left;'>
+        <h1 style='font-size: 2.8rem; margin-bottom: 0;'>|🔭 Revolução Planetária {ano}</h1>
+        <p style='font-size: 1.5rem; color: #555;'>Grau Alvo: <b>{grau_input}°</b></p>
+    </div>
 """, unsafe_allow_html=True)
 
-# --- LÓGICA DE DADOS COM CACHE ---
+# --- PROCESSAMENTO DE DADOS ---
 @st.cache_data
-def get_planetary_data(ano_ref, grau_ref_str, analisar_lua, intervalo_meses):
-    grau_dec = dms_to_dec(grau_ref_str)
-    
+def get_planetary_data(ano_ref, grau_ref_val, analisar_lua, mes_unico):
     planetas = [
         {"id": swe.SUN, "nome": "SOL", "cor": "#FFF12E"},
         {"id": swe.MERCURY, "nome": "MERCÚRIO", "cor": "#F3A384"},
@@ -69,19 +75,18 @@ def get_planetary_data(ano_ref, grau_ref_str, analisar_lua, intervalo_meses):
     if analisar_lua:
         planetas.insert(1, {"id": swe.MOON, "nome": "LUA", "cor": "#A6A6A6"})
 
-    # Definir início e fim baseado nos meses do slider
-    m_ini, m_fim = intervalo_meses
-    jd_start = swe.julday(ano_ref, m_ini, 1)
+    if analisar_lua and mes_unico:
+        jd_start = swe.julday(ano_ref, mes_unico, 1)
+        prox_m = mes_unico + 1 if mes_unico < 12 else 1
+        prox_a = ano_ref if mes_unico < 12 else ano_ref + 1
+        jd_end = swe.julday(prox_a, prox_m, 1)
+        step_size = 0.005
+    else:
+        jd_start = swe.julday(ano_ref, 1, 1)
+        jd_end = swe.julday(ano_ref + 1, 1, 1)
+        step_size = 0.02
     
-    # Determinar último dia do mês final para o Julian Day
-    prox_mes = m_fim + 1 if m_fim < 12 else 1
-    prox_ano = ano_ref if m_fim < 12 else ano_ref + 1
-    jd_end = swe.julday(prox_ano, prox_mes, 1)
-    
-    # Passo refinado para a Lua
-    step_size = 0.005 if analisar_lua else 0.02 
     steps = np.arange(jd_start, jd_end, step_size)
-    
     all_data = []
     for jd in steps:
         y, m, d, h = swe.revjul(jd)
@@ -90,19 +95,18 @@ def get_planetary_data(ano_ref, grau_ref_str, analisar_lua, intervalo_meses):
         for p in planetas:
             res, _ = swe.calc_ut(jd, p["id"], swe.FLG_SWIEPH)
             pos_no_signo = res[0] % 30
-            dist = abs(((pos_no_signo - grau_dec + 15) % 30) - 15)
+            dist = abs(((pos_no_signo - grau_ref_val + 15) % 30) - 15)
             row[p["nome"]] = np.exp(-0.5 * (dist / 1.2)**2) if dist <= 5 else 0
         all_data.append(row)
     
     return pd.DataFrame(all_data), planetas
 
-# Processamento
-df, lista_planetas = get_planetary_data(ano, grau_input, incluir_lua, meses_selecionados)
+df, lista_planetas = get_planetary_data(ano, grau_decimal, incluir_lua, mes_selecionado)
 
-# --- CONSTRUÇÃO DO GRÁFICO ---
+# --- GRÁFICO ---
 fig = go.Figure()
 
-# Traço invisível para Hover (Data/Hora) na posição central do gráfico
+# Hover de Data/Hora (Área de captura)
 fig.add_trace(go.Scatter(
     x=df['date'], y=[0.65] * len(df),
     mode='lines', line=dict(width=50), opacity=0,
@@ -120,7 +124,6 @@ for p in lista_planetas:
         showlegend=True 
     ))
 
-    # Marcação de picos (oculta picos da Lua para evitar poluição visual, já que são muitos)
     if p['nome'] != "LUA":
         peak_mask = (df[p['nome']] > 0.98) & (df[p['nome']] > df[p['nome']].shift(1)) & (df[p['nome']] > df[p['nome']].shift(-1))
         picos = df[peak_mask]
@@ -135,7 +138,7 @@ for p in lista_planetas:
 
 fig.update_layout(
     xaxis=dict(
-        title='Arraste para navegar no tempo',
+        title='Navegue no tempo',
         rangeslider=dict(visible=True, thickness=0.08),
         type='date',
         tickformat='%d/%m\n%Y',
@@ -150,21 +153,27 @@ fig.update_layout(
     template='plotly_white',
     hovermode='x',
     dragmode='pan',
-    height=750,
-    hoverlabel=dict(bgcolor="white", font_size=13, namelength=0)
+    height=700,
+    # Configuração da legenda flutuante (Tooltip)
+    hoverlabel=dict(
+        bgcolor="white",
+        font_size=13,
+        font_color="black",  # COR DAS LETRAS EM PRETO
+        namelength=0,
+        font_family="Arial"
+    )
 )
 
-# --- EXIBIÇÃO ---
 st.plotly_chart(fig, use_container_width=True, config={'scrollZoom': True})
 
 # --- DOWNLOADS ---
 st.divider()
 col1, col2 = st.columns(2)
+grau_limpo = grau_input.replace('.', '_')
 
 with col1:
     buffer_html = io.StringIO()
     fig.write_html(buffer_html, config={'scrollZoom': True})
-    grau_limpo = grau_input.replace('.', '_')
     st.download_button(
         label="📥 Baixar Gráfico Interativo (HTML)",
         data=buffer_html.getvalue(),
