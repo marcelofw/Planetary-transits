@@ -18,7 +18,7 @@ def dms_to_dec(dms_str):
         minutes = float(parts[1]) if len(parts) > 1 else 0
         return degrees + (minutes / 60)
     except:
-        return 0.0
+        return None
 
 def hex_to_rgba(hex_color, opacity):
     hex_color = hex_color.lstrip('#')
@@ -27,20 +27,19 @@ def hex_to_rgba(hex_color, opacity):
 
 # --- INTERFACE LATERAL ---
 st.sidebar.header("🎯 Alvo Zodiacal")
-grau_input = st.sidebar.text_input("Digite o Grau (ex: 27.0 ou 6.20):", value="27.0")
+grau_raw = st.sidebar.text_input("Digite o Grau (0 a 30):", value="27.0")
 ano = st.sidebar.number_input("Ano da Análise:", value=2026)
 
-st.sidebar.divider()
-st.sidebar.markdown("""
-**Como funciona:**
-Este scanner monitora quando cada planeta do céu atinge o grau exato que você digitou em qualquer um dos 12 signos. 
-""")
+# Validação do Grau
+grau_decimal = dms_to_dec(grau_raw)
+
+if grau_decimal is None or grau_decimal < 0 or grau_decimal > 30:
+    st.error("❌ Erro: Por favor, insira um valor de grau válido entre 0 e 30 (ex: 27.0 ou 6.20).")
+    st.stop() # Interrompe a execução aqui
 
 # --- CÁLCULO DE EFEMÉRIDES ---
 @st.cache_data
-def get_transit_data(grau_alvo, ano_ref):
-    grau_decimal = dms_to_dec(grau_alvo)
-    
+def get_transit_data(grau_val, ano_ref):
     planetas_monitorados = [
         {"id": swe.SUN, "nome": "SOL", "cor": "#FFF12E"},
         {"id": swe.MERCURY, "nome": "MERCÚRIO", "cor": "#F3A384"},
@@ -55,7 +54,7 @@ def get_transit_data(grau_alvo, ano_ref):
 
     jd_start = swe.julday(ano_ref, 1, 1)
     jd_end = swe.julday(ano_ref + 1, 1, 1)
-    step_size = 0.01  # Alta precisão: ~14 min
+    step_size = 0.01 
     steps = np.arange(jd_start, jd_end, step_size)
     
     results = []
@@ -67,9 +66,9 @@ def get_transit_data(grau_alvo, ano_ref):
         for p in planetas_monitorados:
             res, _ = swe.calc_ut(jd, p["id"], swe.FLG_SWIEPH)
             pos_no_signo = res[0] % 30
-            dist = abs(((pos_no_signo - grau_decimal + 15) % 30) - 15)
+            dist = abs(((pos_no_signo - grau_val + 15) % 30) - 15)
             
-            if dist <= 5: # Orbe de 5 graus
+            if dist <= 5:
                 row[p["nome"]] = np.exp(-0.5 * (dist / 1.2)**2)
             else:
                 row[p["nome"]] = 0
@@ -78,11 +77,10 @@ def get_transit_data(grau_alvo, ano_ref):
     return pd.DataFrame(results), planetas_monitorados
 
 # Execução do Cálculo
-df, infos_planetas = get_transit_data(grau_input, ano)
+df, infos_planetas = get_transit_data(grau_decimal, ano)
 
 # --- CONSTRUÇÃO DO GRÁFICO ---
-st.title(f"✨ Scanner de Passagens: Grau {grau_input}°")
-st.subheader(f"Monitorando todos os planetas em {ano}")
+st.title(f"Scanner de Passagens: Grau {grau_raw}°")
 
 fig = go.Figure()
 
@@ -94,7 +92,7 @@ for p in infos_planetas:
         line=dict(color=p['cor'], width=2),
         fill='tozeroy',
         fillcolor=hex_to_rgba(p['cor'], 0.12),
-        hovertemplate=f"<b>{p['nome']} em {grau_input}°</b><br>Data: %{{x|%d/%m %H:%M}}<extra></extra>"
+        hovertemplate=f"<b>{p['nome']} em {grau_raw}°</b><br>Data: %{{x|%d/%m %H:%M}}<extra></extra>"
     ))
 
     # Identificação de Picos (Seta Vertical)
@@ -133,6 +131,6 @@ html_string = fig.to_html(include_plotlyjs='cdn')
 st.download_button(
     label="📥 Baixar Gráfico Interativo",
     data=html_string,
-    file_name=f"scanner_grau_{grau_input.replace('.','_')}_{ano}.html",
+    file_name=f"scanner_grau_{grau_raw.replace('.','_')}_{ano}.html",
     mime="text/html"
 )
