@@ -32,15 +32,37 @@ ano = st.sidebar.number_input("Ano da Análise:", value=2026)
 
 # Validação do Grau
 grau_decimal = dms_to_dec(grau_raw)
-
 if grau_decimal is None or grau_decimal < 0 or grau_decimal > 30:
-    st.error("❌ Erro: Por favor, insira um valor de grau válido entre 0 e 30 (ex: 27.0 ou 6.20).")
-    st.stop() # Interrompe a execução aqui
+    st.error("❌ Erro: Por favor, insira um valor de grau válido entre 0 e 30.")
+    st.stop()
+
+st.sidebar.divider()
+
+# Botão e lógica para a Lua
+if 'analisar_lua' not in st.session_state:
+    st.session_state.analisar_lua = False
+
+if st.sidebar.button("🌙 Quero analisar a Lua"):
+    st.session_state.analisar_lua = True
+
+mes_selecionado = None
+if st.session_state.analisar_lua:
+    mes_selecionado = st.sidebar.select_slider(
+        "Selecione o mês para a Lua:",
+        options=list(range(1, 13)),
+        format_func=lambda x: [
+            "Jan", "Fev", "Mar", "Abr", "Mai", "Jun", 
+            "Jul", "Ago", "Set", "Out", "Nov", "Dez"
+        ][x-1]
+    )
+    if st.sidebar.button("Recolher Análise da Lua"):
+        st.session_state.analisar_lua = False
+        st.rerun()
 
 # --- CÁLCULO DE EFEMÉRIDES ---
 @st.cache_data
-def get_transit_data(grau_val, ano_ref):
-    planetas_monitorados = [
+def get_transit_data(grau_val, ano_ref, analisar_lua, mes_lua):
+    planetas_base = [
         {"id": swe.SUN, "nome": "SOL", "cor": "#FFF12E"},
         {"id": swe.MERCURY, "nome": "MERCÚRIO", "cor": "#F3A384"},
         {"id": swe.VENUS, "nome": "VÊNUS", "cor": "#0A8F11"},
@@ -51,10 +73,21 @@ def get_transit_data(grau_val, ano_ref):
         {"id": swe.NEPTUNE, "nome": "NETUNO", "cor": "#1EFF00"},
         {"id": swe.PLUTO, "nome": "PLUTÃO", "cor": "#14F1F1"}
     ]
+    
+    # Se a Lua estiver ativa, trabalhamos apenas com o mês dela
+    if analisar_lua and mes_lua:
+        jd_start = swe.julday(ano_ref, mes_lua, 1)
+        # Calcula último dia do mês
+        if mes_lua == 12:
+            jd_end = swe.julday(ano_ref + 1, 1, 1)
+        else:
+            jd_end = swe.julday(ano_ref, mes_lua + 1, 1)
+        planetas_base.append({"id": swe.MOON, "nome": "LUA", "cor": "#C37DEB"})
+    else:
+        jd_start = swe.julday(ano_ref, 1, 1)
+        jd_end = swe.julday(ano_ref + 1, 1, 1)
 
-    jd_start = swe.julday(ano_ref, 1, 1)
-    jd_end = swe.julday(ano_ref + 1, 1, 1)
-    step_size = 0.01 
+    step_size = 0.005 # Passo menor para a Lua (maior precisão)
     steps = np.arange(jd_start, jd_end, step_size)
     
     results = []
@@ -63,7 +96,7 @@ def get_transit_data(grau_val, ano_ref):
         dt = datetime(y, m, d, int(h), int((h%1)*60))
         row = {'date': dt}
         
-        for p in planetas_monitorados:
+        for p in planetas_base:
             res, _ = swe.calc_ut(jd, p["id"], swe.FLG_SWIEPH)
             pos_no_signo = res[0] % 30
             dist = abs(((pos_no_signo - grau_val + 15) % 30) - 15)
@@ -74,48 +107,54 @@ def get_transit_data(grau_val, ano_ref):
                 row[p["nome"]] = 0
         results.append(row)
     
-    return pd.DataFrame(results), planetas_monitorados
+    return pd.DataFrame(results), planetas_base
 
 # Execução do Cálculo
-df, infos_planetas = get_transit_data(grau_decimal, ano)
+df, infos_planetas = get_transit_data(grau_decimal, ano, st.session_state.analisar_lua, mes_selecionado)
 
 # --- CONSTRUÇÃO DO GRÁFICO ---
-st.title(f"Scanner de Passagens: Grau {grau_raw}°")
+st.title(f"🔭 Scanner de Passagens: Grau {grau_raw}°")
 
 fig = go.Figure()
 
 for p in infos_planetas:
-    fig.add_trace(go.Scatter(
-        x=df['date'], y=df[p['nome']],
-        mode='lines',
-        name=p['nome'],
-        line=dict(color=p['cor'], width=2),
-        fill='tozeroy',
-        fillcolor=hex_to_rgba(p['cor'], 0.12),
-        hovertemplate=f"<b>{p['nome']} em {grau_raw}°</b><br>Data: %{{x|%d/%m %H:%M}}<extra></extra>"
-    ))
+    if p["nome"] in df.columns:
+        fig.add_trace(go.Scatter(
+            x=df['date'], y=df[p['nome']],
+            mode='lines',
+            name=p['nome'],
+            line=dict(color=p['cor'], width=2),
+            fill='tozeroy',
+            fillcolor=hex_to_rgba(p['cor'], 0.12),
+            hovertemplate=(
+                f"<b>{p['nome']} em {grau_raw}°</b><br>" +
+                "Data: %{x|%d/%m %H:%M}<br>" +
+                "Intensidade: <b>%{y:.3f}</b>" + # Indicador de intensidade de 0 a 1
+                "<extra></extra>"
+            )
+        ))
 
-    # Identificação de Picos (Seta Vertical)
-    peak_mask = (df[p['nome']] > 0.98) & (df[p['nome']] > df[p['nome']].shift(1)) & (df[p['nome']] > df[p['nome']].shift(-1))
-    picos = df[peak_mask]
-    
-    for _, row in picos.iterrows():
-        fig.add_annotation(
-            x=row['date'], y=row[p['nome']],
-            text=row['date'].strftime('%d/%m'),
-            font=dict(color=p['cor'], size=10, family="Arial Black"),
-            showarrow=True, arrowhead=1, ax=0, ay=-30,
-            bgcolor="rgba(255,255,255,0.85)", bordercolor=p['cor']
-        )
+        # Identificação de Picos
+        peak_mask = (df[p['nome']] > 0.98) & (df[p['nome']] > df[p['nome']].shift(1)) & (df[p['nome']] > df[p['nome']].shift(-1))
+        picos = df[peak_mask]
+        
+        for _, row in picos.iterrows():
+            fig.add_annotation(
+                x=row['date'], y=row[p['nome']],
+                text=row['date'].strftime('%d/%m'),
+                font=dict(color=p['cor'], size=10, family="Arial Black"),
+                showarrow=True, arrowhead=1, ax=0, ay=-30,
+                bgcolor="rgba(255,255,255,0.85)", bordercolor=p['cor']
+            )
 
 fig.update_layout(
     xaxis=dict(
-        title="Deslize lateralmente para navegar no tempo",
+        title="Arraste para navegar no tempo" if not st.session_state.analisar_lua else f"Foco no mês {mes_selecionado}",
         rangeslider=dict(visible=True, thickness=0.05),
         type='date',
-        tickformat='%d/%m\n%Y'
+        tickformat='%d/%m\n%H:%M' if st.session_state.analisar_lua else '%d/%m\n%Y'
     ),
-    yaxis=dict(title="Intensidade da Conjunção", range=[0, 1.35], fixedrange=True),
+    yaxis=dict(title="Intensidade", range=[0, 1.35], fixedrange=True),
     template='plotly_white',
     dragmode='pan',
     hovermode='x unified',
@@ -123,7 +162,6 @@ fig.update_layout(
     legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
 )
 
-# Renderização
 st.plotly_chart(fig, use_container_width=True, config={'scrollZoom': True})
 
 # Botão de Download
