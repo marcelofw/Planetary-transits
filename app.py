@@ -123,11 +123,12 @@ for p in infos_planetas:
             line=dict(color=p['cor'], width=2),
             fill='tozeroy',
             fillcolor=hex_to_rgba(p['cor'], 0.12),
-            # Hover simplificado apenas com o nome
-            hovertemplate=f"{p['nome']}<extra></extra>"
+            # O SEGREDO: Template vazio oculta o nome do planeta e a linha colorida no hover
+            hovertemplate="",
+            showlegend=True 
         ))
 
-        peak_mask = (df[p['nome']] > 0.98) & (df[p['nome']] > df[p['nome']].shift(1)) & (df[p['nome']] > df[p['nome']].shift(-1))
+        peak_mask = (df[p['nome']] > 0.98) & (df[df.columns.intersection([p['nome']])].squeeze() > df[df.columns.intersection([p['nome']])].squeeze().shift(1)) & (df[df.columns.intersection([p['nome']])].squeeze() > df[df.columns.intersection([p['nome']])].squeeze().shift(-1))
         picos = df[peak_mask]
         
         for _, row in picos.iterrows():
@@ -145,7 +146,7 @@ fig.update_layout(
         rangeslider=dict(visible=True, thickness=0.05),
         type='date',
         tickformat='%d/%m\n%Y',
-        # FORMATAÇÃO SOLICITADA: Apenas Data e Hora no hover unificado
+        # Formato da data e hora que aparecerá SOZINHO no hover
         hoverformat='%d/%m/%Y %H:%M'
     ),
     yaxis=dict(title="Proximidade do Grau", range=[0, 1.35], fixedrange=True),
@@ -155,6 +156,9 @@ fig.update_layout(
     height=700,
     legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
 )
+
+# Estilização extra para garantir que a caixa do hover seja minimalista
+fig.update_layout(hoverlabel=dict(bgcolor="white", font_size=12))
 
 st.plotly_chart(fig, use_container_width=True, config={'scrollZoom': True})
 
