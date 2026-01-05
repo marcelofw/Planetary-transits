@@ -102,7 +102,7 @@ def generate_degree_transit_chart():
                 mode='markers+text',
                 text=picos['date'].dt.strftime('%d/%m'),
                 textposition="top center",
-                textfont=dict(family="Arial Black", size=10, color="black"),
+                textfont=dict(family="Arial Black", size=10, color="#CCCCCC"),
                 marker=dict(symbol="triangle-down", color=p['cor'], size=8),
                 legendgroup=p['nome'],
                 showlegend=False,
@@ -114,7 +114,13 @@ def generate_degree_transit_chart():
     # ==========================================
     fig.update_layout(
         title=dict(text=f'Revolucao Planetaria {ano}: Grau {grau_alvo_natal}', x=0.5),
-        xaxis=dict(type='date', tickformat='%d/%m\n%Y', rangeslider=dict(visible=True, thickness=0.08)),
+        xaxis=dict(
+            type='date', 
+            tickformat='%d/%m\n%Y', 
+            # ADICIONADO: Define o formato da data e hora na legenda flutuante
+            hoverformat='%d/%m/%Y %H:%M',
+            rangeslider=dict(visible=True, thickness=0.08)
+        ),
         yaxis=dict(title='Intensidade', range=[0, 1.25], fixedrange=True),
         template='plotly_white',
         hovermode='x unified', 
@@ -128,7 +134,6 @@ def generate_degree_transit_chart():
     
     fig.write_html(file_name, config={'scrollZoom': True})
     
-    # REMOVIDO O EMOJI DO PRINT PARA EVITAR UNICODEENCODEERROR
     print(f"Sucesso! Grafico gerado: {file_name}")
 
 if __name__ == "__main__":
