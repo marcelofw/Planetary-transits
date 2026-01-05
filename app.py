@@ -23,7 +23,6 @@ def get_signo(longitude):
 def dms_to_dec(dms_str):
     if isinstance(dms_str, (int, float)): return float(dms_str)
     try:
-        # Validação: apenas números e um ponto decimal, entre 0 e 30
         if not re.match(r"^\d+(\.\d+)?$", str(dms_str)): return None
         parts = str(dms_str).split('.')
         degrees = float(parts[0])
@@ -38,25 +37,22 @@ def hex_to_rgba(hex_color, opacity):
     r, g, b = tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
     return f'rgba({r}, {g}, {b}, {opacity})'
 
-# --- INTERFACE LATERAL (Sidebar) ---
+# --- INTERFACE LATERAL ---
 st.sidebar.header("Configurações")
 ano = st.sidebar.number_input("Ano da Análise", min_value=1900, max_value=2100, value=2026)
 grau_input = st.sidebar.text_input("Grau Alvo Natal (0 a 30°)", value="27.0")
 
-# Validação do Grau
 grau_decimal = dms_to_dec(grau_input)
 
-# Funcionalidade da Lua
 incluir_lua = st.sidebar.checkbox("Quero analisar a Lua", value=False)
 mes_selecionado = None
 if incluir_lua:
     mes_selecionado = st.sidebar.slider("Mês da Lua", min_value=1, max_value=12, value=1)
 
 if grau_decimal is None:
-    st.error("⚠️ Erro: Por favor, insira um valor numérico válido entre 0 e 30. (Exemplo: 27.0)")
+    st.error("⚠️ Erro: Por favor, insira um valor numérico válido entre 0 e 30.")
     st.stop()
 
-# Título visual
 st.markdown(f"""
     <div style='text-align: left;'>
         <h1 style='font-size: 2.5rem; margin-bottom: 0;'>🔭 Revolução Planetária {ano}</h1>
@@ -64,7 +60,7 @@ st.markdown(f"""
     </div>
 """, unsafe_allow_html=True)
 
-# --- PROCESSAMENTO DE DADOS ---
+# --- PROCESSAMENTO ---
 @st.cache_data
 def get_planetary_data(ano_ref, grau_ref_val, analisar_lua, mes_unico):
     planetas_cfg = [
@@ -78,20 +74,17 @@ def get_planetary_data(ano_ref, grau_ref_val, analisar_lua, mes_unico):
         {"id": swe.NEPTUNE, "nome": "NETUNO", "cor": "#1EFF00"},
         {"id": swe.PLUTO, "nome": "PLUTÃO", "cor": "#14F1F1"}
     ]
-    
     if analisar_lua:
         planetas_cfg.insert(1, {"id": swe.MOON, "nome": "LUA", "cor": "#A6A6A6"})
 
-    # Flags de precisão e velocidade (para detectar R)
     flags = swe.FLG_SWIEPH | swe.FLG_SPEED
 
-    # Definição de intervalo
     if analisar_lua and mes_unico:
         jd_start = swe.julday(ano_ref, mes_unico, 1)
         prox_m = mes_unico + 1 if mes_unico < 12 else 1
         prox_a = ano_ref if mes_unico < 12 else ano_ref + 1
         jd_end = swe.julday(prox_a, prox_m, 1)
-        step_size = 0.005 # Alta precisão para Lua
+        step_size = 0.005 
     else:
         jd_start = swe.julday(ano_ref, 1, 1)
         jd_end = swe.julday(ano_ref + 1, 1, 1)
@@ -104,38 +97,26 @@ def get_planetary_data(ano_ref, grau_ref_val, analisar_lua, mes_unico):
         y, m, d, h = swe.revjul(jd)
         dt = datetime(y, m, d, int(h), int((h%1)*60))
         row = {'date': dt}
-        
         for p in planetas_cfg:
             res, _ = swe.calc_ut(jd, p["id"], flags)
             long_abs, velocidade = res[0], res[3]
-            
-            # Movimento Retrógrado
             mov = " (R)" if velocidade < 0 else " (D)"
-            
-            pos_no_signo = long_abs % 30
-            dist = abs(((pos_no_signo - grau_ref_val + 15) % 30) - 15)
-            
-            # Intensidade Gaussiana (Sigma 1.7)
+            dist = abs(((long_abs % 30 - grau_ref_val + 15) % 30) - 15)
             val = np.exp(-0.5 * (dist / 1.7)**2)
-            
-            # Orbe de 5 graus
             row[p["nome"]] = val if dist <= 5.0 else None
             row[f"{p['nome']}_info"] = f"{get_signo(long_abs)}{mov}"
-            
         all_data.append(row)
     
     return pd.DataFrame(all_data).infer_objects(copy=False), planetas_cfg
 
 df, lista_planetas = get_planetary_data(ano, grau_decimal, incluir_lua, mes_selecionado)
 
-# --- CONSTRUÇÃO DO GRÁFICO ---
+# --- GRÁFICO ---
 fig = go.Figure()
 
 for p in lista_planetas:
-    # Curva principal
     fig.add_trace(go.Scatter(
-        x=df['date'], 
-        y=df[p['nome']],
+        x=df['date'], y=df[p['nome']],
         mode='lines',
         name=p['nome'],
         legendgroup=p['nome'],
@@ -147,8 +128,6 @@ for p in lista_planetas:
         connectgaps=False 
     ))
 
-    # Marcação de Datas nos Picos (Sincronizado via legendgroup)
-    # Ignoramos picos da Lua se houver muitos para não poluir
     if p['nome'] != "LUA" or (incluir_lua and len(df) < 10000):
         serie_p = df[p['nome']].fillna(0).infer_objects(copy=False)
         peak_mask = (serie_p > 0.98) & (serie_p > serie_p.shift(1)) & (serie_p > serie_p.shift(-1))
@@ -161,7 +140,8 @@ for p in lista_planetas:
                 mode='markers+text',
                 text=picos['date'].dt.strftime('%d/%m'),
                 textposition="top center",
-                textfont=dict(family="Arial Black", size=10, color="black"),
+                # TEXTO EM CINZA PARA COMPATIBILIDADE COM MODO DARK
+                textfont=dict(family="Arial Black", size=10, color="#CCCCCC"),
                 marker=dict(symbol="triangle-down", color=p['cor'], size=8),
                 legendgroup=p['nome'],
                 showlegend=False,
@@ -171,11 +151,8 @@ for p in lista_planetas:
 fig.update_layout(
     height=700,
     xaxis=dict(
-        title='Navegue no tempo',
         rangeslider=dict(visible=True, thickness=0.08),
-        type='date',
-        tickformat='%d/%m\n%Y',
-        hoverformat='%d/%m/%Y %H:%M',
+        type='date', tickformat='%d/%m\n%Y',
         showspikes=True, spikemode='across', spikethickness=1, spikecolor="gray"
     ),
     yaxis=dict(title='Intensidade', range=[0, 1.3], fixedrange=True),
@@ -187,27 +164,17 @@ fig.update_layout(
 
 st.plotly_chart(fig, use_container_width=True, config={'scrollZoom': True})
 
-# --- SEÇÃO DE DOWNLOADS ---
+# --- DOWNLOADS ---
 st.divider()
 col1, col2 = st.columns(2)
 grau_limpo = str(grau_input).replace('.', '_')
-nome_arquivo_base = f"revolucao_planetaria_{ano}_grau_{grau_limpo}"
+nome_base = f"revolucao_planetaria_{ano}_grau_{grau_limpo}"
 
 with col1:
     html_buffer = io.StringIO()
     fig.write_html(html_buffer, config={'scrollZoom': True})
-    st.download_button(
-        label="📥 Baixar Gráfico Interativo (HTML)",
-        data=html_buffer.getvalue(),
-        file_name=f"{nome_arquivo_base}.html",
-        mime="text/html"
-    )
+    st.download_button("📥 Baixar Gráfico (HTML)", html_buffer.getvalue(), f"{nome_base}.html", "text/html")
 
 with col2:
     csv_data = df.to_csv(index=False).encode('utf-8')
-    st.download_button(
-        label="📊 Baixar Dados da Análise (CSV)",
-        data=csv_data,
-        file_name=f"dados_{nome_arquivo_base}.csv",
-        mime="text/csv"
-    )
+    st.download_button("📊 Baixar Dados (CSV)", csv_data, f"dados_{nome_base}.csv", "text/csv")
