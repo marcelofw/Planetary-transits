@@ -42,13 +42,22 @@ def hex_to_rgba(hex_color, opacity):
 # --- INTERFACE LATERAL (Sidebar) ---
 st.sidebar.header("Configurações")
 ano = st.sidebar.number_input("Ano da Análise", min_value=1900, max_value=2100, value=2026)
-grau_input = st.sidebar.text_input("Grau Alvo Natal (0 a 30°)", value="27.0")
+grau_input = st.sidebar.text_input("Grau Natal (0 a 30°)", value="27.0")
 
-# CAMPOS COSMÉTICOS
-planeta_alvo_ui = st.sidebar.selectbox("Planeta Alvo", options=LISTA_PLANETAS_UI)
-signo_alvo_ui = st.sidebar.selectbox("Signo do Zodíaco", options=SIGNOS)
+# CAMPOS COM OPÇÕES INICIAIS PERSONALIZADAS
+planeta_selecionado = st.sidebar.selectbox(
+    "Planeta", 
+    options=["Escolha um planeta"] + LISTA_PLANETAS_UI,
+    index=0
+)
 
-# Validação do Grau (Lógica mantida: foca no grau independente do signo)
+signo_selecionado = st.sidebar.selectbox(
+    "Signo do Zodíaco", 
+    options=["Escolha um signo"] + SIGNOS,
+    index=0
+)
+
+# Validação do Grau
 grau_decimal = dms_to_dec(grau_input)
 
 # Funcionalidade da Lua
@@ -61,11 +70,14 @@ if grau_decimal is None:
     st.error("⚠️ Erro: Por favor, insira um valor numérico válido entre 0 e 30.")
     st.stop()
 
-# Título visual (Usando os campos cosméticos para exibição)
+# Ajuste do texto do cabeçalho para quando nada foi escolhido
+p_texto = planeta_selecionado if planeta_selecionado != "Escolha um planeta" else "Planeta"
+s_texto = signo_selecionado if signo_selecionado != "Escolha um signo" else "Signo"
+
 st.markdown(f"""
     <div style='text-align: left;'>
         <h1 style='font-size: 2.5rem; margin-bottom: 0;'>🔭 Revolução Planetária {ano}</h1>
-        <p style='font-size: 1.2rem; color: #555;'>Ponto Natal: <b>{planeta_alvo_ui} a {grau_input}° de {signo_alvo_ui}</b></p>
+        <p style='font-size: 1.2rem; color: #555;'>Ponto Natal: <b>{p_texto} a {grau_input}° de {s_texto}</b></p>
     </div>
 """, unsafe_allow_html=True)
 
@@ -113,7 +125,7 @@ def get_planetary_data(ano_ref, grau_ref_val, analisar_lua, mes_unico):
             long_abs, velocidade = res[0], res[3]
             mov = " (R)" if velocidade < 0 else " (D)"
             
-            # Lógica original: calcula proximidade do grau dentro de QUALQUER signo
+            # Lógica: calcula proximidade do grau dentro de QUALQUER signo
             pos_no_signo = long_abs % 30
             dist = abs(((pos_no_signo - grau_ref_val + 15) % 30) - 15)
             
@@ -183,9 +195,11 @@ st.plotly_chart(fig, use_container_width=True, config={'scrollZoom': True})
 # --- DOWNLOADS ---
 st.divider()
 col1, col2 = st.columns(2)
-grau_limpo = str(grau_input).replace('.', '_')
-# Nome do arquivo usa os campos cosméticos
-nome_arquivo_base = f"revolucao_{planeta_alvo_ui}_{signo_alvo_ui}_{ano}"
+
+# Nomes limpos para os arquivos
+p_file = p_texto.replace(" ", "_")
+s_file = s_texto.replace(" ", "_")
+nome_arquivo_base = f"revolucao_{p_file}_{s_file}_{ano}"
 
 with col1:
     html_buffer = io.StringIO()
