@@ -2,3 +2,4 @@ streamlit
 pyswisseph
 pandas
 plotly
+openpyxl
