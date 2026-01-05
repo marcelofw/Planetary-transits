@@ -4,24 +4,20 @@ import plotly.graph_objects as go
 import numpy as np
 from datetime import datetime
 
-# Lista de Signos para conversão
-SIGNOS = [
-    "Áries", "Touro", "Gêmeos", "Câncer", "Leão", "Virgem",
-    "Libra", "Escorpião", "Sagitário", "Capricórnio", "Aquário", "Peixes"
-]
+# Silencia o aviso de downcasting do Pandas
+pd.set_option('future.no_silent_downcasting', True)
+
+# --- CONFIGURAÇÕES E FUNÇÕES AUXILIARES ---
+SIGNOS = ["Áries", "Touro", "Gêmeos", "Câncer", "Leão", "Virgem", 
+          "Libra", "Escorpião", "Sagitário", "Capricórnio", "Aquário", "Peixes"]
 
 def get_signo(longitude):
-    """Converte longitude absoluta (0-360) no nome do signo."""
-    idx = int(longitude / 30)
-    return SIGNOS[idx % 12]
+    return SIGNOS[int(longitude / 30) % 12]
 
 def dms_to_dec(dms_str):
-    if isinstance(dms_str, (int, float)):
-        return float(dms_str)
+    if isinstance(dms_str, (int, float)): return float(dms_str)
     parts = str(dms_str).split('.')
-    degrees = float(parts[0])
-    minutes = float(parts[1]) if len(parts) > 1 else 0
-    return degrees + (minutes / 60)
+    return float(parts[0]) + (float(parts[1])/60 if len(parts) > 1 else 0)
 
 def hex_to_rgba(hex_color, opacity):
     hex_color = hex_color.lstrip('#')
@@ -34,8 +30,10 @@ def generate_degree_transit_chart():
     # ==========================================
     ano = 2026
     grau_alvo_natal = "27.0"  
-    grau_decimal = dms_to_dec(grau_alvo_natal)
     
+    grau_decimal = dms_to_dec(grau_alvo_natal)
+    flags = swe.FLG_SWIEPH | swe.FLG_SPEED
+
     planetas_monitorados = [
         {"id": swe.SUN, "nome": "SOL", "cor": "#FFF12E"},
         {"id": swe.MERCURY, "nome": "MERCÚRIO", "cor": "#F3A384"},
@@ -49,89 +47,89 @@ def generate_degree_transit_chart():
     ]
 
     # ==========================================
-    # 2. PROCESSAMENTO
+    # 2. PROCESSAMENTO DE DADOS
     # ==========================================
     jd_start = swe.julday(ano, 1, 1)
     jd_end = swe.julday(ano + 1, 1, 1)
-    step_size = 0.05 
-    steps = np.arange(jd_start, jd_end, step_size)
+    steps = np.arange(jd_start, jd_end, 0.05)
     
     all_data = []
     for jd in steps:
         y, m, d, h = swe.revjul(jd)
         dt = datetime(y, m, d, int(h), int((h%1)*60))
         row = {'date': dt}
+        
         for p in planetas_monitorados:
-            res, _ = swe.calc_ut(jd, p["id"], swe.FLG_SWIEPH)
-            long_abs = res[0]
-            pos_no_signo = long_abs % 30
-            
-            dist = abs(((pos_no_signo - grau_decimal + 15) % 30) - 15)
-            val = np.exp(-0.5 * (dist / 1.2)**2) if dist <= 5 else 0
-            
-            # Se a intensidade for quase zero, não incluímos no hover
-            row[p["nome"]] = val if val > 0.01 else None
-            row[f"{p['nome']}_signo"] = get_signo(long_abs)
+            res, _ = swe.calc_ut(jd, p["id"], flags)
+            long_abs, velocidade = res[0], res[3]
+            mov = " (R)" if velocidade < 0 else " (D)"
+            dist = abs(((long_abs % 30 - grau_decimal + 15) % 30) - 15)
+            val = np.exp(-0.5 * (dist / 1.7)**2)
+            row[p["nome"]] = val if dist <= 5.0 else None
+            row[f"{p['nome']}_info"] = f"{get_signo(long_abs)}{mov}"
             
         all_data.append(row)
 
-    df = pd.DataFrame(all_data)
+    df = pd.DataFrame(all_data).infer_objects(copy=False)
 
     # ==========================================
-    # 3. GRÁFICO
+    # 3. CONSTRUÇÃO DO GRÁFICO
     # ==========================================
     fig = go.Figure()
 
     for p in planetas_monitorados:
         fig.add_trace(go.Scatter(
-            x=df['date'], 
-            y=df[p['nome']],
+            x=df['date'], y=df[p['nome']],
             mode='lines',
             name=p['nome'],
+            legendgroup=p['nome'],
             line=dict(color=p['cor'], width=2.5),
             fill='tozeroy',
             fillcolor=hex_to_rgba(p['cor'], 0.15),
-            customdata=df[f"{p['nome']}_signo"],
-            hovertemplate="%{customdata}<extra></extra>",
+            customdata=df[f"{p['nome']}_info"],
+            hovertemplate="<b>%{customdata}</b><extra></extra>",
             connectgaps=False 
         ))
 
+        serie_p = df[p['nome']].fillna(0).infer_objects(copy=False)
+        peak_mask = (serie_p > 0.98) & (serie_p > serie_p.shift(1)) & (serie_p > serie_p.shift(-1))
+        picos = df[peak_mask]
+        
+        if not picos.empty:
+            fig.add_trace(go.Scatter(
+                x=picos['date'],
+                y=picos[p['nome']] + 0.04,
+                mode='markers+text',
+                text=picos['date'].dt.strftime('%d/%m'),
+                textposition="top center",
+                textfont=dict(family="Arial Black", size=10, color="black"),
+                marker=dict(symbol="triangle-down", color=p['cor'], size=8),
+                legendgroup=p['nome'],
+                showlegend=False,
+                hoverinfo='skip'
+            ))
+
+    # ==========================================
+    # 4. LAYOUT E EXPORTAÇÃO
+    # ==========================================
     fig.update_layout(
-        title=dict(text=f'🔭 Revolução Planetária {ano}: Grau {grau_alvo_natal}°', x=0.5),
-        xaxis=dict(
-            title='Arraste para navegar no tempo',
-            rangeslider=dict(visible=True, thickness=0.08),
-            type='date',
-            tickformat='%d/%m\n%Y',
-            hoverformat='%d/%m/%Y %H:%M',
-            showspikes=True,
-            spikemode='across',
-            spikethickness=1,
-            spikecolor="black"
-        ),
-        yaxis=dict(title='Intensidade', range=[0, 1.3], fixedrange=True),
+        title=dict(text=f'Revolucao Planetaria {ano}: Grau {grau_alvo_natal}', x=0.5),
+        xaxis=dict(type='date', tickformat='%d/%m\n%Y', rangeslider=dict(visible=True, thickness=0.08)),
+        yaxis=dict(title='Intensidade', range=[0, 1.25], fixedrange=True),
         template='plotly_white',
         hovermode='x unified', 
         dragmode='pan',
-        hoverlabel=dict(
-            bgcolor="white",
-            font_size=12,
-            font_color="black",
-            font_family="Arial"
-        )
+        margin=dict(t=100)
     )
 
-    # ==========================================
-    # 4. SALVAMENTO DINÂMICO
-    # ==========================================
-    grau_limpo = grau_alvo_natal.replace('.', '_')
-    # Nome do arquivo agora contém o ano e o grau formatado
-    file_name = f"revolucao_planetaria_{ano}_grau_{grau_limpo}.html"
+    # Nome do arquivo dinâmico
+    grau_para_nome = str(grau_alvo_natal).replace('.', '_')
+    file_name = f"revolucao_{ano}_grau_{grau_para_nome}.html"
     
     fig.write_html(file_name, config={'scrollZoom': True})
     
-    print(f"Sucesso! Gráfico gerado para o ano {ano} e grau {grau_alvo_natal}.")
-    print(f"Arquivo salvo como: {file_name}")
+    # REMOVIDO O EMOJI DO PRINT PARA EVITAR UNICODEENCODEERROR
+    print(f"Sucesso! Grafico gerado: {file_name}")
 
 if __name__ == "__main__":
     generate_degree_transit_chart()
