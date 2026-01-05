@@ -9,16 +9,20 @@ import re
 
 # --- CONFIGURAÇÃO DA PÁGINA ---
 st.set_page_config(page_title="Revolução Planetária Profissional", layout="wide")
-
-# Silencia avisos de downcasting para compatibilidade futura com Pandas
 pd.set_option('future.no_silent_downcasting', True)
 
-# --- CONSTANTES E FUNÇÕES AUXILIARES ---
+# --- CONSTANTES ---
 SIGNOS = ["Áries", "Touro", "Gêmeos", "Câncer", "Leão", "Virgem", 
           "Libra", "Escorpião", "Sagitário", "Capricórnio", "Aquário", "Peixes"]
 
 LISTA_PLANETAS_UI = ["Sol", "Lua", "Mercúrio", "Vênus", "Marte", "Júpiter", "Saturno", "Urano", "Netuno", "Plutão"]
 
+ASPECTOS = {
+    0: "Conjunção", 30: "Semi-sêxtil", 60: "Sêxtil", 90: "Quadratura", 
+    120: "Trígono", 150: "Quincúncio", 180: "Oposição"
+}
+
+# --- FUNÇÕES AUXILIARES ---
 def get_signo(longitude):
     return SIGNOS[int(longitude / 30) % 12]
 
@@ -29,61 +33,47 @@ def dms_to_dec(dms_str):
         parts = str(dms_str).split('.')
         degrees = float(parts[0])
         minutes = float(parts[1]) if len(parts) > 1 else 0
-        val = degrees + (minutes / 60)
-        return val if 0 <= val <= 30 else None
-    except:
-        return None
+        return degrees + (minutes / 60)
+    except: return None
 
 def hex_to_rgba(hex_color, opacity):
     hex_color = hex_color.lstrip('#')
     r, g, b = tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
     return f'rgba({r}, {g}, {b}, {opacity})'
 
-# --- INTERFACE LATERAL (Sidebar) ---
+def calcular_aspecto(long1, long2):
+    diff = abs(long1 - long2) % 360
+    if diff > 180: diff = 360 - diff
+    for angulo, nome in ASPECTOS.items():
+        if abs(diff - angulo) <= 5: # Orbe de 5 graus
+            return nome
+    return "Outro"
+
+# --- INTERFACE LATERAL ---
 st.sidebar.header("Configurações")
 ano = st.sidebar.number_input("Ano da Análise", min_value=1900, max_value=2100, value=2026)
 grau_input = st.sidebar.text_input("Grau Natal (0 a 30°)", value="27.0")
 
-# CAMPOS COM OPÇÕES INICIAIS PERSONALIZADAS
-planeta_selecionado = st.sidebar.selectbox(
-    "Planeta", 
-    options=["Escolha um planeta"] + LISTA_PLANETAS_UI,
-    index=0
-)
+planeta_sel = st.sidebar.selectbox("Planeta", options=["Escolha um planeta"] + LISTA_PLANETAS_UI)
+signo_sel = st.sidebar.selectbox("Signo do Zodíaco", options=["Escolha um signo"] + SIGNOS)
 
-signo_selecionado = st.sidebar.selectbox(
-    "Signo do Zodíaco", 
-    options=["Escolha um signo"] + SIGNOS,
-    index=0
-)
-
-# Validação do Grau
 grau_decimal = dms_to_dec(grau_input)
-
-# Funcionalidade da Lua
 incluir_lua = st.sidebar.checkbox("Quero analisar a Lua", value=False)
-mes_selecionado = None
-if incluir_lua:
-    mes_selecionado = st.sidebar.slider("Mês da Lua", min_value=1, max_value=12, value=1)
+mes_selecionado = st.sidebar.slider("Mês da Lua", 1, 12, 1) if incluir_lua else None
 
 if grau_decimal is None:
-    st.error("⚠️ Erro: Por favor, insira um valor numérico válido entre 0 e 30.")
+    st.error("⚠️ Insira um grau válido.")
     st.stop()
 
-# Ajuste do texto do cabeçalho para quando nada foi escolhido
-p_texto = planeta_selecionado if planeta_selecionado != "Escolha um planeta" else "Planeta"
-s_texto = signo_selecionado if signo_selecionado != "Escolha um signo" else "Signo"
+# Lógica Cosmética para Tabela
+p_label = planeta_sel if planeta_sel != "Escolha um planeta" else "Planeta"
+s_label = signo_sel if signo_sel != "Escolha um signo" else "Signo"
+idx_signo_natal = SIGNOS.index(signo_sel) if signo_sel in SIGNOS else 0
+long_natal_fake = (idx_signo_natal * 30) + grau_decimal
 
-st.markdown(f"""
-    <div style='text-align: left;'>
-        <h1 style='font-size: 2.5rem; margin-bottom: 0;'>🔭 Revolução Planetária {ano}</h1>
-        <p style='font-size: 1.2rem; color: #555;'>Ponto Natal: <b>{p_texto} a {grau_input}° de {s_texto}</b></p>
-    </div>
-""", unsafe_allow_html=True)
-
-# --- PROCESSAMENTO DE DADOS ---
+# --- PROCESSAMENTO ---
 @st.cache_data
-def get_planetary_data(ano_ref, grau_ref_val, analisar_lua, mes_unico):
+def get_data(ano_ref, grau_ref, analisar_lua, mes_unico):
     planetas_cfg = [
         {"id": swe.SUN, "nome": "SOL", "cor": "#FFF12E"},
         {"id": swe.MERCURY, "nome": "MERCÚRIO", "cor": "#F3A384"},
@@ -95,117 +85,105 @@ def get_planetary_data(ano_ref, grau_ref_val, analisar_lua, mes_unico):
         {"id": swe.NEPTUNE, "nome": "NETUNO", "cor": "#1EFF00"},
         {"id": swe.PLUTO, "nome": "PLUTÃO", "cor": "#14F1F1"}
     ]
-    
-    if analisar_lua:
-        planetas_cfg.insert(1, {"id": swe.MOON, "nome": "LUA", "cor": "#A6A6A6"})
+    if analisar_lua: planetas_cfg.insert(1, {"id": swe.MOON, "nome": "LUA", "cor": "#A6A6A6"})
 
-    flags = swe.FLG_SWIEPH | swe.FLG_SPEED
-
-    if analisar_lua and mes_unico:
-        jd_start = swe.julday(ano_ref, mes_unico, 1)
-        prox_m = mes_unico + 1 if mes_unico < 12 else 1
-        prox_a = ano_ref if mes_unico < 12 else ano_ref + 1
-        jd_end = swe.julday(prox_a, prox_m, 1)
-        step_size = 0.005 
-    else:
-        jd_start = swe.julday(ano_ref, 1, 1)
-        jd_end = swe.julday(ano_ref + 1, 1, 1)
-        step_size = 0.05
+    jd_start = swe.julday(ano_ref, mes_unico if mes_unico else 1, 1)
+    jd_end = swe.julday(ano_ref + (0 if mes_unico else 1), (mes_unico + 1) if mes_unico and mes_unico < 12 else (1 if mes_unico else 1), 1)
     
-    steps = np.arange(jd_start, jd_end, step_size)
+    steps = np.arange(jd_start, jd_end, 0.005 if analisar_lua else 0.05)
     all_data = []
     
     for jd in steps:
         y, m, d, h = swe.revjul(jd)
         dt = datetime(y, m, d, int(h), int((h%1)*60))
         row = {'date': dt}
-        
         for p in planetas_cfg:
-            res, _ = swe.calc_ut(jd, p["id"], flags)
-            long_abs, velocidade = res[0], res[3]
-            mov = " (R)" if velocidade < 0 else " (D)"
-            
-            # Lógica: calcula proximidade do grau dentro de QUALQUER signo
-            pos_no_signo = long_abs % 30
-            dist = abs(((pos_no_signo - grau_ref_val + 15) % 30) - 15)
-            
+            res, _ = swe.calc_ut(jd, p['id'], swe.FLG_SWIEPH | swe.FLG_SPEED)
+            long_abs, vel = res[0], res[3]
+            dist = abs(((long_abs % 30 - grau_ref + 15) % 30) - 15)
             val = np.exp(-0.5 * (dist / 1.7)**2)
-            row[p["nome"]] = val if dist <= 5.0 else None
-            row[f"{p['nome']}_info"] = f"{get_signo(long_abs)}{mov}"
-            
+            row[p['nome']] = val if dist <= 5.0 else 0
+            row[f"{p['nome']}_long"] = long_abs
+            row[f"{p['nome']}_ret"] = "Retrógrado" if vel < 0 else "Direto"
         all_data.append(row)
-    
-    return pd.DataFrame(all_data).infer_objects(copy=False), planetas_cfg
+    return pd.DataFrame(all_data), planetas_cfg
 
-df, lista_planetas = get_planetary_data(ano, grau_decimal, incluir_lua, mes_selecionado)
+df, planetas_cfg = get_data(ano, grau_decimal, incluir_lua, mes_selecionado)
 
-# --- CONSTRUÇÃO DO GRÁFICO ---
+# --- GERAÇÃO DA TABELA DE EVENTOS ---
+eventos = []
+for p in planetas_cfg:
+    nome = p['nome']
+    serie = df[nome].values
+    for i in range(1, len(serie)-1):
+        if serie[i] > 0.98 and serie[i] > serie[i-1] and serie[i] > serie[i+1]:
+            # Achar início e fim (onde a intensidade zera)
+            idx_ini = i
+            while idx_ini > 0 and serie[idx_ini] > 0.01: idx_ini -= 1
+            idx_fim = i
+            while idx_fim < len(serie)-1 and serie[idx_fim] > 0.01: idx_fim += 1
+            
+            row_pico = df.iloc[i]
+            long_trans = row_pico[f"{nome}_long"]
+            
+            eventos.append({
+                "Início": df.iloc[idx_ini]['date'].strftime('%d/%m/%Y %H:%M'),
+                "Pico": row_pico['date'].strftime('%d/%m/%Y %H:%M'),
+                "Término": df.iloc[idx_fim]['date'].strftime('%d/%m/%Y %H:%M'),
+                "Grau Natal": f"{grau_input}°",
+                "Planeta e Signo Natal": f"{p_label} em {s_label}",
+                "Planeta e Signo em Trânsito": f"{nome} em {get_signo(long_trans)}",
+                "Status": row_pico[f"{nome}_ret"],
+                "Aspecto": calcular_aspecto(long_trans, long_natal_fake)
+            })
+
+df_eventos = pd.DataFrame(eventos)
+
+# --- LAYOUT SUPERIOR ---
+st.markdown(f"<h1>🔭 Revolução Planetária {ano}</h1>", unsafe_allow_html=True)
+st.markdown(f"Ponto Natal: **{p_label} a {grau_input}° de {s_label}**")
+
+# BOTÕES ACIMA DO GRÁFICO
+st.write("### 📥 Downloads")
+c1, c2, c3 = st.columns(3)
+with c1:
+    csv_ev = df_eventos.to_csv(index=False).encode('utf-8')
+    st.download_button("📊 Baixar Tabela (CSV)", csv_ev, "tabela_eventos.csv", "text/csv")
+with c2:
+    csv_raw = df.to_csv(index=False).encode('utf-8')
+    st.download_button("📈 Baixar Dados Brutos (CSV)", csv_raw, "dados_grafico.csv", "text/csv")
+with c3:
+    html_buffer = io.StringIO()
+    # Gráfico será gerado abaixo, mas o botão precisa do objeto 'fig'
+    pass # Definido após gerar fig
+
+# --- GRÁFICO ---
 fig = go.Figure()
-
-for p in lista_planetas:
+for p in planetas_cfg:
+    # Filtra zeros para o gráfico ficar limpo
+    df_plot = df[df[p['nome']] > 0]
     fig.add_trace(go.Scatter(
-        x=df['date'], y=df[p['nome']],
-        mode='lines',
-        name=p['nome'],
-        legendgroup=p['nome'],
-        line=dict(color=p['cor'], width=2.5),
-        fill='tozeroy',
-        fillcolor=hex_to_rgba(p['cor'], 0.15),
-        customdata=df[f"{p['nome']}_info"],
-        hovertemplate="<b>%{customdata}</b><extra></extra>",
-        connectgaps=False 
+        x=df['date'], y=df[p['nome']], name=p['nome'],
+        line=dict(color=p['cor'], width=2),
+        fill='tozeroy', fillcolor=hex_to_rgba(p['cor'], 0.1),
+        hovertemplate="<b>%{x|%d/%m/%Y %H:%M}</b><br>Intensidade: %{y:.2f}<extra></extra>"
+    ))
+    # Datas nos picos (cinza para dark mode)
+    picos_plot = df[(df[p['nome']] > 0.98) & (df[p['nome']] > df[p['nome']].shift(1)) & (df[p['nome']] > df[p['nome']].shift(-1))]
+    fig.add_trace(go.Scatter(
+        x=picos_plot['date'], y=picos_plot[p['nome']]+0.05,
+        mode='text', text=picos_plot['date'].dt.strftime('%d/%m'),
+        textfont=dict(color="#CCCCCC", size=10), showlegend=False
     ))
 
-    if p['nome'] != "LUA" or (incluir_lua and len(df) < 10000):
-        serie_p = df[p['nome']].fillna(0).infer_objects(copy=False)
-        peak_mask = (serie_p > 0.98) & (serie_p > serie_p.shift(1)) & (serie_p > serie_p.shift(-1))
-        picos = df[peak_mask]
-        
-        if not picos.empty:
-            fig.add_trace(go.Scatter(
-                x=picos['date'],
-                y=picos[p['nome']] + 0.04,
-                mode='markers+text',
-                text=picos['date'].dt.strftime('%d/%m'),
-                textposition="top center",
-                textfont=dict(family="Arial Black", size=10, color="#CCCCCC"),
-                marker=dict(symbol="triangle-down", color=p['cor'], size=8),
-                legendgroup=p['nome'],
-                showlegend=False,
-                hoverinfo='skip'
-            ))
-
 fig.update_layout(
-    height=700,
-    xaxis=dict(
-        rangeslider=dict(visible=True, thickness=0.08),
-        type='date', tickformat='%d/%m\n%Y',
-        hoverformat='%d/%m/%Y %H:%M',
-        showspikes=True, spikemode='across', spikethickness=1, spikecolor="gray"
-    ),
-    yaxis=dict(title='Intensidade', range=[0, 1.3], fixedrange=True),
-    template='plotly_white',
-    hovermode='x unified', 
-    dragmode='pan',
-    margin=dict(t=100)
+    height=600, template='plotly_white', hovermode='x unified',
+    xaxis=dict(rangeslider=dict(visible=True), hoverformat='%d/%m/%Y %H:%M'),
+    yaxis=dict(range=[0, 1.3])
 )
 
-st.plotly_chart(fig, use_container_width=True, config={'scrollZoom': True})
+st.plotly_chart(fig, use_container_width=True)
 
-# --- DOWNLOADS ---
-st.divider()
-col1, col2 = st.columns(2)
-
-# Nomes limpos para os arquivos
-p_file = p_texto.replace(" ", "_")
-s_file = s_texto.replace(" ", "_")
-nome_arquivo_base = f"revolucao_{p_file}_{s_file}_{ano}"
-
-with col1:
-    html_buffer = io.StringIO()
-    fig.write_html(html_buffer, config={'scrollZoom': True})
-    st.download_button("📥 Baixar Gráfico (HTML)", html_buffer.getvalue(), f"{nome_arquivo_base}.html", "text/html")
-
-with col2:
-    csv_data = df.to_csv(index=False).encode('utf-8')
-    st.download_button("📊 Baixar Dados (CSV)", csv_data, f"dados_{nome_arquivo_base}.csv", "text/csv")
+# --- EXIBIÇÃO DA TABELA ---
+st.write("### 📅 Tabela de Trânsitos")
+st.dataframe(df_eventos, use_container_width=True)
