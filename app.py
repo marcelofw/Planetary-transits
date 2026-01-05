@@ -44,18 +44,14 @@ st.sidebar.header("Configurações")
 ano = st.sidebar.number_input("Ano da Análise", min_value=1900, max_value=2100, value=2026)
 grau_input = st.sidebar.text_input("Grau Alvo Natal (0 a 30°)", value="27.0")
 
-# NOVOS CAMPOS SOLICITADOS
+# CAMPOS COSMÉTICOS
 planeta_alvo_ui = st.sidebar.selectbox("Planeta Alvo", options=LISTA_PLANETAS_UI)
 signo_alvo_ui = st.sidebar.selectbox("Signo do Zodíaco", options=SIGNOS)
 
-# Validação do Grau e Cálculo da Longitude Absoluta Alvo
+# Validação do Grau (Lógica mantida: foca no grau independente do signo)
 grau_decimal = dms_to_dec(grau_input)
-if grau_decimal is not None:
-    # A longitude absoluta é (índice do signo * 30) + grau dentro do signo
-    idx_signo = SIGNOS.index(signo_alvo_ui)
-    longitude_alvo_absoluta = (idx_signo * 30) + grau_decimal
 
-# Funcionalidade da Lua (Monitoramento da curva da Lua)
+# Funcionalidade da Lua
 incluir_lua = st.sidebar.checkbox("Quero analisar a Lua", value=False)
 mes_selecionado = None
 if incluir_lua:
@@ -65,7 +61,7 @@ if grau_decimal is None:
     st.error("⚠️ Erro: Por favor, insira um valor numérico válido entre 0 e 30.")
     st.stop()
 
-# Título visual atualizado com o Planeta e Signo
+# Título visual (Usando os campos cosméticos para exibição)
 st.markdown(f"""
     <div style='text-align: left;'>
         <h1 style='font-size: 2.5rem; margin-bottom: 0;'>🔭 Revolução Planetária {ano}</h1>
@@ -75,7 +71,7 @@ st.markdown(f"""
 
 # --- PROCESSAMENTO DE DADOS ---
 @st.cache_data
-def get_planetary_data(ano_ref, long_alvo_ref, analisar_lua, mes_unico):
+def get_planetary_data(ano_ref, grau_ref_val, analisar_lua, mes_unico):
     planetas_cfg = [
         {"id": swe.SUN, "nome": "SOL", "cor": "#FFF12E"},
         {"id": swe.MERCURY, "nome": "MERCÚRIO", "cor": "#F3A384"},
@@ -117,12 +113,11 @@ def get_planetary_data(ano_ref, long_alvo_ref, analisar_lua, mes_unico):
             long_abs, velocidade = res[0], res[3]
             mov = " (R)" if velocidade < 0 else " (D)"
             
-            # Cálculo de distância circular absoluta (em relação aos 360°)
-            dist = abs(((long_abs - long_alvo_ref + 180) % 360) - 180)
+            # Lógica original: calcula proximidade do grau dentro de QUALQUER signo
+            pos_no_signo = long_abs % 30
+            dist = abs(((pos_no_signo - grau_ref_val + 15) % 30) - 15)
             
-            # Intensidade Gaussiana (Sigma 1.7 para orbe de ~5 graus)
             val = np.exp(-0.5 * (dist / 1.7)**2)
-            
             row[p["nome"]] = val if dist <= 5.0 else None
             row[f"{p['nome']}_info"] = f"{get_signo(long_abs)}{mov}"
             
@@ -130,7 +125,7 @@ def get_planetary_data(ano_ref, long_alvo_ref, analisar_lua, mes_unico):
     
     return pd.DataFrame(all_data).infer_objects(copy=False), planetas_cfg
 
-df, lista_planetas = get_planetary_data(ano, longitude_alvo_absoluta, incluir_lua, mes_selecionado)
+df, lista_planetas = get_planetary_data(ano, grau_decimal, incluir_lua, mes_selecionado)
 
 # --- CONSTRUÇÃO DO GRÁFICO ---
 fig = go.Figure()
@@ -171,7 +166,6 @@ for p in lista_planetas:
 fig.update_layout(
     height=700,
     xaxis=dict(
-        title='Navegue no tempo',
         rangeslider=dict(visible=True, thickness=0.08),
         type='date', tickformat='%d/%m\n%Y',
         hoverformat='%d/%m/%Y %H:%M',
@@ -190,6 +184,7 @@ st.plotly_chart(fig, use_container_width=True, config={'scrollZoom': True})
 st.divider()
 col1, col2 = st.columns(2)
 grau_limpo = str(grau_input).replace('.', '_')
+# Nome do arquivo usa os campos cosméticos
 nome_arquivo_base = f"revolucao_{planeta_alvo_ui}_{signo_alvo_ui}_{ano}"
 
 with col1:
