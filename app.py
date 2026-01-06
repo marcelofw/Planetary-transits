@@ -160,9 +160,9 @@ def get_planetary_data(ano_ref, grau_ref_val, analisar_lua, mes_unico, long_nata
             pos = res[0] % 30
             dist = abs(((pos - grau_ref_val + 15) % 30) - 15)
             
-            # --- ALTERAÇÃO AQUI: Alinhamento natural na linha de base ---
+            # --- ALTERAÇÃO SOLICITADA: Aumenta o símbolo e força o alinhamento na base ---
             simbolo = obter_simbolo_aspecto(res[0], long_natal_ref) if long_natal_ref > 0 else ""
-            simbolo_html = f"<b>{simbolo}</b>" if simbolo else ""
+            simbolo_html = f"<span style='font-size: 22px; line-height: 0; vertical-align: baseline;'><b>{simbolo}</b></span>" if simbolo else ""
             
             row[p["nome"]] = np.exp(-0.5 * (dist / 1.7)**2) if dist <= 5.0 else 0
             row[f"{p['nome']}_long"] = res[0]
