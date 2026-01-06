@@ -57,8 +57,9 @@ st.sidebar.header("Configurações")
 ano = st.sidebar.number_input("Ano da Análise", min_value=1900, max_value=2100, value=2026)
 grau_input = st.sidebar.text_input("Grau Natal (0 a 30°)", value="27.0")
 
-planeta_selecionado = st.sidebar.selectbox("Planeta", options=["Escolha um planeta"] + LISTA_PLANETAS_UI, index=1) # Default Sol
-signo_selecionado = st.sidebar.selectbox("Signo do Zodíaco", options=["Escolha um signo"] + SIGNOS, index=10) # Default Capricórnio
+# Ajustado para iniciar em "Escolha um..."
+planeta_selecionado = st.sidebar.selectbox("Planeta", options=["Escolha um planeta"] + LISTA_PLANETAS_UI, index=0)
+signo_selecionado = st.sidebar.selectbox("Signo do Zodíaco", options=["Escolha um signo"] + SIGNOS, index=0)
 
 grau_decimal = dms_to_dec(grau_input)
 incluir_lua = st.sidebar.checkbox("Quero analisar a Lua", value=False)
@@ -164,7 +165,6 @@ if planeta_selecionado != "Escolha um planeta" and signo_selecionado != "Escolha
         nome_p = p["nome"]
         serie_tabela = df[nome_p].fillna(0).values
         for i in range(1, len(serie_tabela) - 1):
-            # Condição de Pico do script Python
             if serie_tabela[i] > 0.98 and serie_tabela[i] > serie_tabela[i-1] and serie_tabela[i] > serie_tabela[i+1]:
                 idx_ini = i
                 while idx_ini > 0 and serie_tabela[idx_ini] > 0.01: idx_ini -= 1
@@ -218,6 +218,8 @@ with c2:
         out = io.BytesIO()
         with pd.ExcelWriter(out, engine='openpyxl') as w: pd.DataFrame(eventos_aspectos).to_excel(w, index=False)
         st.download_button("📂 Baixar Tabela Aspectos (Excel)", out.getvalue(), f"tabela_transitos_{ano}_grau_{grau_limpo_file}.xlsx")
+    else:
+        st.button("📂 Baixar Tabela Aspectos (Excel)", disabled=True)
 with c3:
     out_m = io.BytesIO()
     with pd.ExcelWriter(out_m, engine='openpyxl') as w: df_mov_anual.to_excel(w, index=False)
