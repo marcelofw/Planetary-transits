@@ -168,41 +168,49 @@ if planeta_selecionado != "Escolha um planeta" and signo_selecionado != "Escolha
                 while idx_fim < len(serie)-1 and serie[idx_fim] > 0.01: idx_fim += 1
                 row_pico = df.iloc[i]
                 eventos.append({
-                    "Data e Hora Início": df.iloc[idx_ini]['date'].strftime('%d/%m/%Y %H:%M'),
-                    "Data e Hora Pico": row_pico['date'].strftime('%d/%m/%Y %H:%M'),
-                    "Data e Hora Término": df.iloc[idx_fim]['date'].strftime('%d/%m/%Y %H:%M'),
-                    "Grau Natal": f"{grau_input}°", "Planeta e Signo Natal": f"{planeta_selecionado} em {signo_selecionado}",
-                    "Planeta e Signo em Trânsito": f"{p['nome'].capitalize()} em {get_signo(row_pico[p['nome']+'_long'])}",
-                    "Trânsito": row_pico[p['nome']+'_status'], "Aspecto": calcular_aspecto(row_pico[p['nome']+'_long'], long_natal)
+                    "Início": df.iloc[idx_ini]['date'].strftime('%d/%m/%Y'),
+                    "Pico": row_pico['date'].strftime('%d/%m/%Y %H:%M'),
+                    "Término": df.iloc[idx_fim]['date'].strftime('%d/%m/%Y'),
+                    "Natal": f"{grau_input}° {planeta_selecionado} ({signo_selecionado})",
+                    "Céu": f"{p['nome'].capitalize()} {get_signo(row_pico[p['nome']+'_long'])}",
+                    "Trânsito": row_pico[p['nome']+'_status'], 
+                    "Aspecto": calcular_aspecto(row_pico[p['nome']+'_long'], long_natal)
                 })
 
-# Configuração de Colunas para a Tabela de Aspectos
+# Tabela 1: Compactada e com largura de container
 st.dataframe(
     pd.DataFrame(eventos), 
-    width='stretch', 
+    use_container_width=True, # Usa a largura disponível sem "esticar" as células além do limite do container
     height='content',
+    hide_index=True,
     column_config={
-        "Data e Hora Início": st.column_config.TextColumn(width="medium"),
-        "Data e Hora Pico": st.column_config.TextColumn(width="medium"),
-        "Data e Hora Término": st.column_config.TextColumn(width="medium"),
-        "Grau Natal": st.column_config.TextColumn(width="small"),
-        "Aspecto": st.column_config.TextColumn(width="small")
+        "Início": st.column_config.TextColumn(width=100),
+        "Pico": st.column_config.TextColumn(width=150),
+        "Término": st.column_config.TextColumn(width=100),
+        "Natal": st.column_config.TextColumn(width=200),
+        "Céu": st.column_config.TextColumn(width=150),
+        "Trânsito": st.column_config.TextColumn(width=100),
+        "Aspecto": st.column_config.TextColumn(width=100)
     }
 )
 
 st.write(f"### 🔄 Movimento Anual dos Planetas em {ano}")
-# Configuração de Colunas para Movimento Anual para evitar dispersão
-st.dataframe(
-    df_mov_anual, 
-    width='stretch', 
-    height='content',
-    column_config={
-        "Planeta": st.column_config.TextColumn(width="small"),
-        "Início": st.column_config.TextColumn(width="small"),
-        "Término": st.column_config.TextColumn(width="small"),
-        "Trânsito": st.column_config.TextColumn(width="small")
-    }
-)
+# Tabela 2: Reduzida para não espalhar as colunas
+# Criamos colunas para centralizar a tabela pequena na tela
+col_tab1, col_tab2, col_tab3 = st.columns([1, 2, 1])
+with col_tab2:
+    st.dataframe(
+        df_mov_anual, 
+        use_container_width=True, 
+        height='content',
+        hide_index=True,
+        column_config={
+            "Planeta": st.column_config.TextColumn(width=120),
+            "Início": st.column_config.TextColumn(width=100),
+            "Término": st.column_config.TextColumn(width=100),
+            "Trânsito": st.column_config.TextColumn(width=120)
+        }
+    )
 
 # --- DOWNLOADS ---
 st.divider()
