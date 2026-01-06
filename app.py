@@ -93,7 +93,42 @@ st.markdown(f"""
     </div>
 """, unsafe_allow_html=True)
 
-# --- PROCESSAMENTO DE DADOS ---
+# --- PROCESSAMENTO DE DADOS (CACHEADO POR ANO) ---
+@st.cache_data
+def get_annual_movements(ano_ref):
+    """Gera a tabela de movimentos (D/R) que depende apenas do ano."""
+    planetas_cfg = [
+        {"id": swe.SUN, "nome": "SOL"}, {"id": swe.MERCURY, "nome": "MERCÚRIO"},
+        {"id": swe.VENUS, "nome": "VÊNUS"}, {"id": swe.MARS, "nome": "MARTE"},
+        {"id": swe.JUPITER, "nome": "JÚPITER"}, {"id": swe.SATURN, "nome": "SATURNO"},
+        {"id": swe.URANUS, "nome": "URANO"}, {"id": swe.NEPTUNE, "nome": "NETUNO"},
+        {"id": swe.PLUTO, "nome": "PLUTÃO"}
+    ]
+    jd_start = swe.julday(ano_ref, 1, 1)
+    jd_end = swe.julday(ano_ref + 1, 1, 1)
+    steps = np.arange(jd_start, jd_end, 0.5) # Passo largo para performance
+    
+    movs = []
+    for p in planetas_cfg:
+        status_atual = None
+        data_inicio = None
+        for jd in steps:
+            res, _ = swe.calc_ut(jd, p["id"], swe.FLG_SWIEPH | swe.FLG_SPEED)
+            velocidade = res[3]
+            status_ponto = "Retrógrado" if velocidade < 0 else "Direto"
+            y, m, d, h = swe.revjul(jd)
+            dt = datetime(y, m, d)
+            
+            if status_atual is None:
+                status_atual = status_ponto
+                data_inicio = dt
+            elif status_ponto != status_atual:
+                movs.append({"Planeta": p["nome"].capitalize(), "Início": data_inicio.strftime('%d/%m/%Y'), "Término": dt.strftime('%d/%m/%Y'), "Trânsito": status_atual})
+                status_atual = status_ponto
+                data_inicio = dt
+        movs.append({"Planeta": p["nome"].capitalize(), "Início": data_inicio.strftime('%d/%m/%Y'), "Término": datetime(ano_ref, 12, 31).strftime('%d/%m/%Y'), "Trânsito": status_atual})
+    return pd.DataFrame(movs)
+
 @st.cache_data
 def get_planetary_data(ano_ref, grau_ref_val, analisar_lua, mes_unico):
     planetas_cfg = [
@@ -107,200 +142,95 @@ def get_planetary_data(ano_ref, grau_ref_val, analisar_lua, mes_unico):
         {"id": swe.NEPTUNE, "nome": "NETUNO", "cor": "#1EFF00"},
         {"id": swe.PLUTO, "nome": "PLUTÃO", "cor": "#14F1F1"}
     ]
-    
-    if analisar_lua:
-        planetas_cfg.insert(1, {"id": swe.MOON, "nome": "LUA", "cor": "#A6A6A6"})
+    if analisar_lua: planetas_cfg.insert(1, {"id": swe.MOON, "nome": "LUA", "cor": "#A6A6A6"})
 
-    flags = swe.FLG_SWIEPH | swe.FLG_SPEED
-
-    if analisar_lua and mes_unico:
-        jd_start = swe.julday(ano_ref, mes_unico, 1)
-        prox_m = mes_unico + 1 if mes_unico < 12 else 1
-        prox_a = ano_ref if mes_unico < 12 else ano_ref + 1
-        jd_end = swe.julday(prox_a, prox_m, 1)
-        step_size = 0.005 
-    else:
-        jd_start = swe.julday(ano_ref, 1, 1)
-        jd_end = swe.julday(ano_ref + 1, 1, 1)
-        step_size = 0.05
+    jd_start = swe.julday(ano_ref, mes_unico if mes_unico else 1, 1)
+    jd_end = swe.julday(ano_ref + (1 if not mes_unico else 0), (mes_unico + 1 if mes_unico and mes_unico < 12 else 1) if mes_unico else 1, 1)
+    step_size = 0.005 if analisar_lua and mes_unico else 0.05
     
     steps = np.arange(jd_start, jd_end, step_size)
     all_data = []
-    
     for jd in steps:
         y, m, d, h = swe.revjul(jd)
         dt = datetime(y, m, d, int(h), int((h%1)*60))
         row = {'date': dt}
-        
         for p in planetas_cfg:
-            res, _ = swe.calc_ut(jd, p["id"], flags)
-            long_abs, velocidade = res[0], res[3]
-            mov = " (R)" if velocidade < 0 else " (D)"
-            
+            res, _ = swe.calc_ut(jd, p["id"], swe.FLG_SWIEPH | swe.FLG_SPEED)
+            long_abs, vel = res[0], res[3]
             pos_no_signo = long_abs % 30
             dist = abs(((pos_no_signo - grau_ref_val + 15) % 30) - 15)
             
-            val = np.exp(-0.5 * (dist / 1.7)**2)
-            row[p["nome"]] = val if dist <= 5.0 else 0
+            intensidade = "Forte" if dist <= 1.0 else "Médio" if dist <= 2.5 else "Fraco"
+            row[p["nome"]] = np.exp(-0.5 * (dist / 1.7)**2) if dist <= 5.0 else 0
             row[f"{p['nome']}_long"] = long_abs
-            row[f"{p['nome']}_status"] = "Retrógrado" if velocidade < 0 else "Direto"
-            row[f"{p['nome']}_info"] = f"{get_signo(long_abs)}{mov}"
-            
+            row[f"{p['nome']}_status"] = "Retrógrado" if vel < 0 else "Direto"
+            row[f"{p['nome']}_info"] = f"{get_signo(long_abs)} {'(R)' if vel < 0 else '(D)'} {int(pos_no_signo):02d}°{int((pos_no_signo%1)*60):02d}' - {intensidade}"
         all_data.append(row)
-    
     return pd.DataFrame(all_data).infer_objects(copy=False), planetas_cfg
 
+# Execução
+df_mov_anual = get_annual_movements(ano)
 df, lista_planetas = get_planetary_data(ano, grau_decimal, incluir_lua, mes_selecionado)
 
-# --- CONSTRUÇÃO DO GRÁFICO ---
+# --- GRÁFICO ---
 fig = go.Figure()
-
 for p in lista_planetas:
     df_plot = df.copy()
     df_plot.loc[df_plot[p['nome']] == 0, p['nome']] = None
-
     fig.add_trace(go.Scatter(
-        x=df_plot['date'], y=df_plot[p['nome']],
-        mode='lines',
-        name=p['nome'],
-        legendgroup=p['nome'],
-        line=dict(color=p['cor'], width=2.5),
-        fill='tozeroy',
-        fillcolor=hex_to_rgba(p['cor'], 0.15),
-        customdata=df[f"{p['nome']}_info"],
-        hovertemplate="<b>%{customdata}</b><extra></extra>",
-        connectgaps=False 
+        x=df_plot['date'], y=df_plot[p['nome']], mode='lines', name=p['nome'],
+        line=dict(color=p['cor'], width=2.5), fill='tozeroy', fillcolor=hex_to_rgba(p['cor'], 0.15),
+        customdata=df[f"{p['nome']}_info"], hovertemplate="<b>%{customdata}</b><extra></extra>", connectgaps=False 
     ))
+    # Picos
+    serie_p = df[p['nome']].fillna(0)
+    picos = df[(serie_p > 0.98) & (serie_p > serie_p.shift(1)) & (serie_p > serie_p.shift(-1))]
+    if not picos.empty:
+        fig.add_trace(go.Scatter(x=picos['date'], y=picos[p['nome']] + 0.04, mode='markers+text', text=picos['date'].dt.strftime('%d/%m'),
+                                 textposition="top center", marker=dict(symbol="triangle-down", color=p['cor'], size=8), showlegend=False))
 
-    if p['nome'] != "LUA" or (incluir_lua and len(df) < 10000):
-        serie_p = df[p['nome']].fillna(0)
-        peak_mask = (serie_p > 0.98) & (serie_p > serie_p.shift(1)) & (serie_p > serie_p.shift(-1))
-        picos = df[peak_mask]
-        
-        if not picos.empty:
-            fig.add_trace(go.Scatter(
-                x=picos['date'],
-                y=picos[p['nome']] + 0.04,
-                mode='markers+text',
-                text=picos['date'].dt.strftime('%d/%m'),
-                textposition="top center",
-                textfont=dict(family="Arial Black", size=10, color="#CCCCCC"),
-                marker=dict(symbol="triangle-down", color=p['cor'], size=8),
-                legendgroup=p['nome'],
-                showlegend=False,
-                hoverinfo='skip'
-            ))
-
-fig.update_layout(
-    height=700,
-    xaxis=dict(
-        rangeslider=dict(visible=True, thickness=0.08),
-        type='date', tickformat='%d/%m\n%Y',
-        hoverformat='%d/%m/%Y %H:%M',
-        showspikes=True, spikemode='across', spikethickness=1, spikecolor="gray"
-    ),
-    yaxis=dict(title='Intensidade', range=[0, 1.3], fixedrange=True),
-    template='plotly_white',
-    hovermode='x unified', 
-    dragmode='pan',
-    margin=dict(t=100)
-)
-
+fig.update_layout(height=700, xaxis=dict(rangeslider=dict(visible=True, thickness=0.08), type='date', tickformat='%d/%m\n%Y'),
+                  yaxis=dict(title='Intensidade', range=[0, 1.3], fixedrange=True), template='plotly_white', hovermode='x unified', dragmode='pan')
 st.plotly_chart(fig, use_container_width=True, config={'scrollZoom': True})
 
-# --- GERAÇÃO DA TABELA DE ASPECTOS ---
-st.write("### 📅 Tabela de Trânsitos e Aspectos")
-
+# --- TABELAS ---
+st.write("### 📅 Tabela de Trânsitos e Aspectos (Ponto Natal)")
 eventos = []
-movimentos_anuais = [] # Nova lista para movimentos anuais
-
 if planeta_selecionado != "Escolha um planeta" and signo_selecionado != "Escolha um signo":
-    idx_signo_natal = SIGNOS.index(signo_selecionado)
-    long_natal_absoluta = (idx_signo_natal * 30) + grau_decimal
-
+    long_natal = (SIGNOS.index(signo_selecionado) * 30) + grau_decimal
     for p in lista_planetas:
-        nome_p = p["nome"]
-        
-        # Lógica para Movimentos Anuais (D/R)
-        status_atual = df.iloc[0][f"{nome_p}_status"]
-        data_inicio = df.iloc[0]['date']
-        for idx_m in range(1, len(df)):
-            status_ponto = df.iloc[idx_m][f"{nome_p}_status"]
-            if status_ponto != status_atual or idx_m == len(df) - 1:
-                movimentos_anuais.append({
-                    "Planeta": nome_p.capitalize(),
-                    "Início": data_inicio.strftime('%d/%m/%Y'),
-                    "Término": df.iloc[idx_m]['date'].strftime('%d/%m/%Y'),
-                    "Trânsito": status_atual
-                })
-                status_atual = status_ponto
-                data_inicio = df.iloc[idx_m]['date']
-
-        # Lógica para Tabela de Trânsitos
-        serie_tabela = df[nome_p].values
-        for i in range(1, len(serie_tabela) - 1):
-            if serie_tabela[i] > 0.98 and serie_tabela[i] > serie_tabela[i-1] and serie_tabela[i] > serie_tabela[i+1]:
-                idx_ini = i
-                while idx_ini > 0 and serie_tabela[idx_ini] > 0.01:
-                    idx_ini -= 1
-                idx_fim = i
-                while idx_fim < len(serie_tabela) - 1 and serie_tabela[idx_fim] > 0.01:
-                    idx_fim += 1
-                
-                row_pico = df.iloc[i]
-                long_trans = row_pico[f"{nome_p}_long"]
-                
+        serie = df[p["nome"]].values
+        for i in range(1, len(serie)-1):
+            if serie[i] > 0.98 and serie[i] > serie[i-1] and serie[i] > serie[i+1]:
+                idx_ini, idx_fim = i, i
+                while idx_ini > 0 and serie[idx_ini] > 0.01: idx_ini -= 1
+                while idx_fim < len(serie)-1 and serie[idx_fim] > 0.01: idx_fim += 1
                 eventos.append({
                     "Início": df.iloc[idx_ini]['date'].strftime('%d/%m/%Y %H:%M'),
-                    "Pico": row_pico['date'].strftime('%d/%m/%Y %H:%M'),
+                    "Pico": df.iloc[i]['date'].strftime('%d/%m/%Y %H:%M'),
                     "Término": df.iloc[idx_fim]['date'].strftime('%d/%m/%Y %H:%M'),
-                    "Grau Natal": f"{grau_input}°",
-                    "Planeta e Signo Natal": f"{planeta_selecionado} em {signo_selecionado}",
-                    "Planeta e Signo em Trânsito": f"{nome_p.capitalize()} em {get_signo(long_trans)}",
-                    "Status": row_pico[f"{nome_p}_status"],
-                    "Aspecto": calcular_aspecto(long_trans, long_natal_absoluta)
+                    "Grau": f"{grau_input}°", "Signo Natal": signo_selecionado,
+                    "Trânsito": f"{p['nome'].capitalize()} em {get_signo(df.iloc[i][p['nome']+'_long'])}",
+                    "Status": df.iloc[i][p['nome']+'_status'], "Aspecto": calcular_aspecto(df.iloc[i][p['nome']+'_long'], long_natal)
                 })
+st.dataframe(pd.DataFrame(eventos), use_container_width=True)
 
-df_eventos = pd.DataFrame(eventos)
-st.dataframe(df_eventos, use_container_width=True)
-
-if movimentos_anuais:
-    st.write("### 🔄 Movimento Anual dos Planetas (Direto/Retrógrado)")
-    df_mov = pd.DataFrame(movimentos_anuais)
-    st.dataframe(df_mov, use_container_width=True)
+st.write(f"### 🔄 Movimento Anual dos Planetas em {ano}")
+st.dataframe(df_mov_anual, use_container_width=True)
 
 # --- DOWNLOADS ---
 st.divider()
-col1, col2, col3, col4 = st.columns(4) # Adicionada quarta coluna para download
-
-p_file = p_texto.replace(" ", "_")
-s_file = s_texto.replace(" ", "_")
+col1, col2, col3 = st.columns(3)
 grau_limpo = str(grau_input).replace('.', '_')
-nome_arquivo_base = f"revolucao_{p_file}_{s_file}_{ano}_grau_{grau_limpo}"
-
 with col1:
-    html_buffer = io.StringIO()
-    fig.write_html(html_buffer, config={'scrollZoom': True})
-    st.download_button("📥 Baixar Gráfico (HTML)", html_buffer.getvalue(), f"{nome_arquivo_base}.html", "text/html")
-
+    html_buf = io.StringIO()
+    fig.write_html(html_buf)
+    st.download_button("📥 Gráfico (HTML)", html_buf.getvalue(), f"grafico_{ano}.html", "text/html")
 with col2:
-    if not df_eventos.empty:
-        output = io.BytesIO()
-        with pd.ExcelWriter(output, engine='openpyxl') as writer:
-            df_eventos.to_excel(writer, index=False)
-        st.download_button("📂 Baixar Tabela Trânsitos (Excel)", output.getvalue(), f"trânsitos_{nome_arquivo_base}.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-    else:
-        st.button("📂 Baixar Tabela Trânsitos (Excel)", disabled=True)
-
+    out = io.BytesIO()
+    with pd.ExcelWriter(out) as w: pd.DataFrame(eventos).to_excel(w, index=False)
+    st.download_button("📂 Tabela Aspectos (Excel)", out.getvalue(), f"aspectos_{ano}.xlsx")
 with col3:
-    if movimentos_anuais:
-        output_mov = io.BytesIO()
-        with pd.ExcelWriter(output_mov, engine='openpyxl') as writer:
-            pd.DataFrame(movimentos_anuais).to_excel(writer, index=False)
-        st.download_button("🔄 Baixar Movimento Anual (Excel)", output_mov.getvalue(), f"movimentos_{ano}.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-    else:
-        st.button("🔄 Baixar Movimento Anual (Excel)", disabled=True)
-
-with col4:
-    csv_data = df.to_csv(index=False).encode('utf-8')
-    st.download_button("📊 Baixar Dados Brutos (CSV)", csv_data, f"dados_{nome_arquivo_base}.csv", "text/csv")
+    out_m = io.BytesIO()
+    with pd.ExcelWriter(out_m) as w: df_mov_anual.to_excel(w, index=False)
+    st.download_button("🔄 Movimento Anual (Excel)", out_m.getvalue(), f"movimentos_{ano}.xlsx")
