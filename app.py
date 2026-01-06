@@ -176,11 +176,33 @@ if planeta_selecionado != "Escolha um planeta" and signo_selecionado != "Escolha
                     "Trânsito": row_pico[p['nome']+'_status'], "Aspecto": calcular_aspecto(row_pico[p['nome']+'_long'], long_natal)
                 })
 
-# CORREÇÃO: height='content' faz a tabela expandir conforme o número de linhas
-st.dataframe(pd.DataFrame(eventos), width='stretch', height='content')
+# Configuração de Colunas para a Tabela de Aspectos
+st.dataframe(
+    pd.DataFrame(eventos), 
+    width='stretch', 
+    height='content',
+    column_config={
+        "Data e Hora Início": st.column_config.TextColumn(width="medium"),
+        "Data e Hora Pico": st.column_config.TextColumn(width="medium"),
+        "Data e Hora Término": st.column_config.TextColumn(width="medium"),
+        "Grau Natal": st.column_config.TextColumn(width="small"),
+        "Aspecto": st.column_config.TextColumn(width="small")
+    }
+)
 
 st.write(f"### 🔄 Movimento Anual dos Planetas em {ano}")
-st.dataframe(df_mov_anual, width='stretch', height='content')
+# Configuração de Colunas para Movimento Anual para evitar dispersão
+st.dataframe(
+    df_mov_anual, 
+    width='stretch', 
+    height='content',
+    column_config={
+        "Planeta": st.column_config.TextColumn(width="small"),
+        "Início": st.column_config.TextColumn(width="small"),
+        "Término": st.column_config.TextColumn(width="small"),
+        "Trânsito": st.column_config.TextColumn(width="small")
+    }
+)
 
 # --- DOWNLOADS ---
 st.divider()
