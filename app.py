@@ -194,7 +194,7 @@ fig.update_layout(height=700, xaxis=dict(rangeslider=dict(visible=True, thicknes
                   yaxis=dict(title='Intensidade', range=[0, 1.3], fixedrange=True), template='plotly_white', hovermode='x unified', dragmode='pan')
 st.plotly_chart(fig, use_container_width=True, config={'scrollZoom': True})
 
-# --- LÓGICA DA TABELA DE ASPECTOS (IGUAL AO SCRIPT PYTHON) ---
+# --- LÓGICA DA TABELA DE ASPECTOS ---
 eventos_aspectos = []
 if planeta_selecionado != "Escolha um planeta" and signo_selecionado != "Escolha um signo":
     idx_signo_natal = SIGNOS.index(signo_selecionado)
@@ -214,32 +214,28 @@ if planeta_selecionado != "Escolha um planeta" and signo_selecionado != "Escolha
                 long_trans = row_pico[f"{nome_p}_long"]
                 
                 eventos_aspectos.append({
-                    "Data e Hora Início": df.iloc[idx_ini]['date'].strftime('%d/%m/%Y %H:%M'),
-                    "Data e Hora Pico": row_pico['date'].strftime('%d/%m/%Y %H:%M'),
-                    "Data e Hora Término": df.iloc[idx_fim]['date'].strftime('%d/%m/%Y %H:%M'),
-                    "Grau Natal": f"{grau_input}°",
+                    "Início": df.iloc[idx_ini]['date'].strftime('%d/%m/%Y %H:%M'),
+                    "Pico": row_pico['date'].strftime('%d/%m/%Y %H:%M'),
+                    "Término": df.iloc[idx_fim]['date'].strftime('%d/%m/%Y %H:%M'),
                     "Planeta e Signo Natal": f"{planeta_selecionado} em {signo_selecionado}",
                     "Planeta e Signo em Trânsito": f"{nome_p.capitalize()} em {get_signo(long_trans)}",
                     "Trânsito": row_pico[f"{nome_p}_status"],
                     "Aspecto": calcular_aspecto(long_trans, long_natal_absoluta)
                 })
 
-# --- EXIBIÇÃO DAS TABELAS CENTRALIZADAS (SEM SCROLL E SEM ÍNDICE) ---
+# --- EXIBIÇÃO DAS TABELAS SEM ÍNDICE E SEM SCROLL ---
 st.markdown("<h3 style='text-align: center;'>📅 Tabela de Trânsitos e Aspectos (Ponto Natal)</h3>", unsafe_allow_html=True)
 col_a1, col_a2, col_a3 = st.columns([0.05, 0.9, 0.05])
 with col_a2:
     if eventos_aspectos:
-        df_aspectos = pd.DataFrame(eventos_aspectos)
-        # Oculta o índice usando Pandas Styler
-        st.table(df_aspectos.style.hide(axis='index'))
-    else:
-        st.info("Selecione um ponto natal para gerar a tabela de aspectos.")
+        # hide_index=True remove o 0,1,2,3 e o ajuste de altura remove o scroll
+        st.dataframe(pd.DataFrame(eventos_aspectos), use_container_width=True, hide_index=True, height=(len(eventos_aspectos) + 1) * 35 + 3)
 
 st.markdown(f"<h3 style='text-align: center;'>🔄 Movimento Anual dos Planetas em {ano}</h3>", unsafe_allow_html=True)
 col_m1, col_m2, col_m3 = st.columns([1, 2, 1])
 with col_m2:
-    # Oculta o índice usando Pandas Styler
-    st.table(df_mov_anual.style.hide(axis='index'))
+    # hide_index=True remove o 0,1,2,3 e o ajuste de altura remove o scroll
+    st.dataframe(df_mov_anual, use_container_width=True, hide_index=True, height=(len(df_mov_anual) + 1) * 35 + 3)
 
 # --- DOWNLOADS ---
 st.divider()
