@@ -154,8 +154,7 @@ fig.update_layout(height=700, xaxis=dict(rangeslider=dict(visible=True, thicknes
                   yaxis=dict(title='Intensidade', range=[0, 1.3], fixedrange=True), template='plotly_white', hovermode='x unified', dragmode='pan')
 st.plotly_chart(fig, width='stretch', config={'scrollZoom': True})
 
-# --- TABELAS ---
-st.write("### 📅 Tabela de Trânsitos e Aspectos (Ponto Natal)")
+# --- TABELAS CENTRALIZADAS ---
 eventos = []
 if planeta_selecionado != "Escolha um planeta" and signo_selecionado != "Escolha um signo":
     long_natal = (SIGNOS.index(signo_selecionado) * 30) + grau_decimal
@@ -177,28 +176,30 @@ if planeta_selecionado != "Escolha um planeta" and signo_selecionado != "Escolha
                     "Aspecto": calcular_aspecto(row_pico[p['nome']+'_long'], long_natal)
                 })
 
-# Tabela 1: Compactada e com largura de container
-st.dataframe(
-    pd.DataFrame(eventos), 
-    use_container_width=True, # Usa a largura disponível sem "esticar" as células além do limite do container
-    height='content',
-    hide_index=True,
-    column_config={
-        "Início": st.column_config.TextColumn(width=100),
-        "Pico": st.column_config.TextColumn(width=150),
-        "Término": st.column_config.TextColumn(width=100),
-        "Natal": st.column_config.TextColumn(width=200),
-        "Céu": st.column_config.TextColumn(width=150),
-        "Trânsito": st.column_config.TextColumn(width=100),
-        "Aspecto": st.column_config.TextColumn(width=100)
-    }
-)
+# Centralização da Tabela de Aspectos
+st.markdown("<h3 style='text-align: center;'>📅 Tabela de Trânsitos e Aspectos (Ponto Natal)</h3>", unsafe_allow_html=True)
+col_a1, col_a2, col_a3 = st.columns([0.1, 0.8, 0.1])
+with col_a2:
+    st.dataframe(
+        pd.DataFrame(eventos), 
+        use_container_width=True, 
+        height='content',
+        hide_index=True,
+        column_config={
+            "Início": st.column_config.TextColumn(width=100),
+            "Pico": st.column_config.TextColumn(width=150),
+            "Término": st.column_config.TextColumn(width=100),
+            "Natal": st.column_config.TextColumn(width=200),
+            "Céu": st.column_config.TextColumn(width=150),
+            "Trânsito": st.column_config.TextColumn(width=100),
+            "Aspecto": st.column_config.TextColumn(width=100)
+        }
+    )
 
-st.write(f"### 🔄 Movimento Anual dos Planetas em {ano}")
-# Tabela 2: Reduzida para não espalhar as colunas
-# Criamos colunas para centralizar a tabela pequena na tela
-col_tab1, col_tab2, col_tab3 = st.columns([1, 2, 1])
-with col_tab2:
+st.markdown(f"<h3 style='text-align: center;'>🔄 Movimento Anual dos Planetas em {ano}</h3>", unsafe_allow_html=True)
+# Centralização da Tabela de Movimentos
+col_m1, col_m2, col_m3 = st.columns([1, 2, 1])
+with col_m2:
     st.dataframe(
         df_mov_anual, 
         use_container_width=True, 
