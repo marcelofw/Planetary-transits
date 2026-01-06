@@ -93,7 +93,7 @@ st.markdown(f"""
     </div>
 """, unsafe_allow_html=True)
 
-# --- PROCESSAMENTO DE DADOS (CACHEADO POR ANO) ---
+# --- PROCESSAMENTO DE DADOS ---
 @st.cache_data
 def get_annual_movements(ano_ref):
     planetas_cfg = [
@@ -113,11 +113,9 @@ def get_annual_movements(ano_ref):
         data_inicio = None
         for jd in steps:
             res, _ = swe.calc_ut(jd, p["id"], swe.FLG_SWIEPH | swe.FLG_SPEED)
-            velocidade = res[3]
-            status_ponto = "Retrógrado" if velocidade < 0 else "Direto"
+            status_ponto = "Retrógrado" if res[3] < 0 else "Direto"
             y, m, d, h = swe.revjul(jd)
             dt = datetime(y, m, d)
-            
             if status_atual is None:
                 status_atual = status_ponto
                 data_inicio = dt
@@ -158,7 +156,6 @@ def get_planetary_data(ano_ref, grau_ref_val, analisar_lua, mes_unico):
             long_abs, vel = res[0], res[3]
             pos_no_signo = long_abs % 30
             dist = abs(((pos_no_signo - grau_ref_val + 15) % 30) - 15)
-            
             intensidade = "Forte" if dist <= 1.0 else "Médio" if dist <= 2.5 else "Fraco"
             row[p["nome"]] = np.exp(-0.5 * (dist / 1.7)**2) if dist <= 5.0 else 0
             row[f"{p['nome']}_long"] = long_abs
@@ -177,43 +174,21 @@ fig = go.Figure()
 for p in lista_planetas:
     df_plot = df.copy()
     df_plot.loc[df_plot[p['nome']] == 0, p['nome']] = None
-    
     fig.add_trace(go.Scatter(
         x=df_plot['date'], y=df_plot[p['nome']], mode='lines', name=p['nome'],
         line=dict(color=p['cor'], width=2.5), fill='tozeroy', fillcolor=hex_to_rgba(p['cor'], 0.15),
-        customdata=df[f"{p['nome']}_info"], 
-        hovertemplate="<b>%{customdata}</b><extra></extra>", 
-        connectgaps=False 
+        customdata=df[f"{p['nome']}_info"], hovertemplate="<b>%{customdata}</b><extra></extra>", connectgaps=False 
     ))
-    
     serie_p = df[p['nome']].fillna(0)
     picos = df[(serie_p > 0.98) & (serie_p > serie_p.shift(1)) & (serie_p > serie_p.shift(-1))]
     if not picos.empty:
         fig.add_trace(go.Scatter(
-            x=picos['date'], y=picos[p['nome']] + 0.04, 
-            mode='markers+text', 
-            text=picos['date'].dt.strftime('%d/%m'),
-            textposition="top center", 
-            marker=dict(symbol="triangle-down", color=p['cor'], size=8), 
-            showlegend=False,
-            hoverinfo='skip', 
-            hovertemplate=""
+            x=picos['date'], y=picos[p['nome']] + 0.04, mode='markers+text', text=picos['date'].dt.strftime('%d/%m'),
+            textposition="top center", marker=dict(symbol="triangle-down", color=p['cor'], size=8), showlegend=False, hoverinfo='skip', hovertemplate=""
         ))
 
-fig.update_layout(
-    height=700, 
-    xaxis=dict(
-        rangeslider=dict(visible=True, thickness=0.08), 
-        type='date', 
-        tickformat='%d/%m\n%Y',
-        hoverformat='%d/%m/%Y %H:%M'
-    ),
-    yaxis=dict(title='Intensidade', range=[0, 1.3], fixedrange=True), 
-    template='plotly_white', 
-    hovermode='x unified', 
-    dragmode='pan'
-)
-# ATUALIZADO: width='stretch' substitui use_container_width=True
+fig.update_layout(height=700, xaxis=dict(rangeslider=dict(visible=True, thickness=0.08), type='date', tickformat='%d/%m\n%Y', hoverformat='%d/%m/%Y %H:%M'),
+                  yaxis=dict(title='Intensidade', range=[0, 1.3], fixedrange=True), template='plotly_white', hovermode='x unified', dragmode='pan')
 st.plotly_chart(fig, width='stretch', config={'scrollZoom': True})
 
 # --- TABELAS ---
@@ -227,4 +202,38 @@ if planeta_selecionado != "Escolha um planeta" and signo_selecionado != "Escolha
             if serie[i] > 0.98 and serie[i] > serie[i-1] and serie[i] > serie[i+1]:
                 idx_ini, idx_fim = i, i
                 while idx_ini > 0 and serie[idx_ini] > 0.01: idx_ini -= 1
-                while idx_fim < len(serie)-1 and serie[idx_fim] > 0
+                while idx_fim < len(serie)-1 and serie[idx_fim] > 0.01: idx_fim += 1
+                row_pico = df.iloc[i]
+                eventos.append({
+                    "Data e Hora Início": df.iloc[idx_ini]['date'].strftime('%d/%m/%Y %H:%M'),
+                    "Data e Hora Pico": row_pico['date'].strftime('%d/%m/%Y %H:%M'),
+                    "Data e Hora Término": df.iloc[idx_fim]['date'].strftime('%d/%m/%Y %H:%M'),
+                    "Grau Natal": f"{grau_input}°", 
+                    "Planeta e Signo Natal": f"{planeta_selecionado} em {signo_selecionado}",
+                    "Planeta e Signo em Trânsito": f"{p['nome'].capitalize()} em {get_signo(row_pico[p['nome']+'_long'])}",
+                    "Trânsito": row_pico[p['nome']+'_status'], 
+                    "Aspecto": calcular_aspecto(row_pico[p['nome']+'_long'], long_natal)
+                })
+st.dataframe(pd.DataFrame(eventos), width='stretch')
+
+st.write(f"### 🔄 Movimento Anual dos Planetas em {ano}")
+st.dataframe(df_mov_anual, width='stretch')
+
+# --- DOWNLOADS ---
+st.divider()
+c1, c2, c3 = st.columns(3)
+with c1:
+    buf = io.StringIO()
+    fig.write_html(buf, config={'scrollZoom': True})
+    st.download_button("📥 Baixar Gráfico (HTML)", buf.getvalue(), f"revolucao_{ano}_grau_{grau_limpo_file}.html", "text/html")
+with c2:
+    if eventos:
+        out = io.BytesIO()
+        with pd.ExcelWriter(out, engine='openpyxl') as w: pd.DataFrame(eventos).to_excel(w, index=False)
+        st.download_button("📂 Baixar Tabela Aspectos (Excel)", out.getvalue(), f"tabela_transitos_{ano}_grau_{grau_limpo_file}.xlsx")
+    else:
+        st.button("📂 Baixar Tabela Aspectos (Excel)", disabled=True)
+with c3:
+    out_m = io.BytesIO()
+    with pd.ExcelWriter(out_m, engine='openpyxl') as w: df_mov_anual.to_excel(w, index=False)
+    st.download_button("🔄 Baixar Movimento Anual (Excel)", out_m.getvalue(), f"movimento_planetas_{ano}.xlsx")
