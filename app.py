@@ -60,13 +60,13 @@ grau_input = st.sidebar.text_input("Grau Natal (0 a 30°)", value="27.0")
 planeta_selecionado = st.sidebar.selectbox(
     "Planeta", 
     options=["Escolha um planeta"] + LISTA_PLANETAS_UI,
-    index=0 # Definido como "Escolha um planeta"
+    index=0 
 )
 
 signo_selecionado = st.sidebar.selectbox(
     "Signo do Zodíaco", 
     options=["Escolha um signo"] + SIGNOS,
-    index=0 # Definido como "Escolha um signo"
+    index=0 
 )
 
 # Validação do Grau
@@ -96,7 +96,6 @@ st.markdown(f"""
 # --- PROCESSAMENTO DE DADOS (CACHEADO POR ANO) ---
 @st.cache_data
 def get_annual_movements(ano_ref):
-    """Gera a tabela de movimentos (D/R) que depende apenas do ano."""
     planetas_cfg = [
         {"id": swe.SUN, "nome": "SOL"}, {"id": swe.MERCURY, "nome": "MERCÚRIO"},
         {"id": swe.VENUS, "nome": "VÊNUS"}, {"id": swe.MARS, "nome": "MARTE"},
@@ -179,7 +178,6 @@ for p in lista_planetas:
     df_plot = df.copy()
     df_plot.loc[df_plot[p['nome']] == 0, p['nome']] = None
     
-    # Linha Principal do Planeta
     fig.add_trace(go.Scatter(
         x=df_plot['date'], y=df_plot[p['nome']], mode='lines', name=p['nome'],
         line=dict(color=p['cor'], width=2.5), fill='tozeroy', fillcolor=hex_to_rgba(p['cor'], 0.15),
@@ -188,7 +186,6 @@ for p in lista_planetas:
         connectgaps=False 
     ))
     
-    # Marcadores de Picos
     serie_p = df[p['nome']].fillna(0)
     picos = df[(serie_p > 0.98) & (serie_p > serie_p.shift(1)) & (serie_p > serie_p.shift(-1))]
     if not picos.empty:
@@ -216,7 +213,8 @@ fig.update_layout(
     hovermode='x unified', 
     dragmode='pan'
 )
-st.plotly_chart(fig, use_container_width=True, config={'scrollZoom': True})
+# ATUALIZADO: width='stretch' substitui use_container_width=True
+st.plotly_chart(fig, width='stretch', config={'scrollZoom': True})
 
 # --- TABELAS ---
 st.write("### 📅 Tabela de Trânsitos e Aspectos (Ponto Natal)")
@@ -229,39 +227,4 @@ if planeta_selecionado != "Escolha um planeta" and signo_selecionado != "Escolha
             if serie[i] > 0.98 and serie[i] > serie[i-1] and serie[i] > serie[i+1]:
                 idx_ini, idx_fim = i, i
                 while idx_ini > 0 and serie[idx_ini] > 0.01: idx_ini -= 1
-                while idx_fim < len(serie)-1 and serie[idx_fim] > 0.01: idx_fim += 1
-                row_pico = df.iloc[i]
-                eventos.append({
-                    "Data e Hora Início": df.iloc[idx_ini]['date'].strftime('%d/%m/%Y %H:%M'),
-                    "Data e Hora Pico": row_pico['date'].strftime('%d/%m/%Y %H:%M'),
-                    "Data e Hora Término": df.iloc[idx_fim]['date'].strftime('%d/%m/%Y %H:%M'),
-                    "Grau Natal": f"{grau_input}°", 
-                    "Planeta e Signo Natal": f"{planeta_selecionado} em {signo_selecionado}",
-                    "Planeta e Signo em Trânsito": f"{p['nome'].capitalize()} em {get_signo(row_pico[p['nome']+'_long'])}",
-                    "Trânsito": row_pico[p['nome']+'_status'], 
-                    "Aspecto": calcular_aspecto(row_pico[p['nome']+'_long'], long_natal)
-                })
-st.dataframe(pd.DataFrame(eventos), use_container_width=True)
-
-st.write(f"### 🔄 Movimento Anual dos Planetas em {ano}")
-st.dataframe(df_mov_anual, use_container_width=True)
-
-# --- DOWNLOADS ---
-st.divider()
-col1, col2, col3 = st.columns(3)
-
-with col1:
-    html_buf = io.StringIO()
-    fig.write_html(html_buf, config={'scrollZoom': True})
-    st.download_button("📥 Baixar Gráfico (HTML)", html_buf.getvalue(), f"revolucao_{ano}_grau_{grau_limpo_file}.html", "text/html")
-with col2:
-    if eventos:
-        out = io.BytesIO()
-        with pd.ExcelWriter(out, engine='openpyxl') as w: pd.DataFrame(eventos).to_excel(w, index=False)
-        st.download_button("📂 Baixar Tabela Aspectos (Excel)", out.getvalue(), f"tabela_transitos_{ano}_grau_{grau_limpo_file}.xlsx")
-    else:
-        st.button("📂 Baixar Tabela Aspectos (Excel)", disabled=True)
-with col3:
-    out_m = io.BytesIO()
-    with pd.ExcelWriter(out_m, engine='openpyxl') as w: df_mov_anual.to_excel(w, index=False)
-    st.download_button("🔄 Baixar Movimento Anual (Excel)", out_m.getvalue(), f"movimento_planetas_{ano}.xlsx")
+                while idx_fim < len(serie)-1 and serie[idx_fim] > 0
