@@ -33,8 +33,21 @@ def dms_to_dec(dms_str):
         if not re.match(r"^\d+(\.\d+)?$", str(dms_str)): return None
         parts = str(dms_str).split('.')
         degrees = float(parts[0])
-        minutes = float(parts[1]) if len(parts) > 1 else 0
-        val = degrees + (minutes / 60)
+        
+        # Validação de minutos (parte decimal)
+        if len(parts) > 1:
+            minutos_raw = parts[1]
+            # Se o usuário digitou apenas um dígito após o ponto (ex: .5), tratamos como 50 ou 05? 
+            # Em astrologia, .5 costuma ser 05. Mas para evitar ambiguidade, pegamos o valor numérico:
+            minutos = float(minutos_raw)
+            
+            # REGRA: Minutos não podem ser 60 ou mais
+            if minutos >= 60:
+                return "ERRO_MINUTOS"
+        else:
+            minutos = 0
+            
+        val = degrees + (minutos / 60)
         return val if 0 <= val <= 30 else None
     except:
         return None
@@ -55,9 +68,8 @@ def calcular_aspecto(long1, long2):
 # --- INTERFACE LATERAL ---
 st.sidebar.header("Configurações")
 ano = st.sidebar.number_input("Ano da Análise", min_value=1900, max_value=2100, value=2026)
-grau_input = st.sidebar.text_input("Grau Natal (0 a 30°)", value="27.0")
+grau_input = st.sidebar.text_input("Grau Natal (0 a 30°)", value="27.0", help="Exemplo: 27.59 (27 graus e 59 minutos)")
 
-# Ajustado para iniciar em "Escolha um..."
 planeta_selecionado = st.sidebar.selectbox("Planeta", options=["Escolha um planeta"] + LISTA_PLANETAS_UI, index=0)
 signo_selecionado = st.sidebar.selectbox("Signo do Zodíaco", options=["Escolha um signo"] + SIGNOS, index=0)
 
@@ -65,7 +77,11 @@ grau_decimal = dms_to_dec(grau_input)
 incluir_lua = st.sidebar.checkbox("Quero analisar a Lua", value=False)
 mes_selecionado = st.sidebar.slider("Mês da Lua", 1, 12, 1) if incluir_lua else None
 
-if grau_decimal is None:
+# Verificação da Regra de Minutos < 60
+if grau_decimal == "ERRO_MINUTOS":
+    st.error("⚠️ Erro: Os minutos (parte decimal) não podem ser iguais ou maiores que 60. Use de .00 a .59.")
+    st.stop()
+elif grau_decimal is None:
     st.error("⚠️ Erro: Insira um valor numérico válido entre 0 e 30.")
     st.stop()
 
@@ -189,22 +205,12 @@ if planeta_selecionado != "Escolha um planeta" and signo_selecionado != "Escolha
 st.markdown("<h3 style='text-align: center;'>📅 Tabela de Trânsitos e Aspectos (Ponto Natal)</h3>", unsafe_allow_html=True)
 col_a1, col_a2, col_a3 = st.columns([0.05, 0.9, 0.05])
 with col_a2:
-    st.dataframe(
-        pd.DataFrame(eventos_aspectos), 
-        use_container_width=True, 
-        height='content',
-        hide_index=True
-    )
+    st.dataframe(pd.DataFrame(eventos_aspectos), use_container_width=True, height='content', hide_index=True)
 
 st.markdown(f"<h3 style='text-align: center;'>🔄 Movimento Anual dos Planetas em {ano}</h3>", unsafe_allow_html=True)
 col_m1, col_m2, col_m3 = st.columns([1, 2, 1])
 with col_m2:
-    st.dataframe(
-        df_mov_anual, 
-        use_container_width=True, 
-        height='content',
-        hide_index=True
-    )
+    st.dataframe(df_mov_anual, use_container_width=True, height='content', hide_index=True)
 
 # --- DOWNLOADS ---
 st.divider()
