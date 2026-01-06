@@ -37,8 +37,6 @@ def dms_to_dec(dms_str):
         # Validação de minutos (parte decimal)
         if len(parts) > 1:
             minutos_raw = parts[1]
-            # Se o usuário digitou apenas um dígito após o ponto (ex: .5), tratamos como 50 ou 05? 
-            # Em astrologia, .5 costuma ser 05. Mas para evitar ambiguidade, pegamos o valor numérico:
             minutos = float(minutos_raw)
             
             # REGRA: Minutos não podem ser 60 ou mais
@@ -169,7 +167,7 @@ for p in lista_planetas:
 
 fig.update_layout(height=700, xaxis=dict(rangeslider=dict(visible=True, thickness=0.08), type='date', tickformat='%d/%m\n%Y', hoverformat='%d/%m/%Y %H:%M'),
                   yaxis=dict(title='Intensidade', range=[0, 1.3], fixedrange=True), template='plotly_white', hovermode='x unified', dragmode='pan')
-st.plotly_chart(fig, use_container_width=True, config={'scrollZoom': True})
+st.plotly_chart(fig, width='stretch', config={'scrollZoom': True})
 
 # --- LÓGICA DA TABELA DE ASPECTOS (IGUAL AO SCRIPT PYTHON) ---
 eventos_aspectos = []
@@ -205,12 +203,12 @@ if planeta_selecionado != "Escolha um planeta" and signo_selecionado != "Escolha
 st.markdown("<h3 style='text-align: center;'>📅 Tabela de Trânsitos e Aspectos (Ponto Natal)</h3>", unsafe_allow_html=True)
 col_a1, col_a2, col_a3 = st.columns([0.05, 0.9, 0.05])
 with col_a2:
-    st.dataframe(pd.DataFrame(eventos_aspectos), use_container_width=True, height='content', hide_index=True)
+    st.dataframe(pd.DataFrame(eventos_aspectos), width='stretch', height='content', hide_index=True)
 
 st.markdown(f"<h3 style='text-align: center;'>🔄 Movimento Anual dos Planetas em {ano}</h3>", unsafe_allow_html=True)
 col_m1, col_m2, col_m3 = st.columns([1, 2, 1])
 with col_m2:
-    st.dataframe(df_mov_anual, use_container_width=True, height='content', hide_index=True)
+    st.dataframe(df_mov_anual, width='stretch', height='content', hide_index=True)
 
 # --- DOWNLOADS ---
 st.divider()
