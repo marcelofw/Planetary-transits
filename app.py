@@ -162,7 +162,7 @@ def get_planetary_data(ano_ref, grau_ref_val, analisar_lua, mes_unico, long_nata
             
             # Cálculo do símbolo para a legenda do gráfico
             simbolo = obter_simbolo_aspecto(res[0], long_natal_ref) if long_natal_ref > 0 else ""
-            simbolo_html = f"<span style='font-size: 18px;'><b>{simbolo}</b></span>" if simbolo else ""
+            simbolo_html = f"<b>{simbolo}</b>" if simbolo else ""
             
             row[p["nome"]] = np.exp(-0.5 * (dist / 1.7)**2) if dist <= 5.0 else 0
             row[f"{p['nome']}_long"] = res[0]
@@ -224,16 +224,16 @@ if planeta_selecionado != "Escolha um planeta" and signo_selecionado != "Escolha
                     "Aspecto": calcular_aspecto(long_trans, long_natal_absoluta)
                 })
 
-# --- EXIBIÇÃO DAS TABELAS CENTRALIZADAS ---
+# --- EXIBIÇÃO DAS TABELAS CENTRALIZADAS (SEM SCROLL) ---
 st.markdown("<h3 style='text-align: center;'>📅 Tabela de Trânsitos e Aspectos (Ponto Natal)</h3>", unsafe_allow_html=True)
 col_a1, col_a2, col_a3 = st.columns([0.05, 0.9, 0.05])
 with col_a2:
-    st.dataframe(pd.DataFrame(eventos_aspectos), use_container_width=True, hide_index=True)
+    st.table(pd.DataFrame(eventos_aspectos))
 
 st.markdown(f"<h3 style='text-align: center;'>🔄 Movimento Anual dos Planetas em {ano}</h3>", unsafe_allow_html=True)
 col_m1, col_m2, col_m3 = st.columns([1, 2, 1])
 with col_m2:
-    st.dataframe(df_mov_anual, use_container_width=True, hide_index=True)
+    st.table(df_mov_anual)
 
 # --- DOWNLOADS ---
 st.divider()
