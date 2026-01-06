@@ -19,9 +19,15 @@ SIGNOS = ["Áries", "Touro", "Gêmeos", "Câncer", "Leão", "Virgem",
 
 LISTA_PLANETAS_UI = ["Sol", "Lua", "Mercúrio", "Vênus", "Marte", "Júpiter", "Saturno", "Urano", "Netuno", "Plutão"]
 
+# Atualizado com símbolos e nomes para a lógica de exibição
 ASPECTOS = {
-    0: "Conjunção", 30: "Semi-sêxtil", 60: "Sêxtil", 90: "Quadratura", 
-    120: "Trígono", 150: "Quincúncio", 180: "Oposição"
+    0: ("Conjunção", "☌"), 
+    30: ("Semi-sêxtil", "⚺"), 
+    60: ("Sêxtil", "✶"), 
+    90: ("Quadratura", "□"), 
+    120: ("Trígono", "△"), 
+    150: ("Quincúncio", "⚻"), 
+    180: ("Oposição", "☍")
 }
 
 def get_signo(longitude):
@@ -33,18 +39,12 @@ def dms_to_dec(dms_str):
         if not re.match(r"^\d+(\.\d+)?$", str(dms_str)): return None
         parts = str(dms_str).split('.')
         degrees = float(parts[0])
-        
-        # Validação de minutos (parte decimal)
         if len(parts) > 1:
             minutos_raw = parts[1]
             minutos = float(minutos_raw)
-            
-            # REGRA: Minutos não podem ser 60 ou mais
-            if minutos >= 60:
-                return "ERRO_MINUTOS"
+            if minutos >= 60: return "ERRO_MINUTOS"
         else:
             minutos = 0
-            
         val = degrees + (minutos / 60)
         return val if 0 <= val <= 30 else None
     except:
@@ -58,10 +58,18 @@ def hex_to_rgba(hex_color, opacity):
 def calcular_aspecto(long1, long2):
     diff = abs(long1 - long2) % 360
     if diff > 180: diff = 360 - diff
-    for angulo, nome in ASPECTOS.items():
+    for angulo, (nome, simbolo) in ASPECTOS.items():
         if abs(diff - angulo) <= 5:
             return nome
     return "Outro"
+
+def obter_simbolo_aspecto(long1, long2):
+    diff = abs(long1 - long2) % 360
+    if diff > 180: diff = 360 - diff
+    for angulo, (nome, simbolo) in ASPECTOS.items():
+        if abs(diff - angulo) <= 5:
+            return simbolo
+    return ""
 
 # --- INTERFACE LATERAL ---
 st.sidebar.header("Configurações")
@@ -75,13 +83,18 @@ grau_decimal = dms_to_dec(grau_input)
 incluir_lua = st.sidebar.checkbox("Quero analisar a Lua", value=False)
 mes_selecionado = st.sidebar.slider("Mês da Lua", 1, 12, 1) if incluir_lua else None
 
-# Verificação da Regra de Minutos < 60
 if grau_decimal == "ERRO_MINUTOS":
     st.error("⚠️ Erro: Os minutos (parte decimal) não podem ser iguais ou maiores que 60. Use de .00 a .59.")
     st.stop()
 elif grau_decimal is None:
     st.error("⚠️ Erro: Insira um valor numérico válido entre 0 e 30.")
     st.stop()
+
+# Cálculo da Longitude Natal Absoluta para os Aspectos
+long_natal_absoluta_global = 0
+if planeta_selecionado != "Escolha um planeta" and signo_selecionado != "Escolha um signo":
+    idx_signo_natal = SIGNOS.index(signo_selecionado)
+    long_natal_absoluta_global = (idx_signo_natal * 30) + grau_decimal
 
 p_texto = planeta_selecionado if planeta_selecionado != "Escolha um planeta" else "Planeta"
 s_texto = signo_selecionado if signo_selecionado != "Escolha um signo" else "Signo"
@@ -118,7 +131,7 @@ def get_annual_movements(ano_ref):
     return pd.DataFrame(movs)
 
 @st.cache_data
-def get_planetary_data(ano_ref, grau_ref_val, analisar_lua, mes_unico):
+def get_planetary_data(ano_ref, grau_ref_val, analisar_lua, mes_unico, long_natal_ref):
     planetas_cfg = [
         {"id": swe.SUN, "nome": "SOL", "cor": "#FFF12E"}, {"id": swe.MERCURY, "nome": "MERCÚRIO", "cor": "#F3A384"},
         {"id": swe.VENUS, "nome": "VÊNUS", "cor": "#0A8F11"}, {"id": swe.MARS, "nome": "MARTE", "cor": "#F10808"},
@@ -127,9 +140,11 @@ def get_planetary_data(ano_ref, grau_ref_val, analisar_lua, mes_unico):
         {"id": swe.PLUTO, "nome": "PLUTÃO", "cor": "#14F1F1"}
     ]
     if analisar_lua: planetas_cfg.insert(1, {"id": swe.MOON, "nome": "LUA", "cor": "#A6A6A6"})
+    
     jd_start = swe.julday(ano_ref, mes_unico if mes_unico else 1, 1)
     jd_end = swe.julday(ano_ref + (1 if not mes_unico else 0), (mes_unico + 1 if mes_unico and mes_unico < 12 else 1) if mes_unico else 1, 1)
     steps = np.arange(jd_start, jd_end, 0.005 if analisar_lua and mes_unico else 0.05)
+    
     all_data = []
     for jd in steps:
         y, m, d, h = swe.revjul(jd)
@@ -137,17 +152,23 @@ def get_planetary_data(ano_ref, grau_ref_val, analisar_lua, mes_unico):
         row = {'date': dt}
         for p in planetas_cfg:
             res, _ = swe.calc_ut(jd, p["id"], swe.FLG_SWIEPH | swe.FLG_SPEED)
-            pos = res[0] % 30
+            long_abs = res[0]
+            pos = long_abs % 30
             dist = abs(((pos - grau_ref_val + 15) % 30) - 15)
+            
+            # Cálculo de Símbolos para o Hover
+            simbolo = obter_simbolo_aspecto(long_abs, long_natal_ref) if long_natal_ref > 0 else ""
+            simbolo_html = f"<span style='font-size: 18px;'><b>{simbolo}</b></span>" if simbolo else ""
+            
             row[p["nome"]] = np.exp(-0.5 * (dist / 1.7)**2) if dist <= 5.0 else 0
-            row[f"{p['nome']}_long"] = res[0]
+            row[f"{p['nome']}_long"] = long_abs
             row[f"{p['nome']}_status"] = "Retrógrado" if res[3] < 0 else "Direto"
-            row[f"{p['nome']}_info"] = f"{get_signo(res[0])} {'(R)' if res[3]<0 else '(D)'} {int(pos):02d}°{int((pos%1)*60):02d}' - {'Forte' if dist <= 1.0 else 'Médio' if dist <= 2.5 else 'Fraco'}"
+            row[f"{p['nome']}_info"] = f"{get_signo(long_abs)} {'(R)' if res[3]<0 else '(D)'} {int(pos):02d}°{int((pos%1)*60):02d}' - {'Forte' if dist <= 1.0 else 'Médio' if dist <= 2.5 else 'Fraco'} {simbolo_html}"
         all_data.append(row)
     return pd.DataFrame(all_data).infer_objects(copy=False), planetas_cfg
 
 df_mov_anual = get_annual_movements(ano)
-df, lista_planetas = get_planetary_data(ano, grau_decimal, incluir_lua, mes_selecionado)
+df, lista_planetas = get_planetary_data(ano, grau_decimal, incluir_lua, mes_selecionado, long_natal_absoluta_global)
 grau_limpo_file = str(grau_input).replace('.', '_')
 
 # --- GRÁFICO ---
@@ -155,7 +176,8 @@ fig = go.Figure()
 for p in lista_planetas:
     df_p = df.copy()
     df_p.loc[df_p[p['nome']] == 0, p['nome']] = None
-    fig.add_trace(go.Scatter(x=df_p['date'], y=df_p[p['nome']], name=p['nome'], mode='lines', line=dict(color=p['cor'], width=2.5),
+    fig.add_trace(go.Scatter(x=df_p['date'], y=df_p[p['nome']], name=p['nome'], mode='lines', 
+                             legendgroup=p['nome'], line=dict(color=p['cor'], width=2.5),
                              fill='tozeroy', fillcolor=hex_to_rgba(p['cor'], 0.15), customdata=df[f"{p['nome']}_info"],
                              hovertemplate="<b>%{customdata}</b><extra></extra>", connectgaps=False))
     
@@ -163,18 +185,48 @@ for p in lista_planetas:
     picos = df[(serie > 0.98) & (serie > serie.shift(1)) & (serie > serie.shift(-1))]
     if not picos.empty:
         fig.add_trace(go.Scatter(x=picos['date'], y=picos[p['nome']]+0.04, mode='markers+text', text=picos['date'].dt.strftime('%d/%m'),
-                                 textposition="top center", marker=dict(symbol="triangle-down", color=p['cor'], size=8), showlegend=False, hoverinfo='skip'))
+                                 textposition="top center", marker=dict(symbol="triangle-down", color=p['cor'], size=8), 
+                                 legendgroup=p['nome'], showlegend=False, hoverinfo='skip'))
 
-fig.update_layout(height=700, xaxis=dict(rangeslider=dict(visible=True, thickness=0.08), type='date', tickformat='%d/%m\n%Y', hoverformat='%d/%m/%Y %H:%M'),
-                  yaxis=dict(title='Intensidade', range=[0, 1.3], fixedrange=True), template='plotly_white', hovermode='x unified', dragmode='pan')
-st.plotly_chart(fig, width='stretch', config={'scrollZoom': True})
+# --- LEGENDA DE ASPECTOS REESTRUTURADA ---
+legenda_html = (
+    "<b style='font-size:13px; color:#2c3e50'>Símbolos de Aspectos</b><br>"
+    "<hr style='margin:2px'>"
+    "<span style='font-family: monospace;'>"
+    + "<br>".join([f"<b>{v[1]}</b> {v[0].ljust(12)}" for v in ASPECTOS.values()]) +
+    "</span>"
+)
 
-# --- LÓGICA DA TABELA DE ASPECTOS (IGUAL AO SCRIPT PYTHON) ---
+fig.add_annotation(
+    dict(
+        xref="paper", yref="paper",
+        x=1.12, y=0.15, 
+        text=legenda_html,
+        showarrow=False,
+        align="left",
+        valign="top",
+        font=dict(size=12, color="#444"),
+        bgcolor="rgba(255, 255, 255, 0.9)",
+        bordercolor="#dcdde1",
+        borderwidth=1.5,
+        borderpad=8,
+    )
+)
+
+fig.update_layout(
+    height=700, 
+    xaxis=dict(rangeslider=dict(visible=True, thickness=0.08), type='date', tickformat='%d/%m\n%Y', hoverformat='%d/%m/%Y %H:%M'),
+    yaxis=dict(title='Intensidade', range=[0, 1.3], fixedrange=True), 
+    template='plotly_white', hovermode='x unified', dragmode='pan',
+    margin=dict(t=100, r=200),
+    legend=dict(yanchor="top", y=0.99, xanchor="left", x=1.02)
+)
+
+st.plotly_chart(fig, use_container_width=True, config={'scrollZoom': True})
+
+# --- LÓGICA DA TABELA DE ASPECTOS ---
 eventos_aspectos = []
 if planeta_selecionado != "Escolha um planeta" and signo_selecionado != "Escolha um signo":
-    idx_signo_natal = SIGNOS.index(signo_selecionado)
-    long_natal_absoluta = (idx_signo_natal * 30) + grau_decimal
-    
     for p in lista_planetas:
         nome_p = p["nome"]
         serie_tabela = df[nome_p].fillna(0).values
@@ -196,19 +248,19 @@ if planeta_selecionado != "Escolha um planeta" and signo_selecionado != "Escolha
                     "Planeta e Signo Natal": f"{planeta_selecionado} em {signo_selecionado}",
                     "Planeta e Signo em Trânsito": f"{nome_p.capitalize()} em {get_signo(long_trans)}",
                     "Trânsito": row_pico[f"{nome_p}_status"],
-                    "Aspecto": calcular_aspecto(long_trans, long_natal_absoluta)
+                    "Aspecto": calcular_aspecto(long_trans, long_natal_absoluta_global)
                 })
 
-# --- EXIBIÇÃO DAS TABELAS CENTRALIZADAS ---
+# --- EXIBIÇÃO DAS TABELAS ---
 st.markdown("<h3 style='text-align: center;'>📅 Tabela de Trânsitos e Aspectos (Ponto Natal)</h3>", unsafe_allow_html=True)
 col_a1, col_a2, col_a3 = st.columns([0.05, 0.9, 0.05])
 with col_a2:
-    st.dataframe(pd.DataFrame(eventos_aspectos), width='stretch', height='content', hide_index=True)
+    st.dataframe(pd.DataFrame(eventos_aspectos), use_container_width=True, hide_index=True)
 
 st.markdown(f"<h3 style='text-align: center;'>🔄 Movimento Anual dos Planetas em {ano}</h3>", unsafe_allow_html=True)
 col_m1, col_m2, col_m3 = st.columns([1, 2, 1])
 with col_m2:
-    st.dataframe(df_mov_anual, width='stretch', height='content', hide_index=True)
+    st.dataframe(df_mov_anual, use_container_width=True, hide_index=True)
 
 # --- DOWNLOADS ---
 st.divider()

@@ -11,9 +11,15 @@ pd.set_option('future.no_silent_downcasting', True)
 SIGNOS = ["Áries", "Touro", "Gêmeos", "Câncer", "Leão", "Virgem", 
           "Libra", "Escorpião", "Sagitário", "Capricórnio", "Aquário", "Peixes"]
 
+# Mantendo os símbolos nos aspectos
 ASPECTOS = {
-    0: "Conjunção", 30: "Semi-sêxtil", 60: "Sêxtil", 90: "Quadratura", 
-    120: "Trígono", 150: "Quincúncio", 180: "Oposição"
+    0: ("Conjunção", "☌"), 
+    30: ("Semi-sêxtil", "⚺"), 
+    60: ("Sêxtil", "✶"), 
+    90: ("Quadratura", "□"), 
+    120: ("Trígono", "△"), 
+    150: ("Quincúncio", "⚻"), 
+    180: ("Oposição", "☍")
 }
 
 def get_signo(longitude):
@@ -32,10 +38,18 @@ def hex_to_rgba(hex_color, opacity):
 def calcular_aspecto(long1, long2):
     diff = abs(long1 - long2) % 360
     if diff > 180: diff = 360 - diff
-    for angulo, nome in ASPECTOS.items():
+    for angulo, (nome, simbolo) in ASPECTOS.items():
         if abs(diff - angulo) <= 5: # Orbe de 5 graus
             return nome
     return "Outro"
+
+def obter_simbolo_aspecto(long1, long2):
+    diff = abs(long1 - long2) % 360
+    if diff > 180: diff = 360 - diff
+    for angulo, (nome, simbolo) in ASPECTOS.items():
+        if abs(diff - angulo) <= 5:
+            return simbolo
+    return ""
 
 def generate_degree_transit_chart():
     # ==========================================
@@ -97,10 +111,17 @@ def generate_degree_transit_chart():
             else:
                 intensidade_txt = "Fraco"
 
+            # Calcula o símbolo do aspecto
+            simbolo = obter_simbolo_aspecto(long_abs, long_natal_absoluta)
+
             row[p["nome"]] = val if dist <= 5.0 else None
             row[f"{p['nome']}_long"] = long_abs
             row[f"{p['nome']}_status"] = status
-            row[f"{p['nome']}_info"] = f"{get_signo(long_abs)}{mov_abrev} {grau:02d}°{minutos:02d}' - {intensidade_txt}"
+            
+            # --- MELHORIA DE VISIBILIDADE ---
+            # O símbolo agora é envolvido em HTML para aumentar tamanho e destaque
+            simbolo_html = f"<span style='font-size: 18px;'><b>{simbolo}</b></span>" if simbolo else ""
+            row[f"{p['nome']}_info"] = f"{get_signo(long_abs)}{mov_abrev} {grau:02d}°{minutos:02d}' - {intensidade_txt} {simbolo_html}"
             
         all_data.append(row)
 
@@ -138,19 +159,18 @@ def generate_degree_transit_chart():
         pd.DataFrame(eventos_aspectos).to_excel(f"tabela_transitos_{ano}_grau_{grau_limpo}.xlsx", index=False)
 
     # ==========================================
-    # 3.1 GERAÇÃO DA TABELA DE MOVIMENTO ANUAL (D/R)
+    # 3.1 MOVIMENTO ANUAL
     # ==========================================
     movimentos_anuais = []
     for p in planetas_monitorados:
         nome = p["nome"]
         status_atual = df.iloc[0][f"{nome}_status"]
         data_inicio = df.iloc[0]['date']
-        
         for i in range(1, len(df)):
             status_ponto = df.iloc[i][f"{nome}_status"]
             if status_ponto != status_atual or i == len(df) - 1:
                 movimentos_anuais.append({
-                    "Planeta": nome.capitalize(), # Alterado para Primeira letra maiúscula
+                    "Planeta": nome.capitalize(),
                     "Início": data_inicio.strftime('%d/%m/%Y'),
                     "Término": df.iloc[i]['date'].strftime('%d/%m/%Y'),
                     "Trânsito": status_atual
@@ -160,7 +180,6 @@ def generate_degree_transit_chart():
 
     df_mov = pd.DataFrame(movimentos_anuais)
     df_mov.to_excel(f"movimento_planetas_{ano}.xlsx", index=False)
-    print(f"Sucesso! Tabela de movimento anual gerada: movimento_planetas_{ano}.xlsx")
 
     # ==========================================
     # 4. CONSTRUÇÃO DO GRÁFICO
@@ -201,7 +220,7 @@ def generate_degree_transit_chart():
     )
 
     fig.write_html(f"revolucao_{ano}_grau_{grau_limpo}.html", config={'scrollZoom': True})
-    print(f"Sucesso! Gráfico gerado: revolucao_{ano}_grau_{grau_limpo}.html")
+    print(f"Sucesso! Gráfico gerado.")
 
 if __name__ == "__main__":
     generate_degree_transit_chart()
