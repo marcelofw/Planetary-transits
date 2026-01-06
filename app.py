@@ -155,7 +155,6 @@ fig.update_layout(height=700, xaxis=dict(rangeslider=dict(visible=True, thicknes
 st.plotly_chart(fig, width='stretch', config={'scrollZoom': True})
 
 # --- TABELAS ---
-# O segredo para remover o scroll é não definir height ou usar um valor que acomode tudo.
 st.write("### 📅 Tabela de Trânsitos e Aspectos (Ponto Natal)")
 eventos = []
 if planeta_selecionado != "Escolha um planeta" and signo_selecionado != "Escolha um signo":
@@ -177,11 +176,11 @@ if planeta_selecionado != "Escolha um planeta" and signo_selecionado != "Escolha
                     "Trânsito": row_pico[p['nome']+'_status'], "Aspecto": calcular_aspecto(row_pico[p['nome']+'_long'], long_natal)
                 })
 
-# Exibição das tabelas sem scroll (height=None expande a tabela conforme o conteúdo)
-st.dataframe(pd.DataFrame(eventos), width='stretch', height=None)
+# CORREÇÃO: height='content' faz a tabela expandir conforme o número de linhas
+st.dataframe(pd.DataFrame(eventos), width='stretch', height='content')
 
 st.write(f"### 🔄 Movimento Anual dos Planetas em {ano}")
-st.dataframe(df_mov_anual, width='stretch', height=None)
+st.dataframe(df_mov_anual, width='stretch', height='content')
 
 # --- DOWNLOADS ---
 st.divider()
