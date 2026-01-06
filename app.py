@@ -106,7 +106,7 @@ def get_annual_movements(ano_ref):
     ]
     jd_start = swe.julday(ano_ref, 1, 1)
     jd_end = swe.julday(ano_ref + 1, 1, 1)
-    steps = np.arange(jd_start, jd_end, 0.5) # Passo largo para performance
+    steps = np.arange(jd_start, jd_end, 0.5) 
     
     movs = []
     for p in planetas_cfg:
@@ -177,20 +177,44 @@ fig = go.Figure()
 for p in lista_planetas:
     df_plot = df.copy()
     df_plot.loc[df_plot[p['nome']] == 0, p['nome']] = None
+    
+    # Linha Principal do Planeta
     fig.add_trace(go.Scatter(
         x=df_plot['date'], y=df_plot[p['nome']], mode='lines', name=p['nome'],
         line=dict(color=p['cor'], width=2.5), fill='tozeroy', fillcolor=hex_to_rgba(p['cor'], 0.15),
-        customdata=df[f"{p['nome']}_info"], hovertemplate="<b>%{customdata}</b><extra></extra>", connectgaps=False 
+        customdata=df[f"{p['nome']}_info"], 
+        hovertemplate="<b>%{customdata}</b><extra></extra>", 
+        connectgaps=False 
     ))
-    # Picos
+    
+    # Marcadores de Picos
     serie_p = df[p['nome']].fillna(0)
     picos = df[(serie_p > 0.98) & (serie_p > serie_p.shift(1)) & (serie_p > serie_p.shift(-1))]
     if not picos.empty:
-        fig.add_trace(go.Scatter(x=picos['date'], y=picos[p['nome']] + 0.04, mode='markers+text', text=picos['date'].dt.strftime('%d/%m'),
-                                 textposition="top center", marker=dict(symbol="triangle-down", color=p['cor'], size=8), showlegend=False))
+        fig.add_trace(go.Scatter(
+            x=picos['date'], y=picos[p['nome']] + 0.04, 
+            mode='markers+text', 
+            text=picos['date'].dt.strftime('%d/%m'),
+            textposition="top center", 
+            marker=dict(symbol="triangle-down", color=p['cor'], size=8), 
+            showlegend=False,
+            hoverinfo='skip', # Ignora o hover neste trace para não aparecer "trace..."
+            hovertemplate=""  # Garante que não apareça nada ao passar o mouse especificamente no pico
+        ))
 
-fig.update_layout(height=700, xaxis=dict(rangeslider=dict(visible=True, thickness=0.08), type='date', tickformat='%d/%m\n%Y'),
-                  yaxis=dict(title='Intensidade', range=[0, 1.3], fixedrange=True), template='plotly_white', hovermode='x unified', dragmode='pan')
+fig.update_layout(
+    height=700, 
+    xaxis=dict(
+        rangeslider=dict(visible=True, thickness=0.08), 
+        type='date', 
+        tickformat='%d/%m\n%Y',
+        hoverformat='%d/%m/%Y %H:%M' # Força a exibição de data e hora no topo da caixa de hover
+    ),
+    yaxis=dict(title='Intensidade', range=[0, 1.3], fixedrange=True), 
+    template='plotly_white', 
+    hovermode='x unified', 
+    dragmode='pan'
+)
 st.plotly_chart(fig, use_container_width=True, config={'scrollZoom': True})
 
 # --- TABELAS ---
