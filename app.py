@@ -224,16 +224,22 @@ if planeta_selecionado != "Escolha um planeta" and signo_selecionado != "Escolha
                     "Aspecto": calcular_aspecto(long_trans, long_natal_absoluta)
                 })
 
-# --- EXIBIÇÃO DAS TABELAS CENTRALIZADAS (SEM SCROLL) ---
+# --- EXIBIÇÃO DAS TABELAS CENTRALIZADAS (SEM SCROLL E SEM ÍNDICE) ---
 st.markdown("<h3 style='text-align: center;'>📅 Tabela de Trânsitos e Aspectos (Ponto Natal)</h3>", unsafe_allow_html=True)
 col_a1, col_a2, col_a3 = st.columns([0.05, 0.9, 0.05])
 with col_a2:
-    st.table(pd.DataFrame(eventos_aspectos))
+    if eventos_aspectos:
+        df_aspectos = pd.DataFrame(eventos_aspectos)
+        # Oculta o índice usando Pandas Styler
+        st.table(df_aspectos.style.hide(axis='index'))
+    else:
+        st.info("Selecione um ponto natal para gerar a tabela de aspectos.")
 
 st.markdown(f"<h3 style='text-align: center;'>🔄 Movimento Anual dos Planetas em {ano}</h3>", unsafe_allow_html=True)
 col_m1, col_m2, col_m3 = st.columns([1, 2, 1])
 with col_m2:
-    st.table(df_mov_anual)
+    # Oculta o índice usando Pandas Styler
+    st.table(df_mov_anual.style.hide(axis='index'))
 
 # --- DOWNLOADS ---
 st.divider()
