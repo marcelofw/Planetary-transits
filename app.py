@@ -8,7 +8,7 @@ import io
 import re
 
 # --- CONFIGURAÇÃO DA PÁGINA ---
-st.set_page_config(page_title="Revolução Planetária Profissional", layout="wide")
+st.set_page_config(page_title="Revolução Planetária", layout="wide")
 
 # Silencia avisos de downcasting
 pd.set_option('future.no_silent_downcasting', True)
