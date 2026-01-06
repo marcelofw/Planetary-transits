@@ -60,13 +60,13 @@ grau_input = st.sidebar.text_input("Grau Natal (0 a 30°)", value="27.0")
 planeta_selecionado = st.sidebar.selectbox(
     "Planeta", 
     options=["Escolha um planeta"] + LISTA_PLANETAS_UI,
-    index=1 # Mantendo Sol como padrão para evitar erros iniciais
+    index=0 # Definido como "Escolha um planeta"
 )
 
 signo_selecionado = st.sidebar.selectbox(
     "Signo do Zodíaco", 
     options=["Escolha um signo"] + SIGNOS,
-    index=10 # Mantendo Capricórnio como padrão
+    index=0 # Definido como "Escolha um signo"
 )
 
 # Validação do Grau
@@ -204,7 +204,6 @@ for p in lista_planetas:
         ))
 
 fig.update_layout(
-    title=dict(text=f'Revolução Planetária {ano}: Grau {grau_input}', x=0.5), # Título igual ao script Python
     height=700, 
     xaxis=dict(
         rangeslider=dict(visible=True, thickness=0.08), 
@@ -232,7 +231,6 @@ if planeta_selecionado != "Escolha um planeta" and signo_selecionado != "Escolha
                 while idx_ini > 0 and serie[idx_ini] > 0.01: idx_ini -= 1
                 while idx_fim < len(serie)-1 and serie[idx_fim] > 0.01: idx_fim += 1
                 row_pico = df.iloc[i]
-                # Colunas formatadas exatamente como no script Python original
                 eventos.append({
                     "Data e Hora Início": df.iloc[idx_ini]['date'].strftime('%d/%m/%Y %H:%M'),
                     "Data e Hora Pico": row_pico['date'].strftime('%d/%m/%Y %H:%M'),
@@ -248,7 +246,7 @@ st.dataframe(pd.DataFrame(eventos), use_container_width=True)
 st.write(f"### 🔄 Movimento Anual dos Planetas em {ano}")
 st.dataframe(df_mov_anual, use_container_width=True)
 
-# --- DOWNLOADS (NOMES DE ARQUIVOS IGUAIS AO SCRIPT PYTHON) ---
+# --- DOWNLOADS ---
 st.divider()
 col1, col2, col3 = st.columns(3)
 
