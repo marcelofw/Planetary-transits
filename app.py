@@ -10,7 +10,7 @@ import re
 # --- CONFIGURAÇÃO DA PÁGINA ---
 st.set_page_config(page_title="Revolução Planetária Profissional", layout="wide")
 
-# Silencia avisos de downcasting para compatibilidade futura com Pandas
+# Silencia avisos de downcasting
 pd.set_option('future.no_silent_downcasting', True)
 
 # --- CONSTANTES E FUNÇÕES AUXILIARES ---
@@ -48,41 +48,26 @@ def calcular_aspecto(long1, long2):
     diff = abs(long1 - long2) % 360
     if diff > 180: diff = 360 - diff
     for angulo, nome in ASPECTOS.items():
-        if abs(diff - angulo) <= 5: # Orbe de 5 graus
+        if abs(diff - angulo) <= 5:
             return nome
     return "Outro"
 
-# --- INTERFACE LATERAL (Sidebar) ---
+# --- INTERFACE LATERAL ---
 st.sidebar.header("Configurações")
 ano = st.sidebar.number_input("Ano da Análise", min_value=1900, max_value=2100, value=2026)
 grau_input = st.sidebar.text_input("Grau Natal (0 a 30°)", value="27.0")
 
-planeta_selecionado = st.sidebar.selectbox(
-    "Planeta", 
-    options=["Escolha um planeta"] + LISTA_PLANETAS_UI,
-    index=0 
-)
+planeta_selecionado = st.sidebar.selectbox("Planeta", options=["Escolha um planeta"] + LISTA_PLANETAS_UI, index=0)
+signo_selecionado = st.sidebar.selectbox("Signo do Zodíaco", options=["Escolha um signo"] + SIGNOS, index=0)
 
-signo_selecionado = st.sidebar.selectbox(
-    "Signo do Zodíaco", 
-    options=["Escolha um signo"] + SIGNOS,
-    index=0 
-)
-
-# Validação do Grau
 grau_decimal = dms_to_dec(grau_input)
-
-# Funcionalidade da Lua
 incluir_lua = st.sidebar.checkbox("Quero analisar a Lua", value=False)
-mes_selecionado = None
-if incluir_lua:
-    mes_selecionado = st.sidebar.slider("Mês da Lua", min_value=1, max_value=12, value=1)
+mes_selecionado = st.sidebar.slider("Mês da Lua", 1, 12, 1) if incluir_lua else None
 
 if grau_decimal is None:
-    st.error("⚠️ Erro: Por favor, insira um valor numérico válido entre 0 e 30.")
+    st.error("⚠️ Erro: Insira um valor numérico válido entre 0 e 30.")
     st.stop()
 
-# Ajuste do texto do cabeçalho
 p_texto = planeta_selecionado if planeta_selecionado != "Escolha um planeta" else "Planeta"
 s_texto = signo_selecionado if signo_selecionado != "Escolha um signo" else "Signo"
 
@@ -93,59 +78,43 @@ st.markdown(f"""
     </div>
 """, unsafe_allow_html=True)
 
-# --- PROCESSAMENTO DE DADOS ---
+# --- PROCESSAMENTO ---
 @st.cache_data
 def get_annual_movements(ano_ref):
-    planetas_cfg = [
-        {"id": swe.SUN, "nome": "SOL"}, {"id": swe.MERCURY, "nome": "MERCÚRIO"},
-        {"id": swe.VENUS, "nome": "VÊNUS"}, {"id": swe.MARS, "nome": "MARTE"},
-        {"id": swe.JUPITER, "nome": "JÚPITER"}, {"id": swe.SATURN, "nome": "SATURNO"},
-        {"id": swe.URANUS, "nome": "URANO"}, {"id": swe.NEPTUNE, "nome": "NETUNO"},
-        {"id": swe.PLUTO, "nome": "PLUTÃO"}
-    ]
+    planetas_cfg = [{"id": i, "nome": n} for i, n in zip([swe.SUN, swe.MERCURY, swe.VENUS, swe.MARS, swe.JUPITER, swe.SATURN, swe.URANUS, swe.NEPTUNE, swe.PLUTO], ["SOL", "MERCÚRIO", "VÊNUS", "MARTE", "JÚPITER", "SATURNO", "URANO", "NETUNO", "PLUTÃO"])]
     jd_start = swe.julday(ano_ref, 1, 1)
     jd_end = swe.julday(ano_ref + 1, 1, 1)
-    steps = np.arange(jd_start, jd_end, 0.5) 
-    
+    steps = np.arange(jd_start, jd_end, 0.5)
     movs = []
     for p in planetas_cfg:
-        status_atual = None
-        data_inicio = None
+        status_atual, data_inicio = None, None
         for jd in steps:
             res, _ = swe.calc_ut(jd, p["id"], swe.FLG_SWIEPH | swe.FLG_SPEED)
             status_ponto = "Retrógrado" if res[3] < 0 else "Direto"
-            y, m, d, h = swe.revjul(jd)
-            dt = datetime(y, m, d)
             if status_atual is None:
                 status_atual = status_ponto
-                data_inicio = dt
+                y, m, d, _ = swe.revjul(jd)
+                data_inicio = datetime(y, m, d)
             elif status_ponto != status_atual:
-                movs.append({"Planeta": p["nome"].capitalize(), "Início": data_inicio.strftime('%d/%m/%Y'), "Término": dt.strftime('%d/%m/%Y'), "Trânsito": status_atual})
-                status_atual = status_ponto
-                data_inicio = dt
+                y, m, d, _ = swe.revjul(jd)
+                movs.append({"Planeta": p["nome"].capitalize(), "Início": data_inicio.strftime('%d/%m/%Y'), "Término": datetime(y, m, d).strftime('%d/%m/%Y'), "Trânsito": status_atual})
+                status_atual, data_inicio = status_ponto, datetime(y, m, d)
         movs.append({"Planeta": p["nome"].capitalize(), "Início": data_inicio.strftime('%d/%m/%Y'), "Término": f"31/12/{ano_ref}", "Trânsito": status_atual})
     return pd.DataFrame(movs)
 
 @st.cache_data
 def get_planetary_data(ano_ref, grau_ref_val, analisar_lua, mes_unico):
     planetas_cfg = [
-        {"id": swe.SUN, "nome": "SOL", "cor": "#FFF12E"},
-        {"id": swe.MERCURY, "nome": "MERCÚRIO", "cor": "#F3A384"},
-        {"id": swe.VENUS, "nome": "VÊNUS", "cor": "#0A8F11"},
-        {"id": swe.MARS, "nome": "MARTE", "cor": "#F10808"},
-        {"id": swe.JUPITER, "nome": "JÚPITER", "cor": "#1746C9"},
-        {"id": swe.SATURN, "nome": "SATURNO", "cor": "#381094"},
-        {"id": swe.URANUS, "nome": "URANO", "cor": "#FF00FF"},
-        {"id": swe.NEPTUNE, "nome": "NETUNO", "cor": "#1EFF00"},
+        {"id": swe.SUN, "nome": "SOL", "cor": "#FFF12E"}, {"id": swe.MERCURY, "nome": "MERCÚRIO", "cor": "#F3A384"},
+        {"id": swe.VENUS, "nome": "VÊNUS", "cor": "#0A8F11"}, {"id": swe.MARS, "nome": "MARTE", "cor": "#F10808"},
+        {"id": swe.JUPITER, "nome": "JÚPITER", "cor": "#1746C9"}, {"id": swe.SATURN, "nome": "SATURNO", "cor": "#381094"},
+        {"id": swe.URANUS, "nome": "URANO", "cor": "#FF00FF"}, {"id": swe.NEPTUNE, "nome": "NETUNO", "cor": "#1EFF00"},
         {"id": swe.PLUTO, "nome": "PLUTÃO", "cor": "#14F1F1"}
     ]
     if analisar_lua: planetas_cfg.insert(1, {"id": swe.MOON, "nome": "LUA", "cor": "#A6A6A6"})
-
     jd_start = swe.julday(ano_ref, mes_unico if mes_unico else 1, 1)
     jd_end = swe.julday(ano_ref + (1 if not mes_unico else 0), (mes_unico + 1 if mes_unico and mes_unico < 12 else 1) if mes_unico else 1, 1)
-    step_size = 0.005 if analisar_lua and mes_unico else 0.05
-    
-    steps = np.arange(jd_start, jd_end, step_size)
+    steps = np.arange(jd_start, jd_end, 0.005 if analisar_lua and mes_unico else 0.05)
     all_data = []
     for jd in steps:
         y, m, d, h = swe.revjul(jd)
@@ -153,18 +122,15 @@ def get_planetary_data(ano_ref, grau_ref_val, analisar_lua, mes_unico):
         row = {'date': dt}
         for p in planetas_cfg:
             res, _ = swe.calc_ut(jd, p["id"], swe.FLG_SWIEPH | swe.FLG_SPEED)
-            long_abs, vel = res[0], res[3]
-            pos_no_signo = long_abs % 30
-            dist = abs(((pos_no_signo - grau_ref_val + 15) % 30) - 15)
-            intensidade = "Forte" if dist <= 1.0 else "Médio" if dist <= 2.5 else "Fraco"
+            pos = res[0] % 30
+            dist = abs(((pos - grau_ref_val + 15) % 30) - 15)
             row[p["nome"]] = np.exp(-0.5 * (dist / 1.7)**2) if dist <= 5.0 else 0
-            row[f"{p['nome']}_long"] = long_abs
-            row[f"{p['nome']}_status"] = "Retrógrado" if vel < 0 else "Direto"
-            row[f"{p['nome']}_info"] = f"{get_signo(long_abs)} {'(R)' if vel < 0 else '(D)'} {int(pos_no_signo):02d}°{int((pos_no_signo%1)*60):02d}' - {intensidade}"
+            row[f"{p['nome']}_long"] = res[0]
+            row[f"{p['nome']}_status"] = "Retrógrado" if res[3] < 0 else "Direto"
+            row[f"{p['nome']}_info"] = f"{get_signo(res[0])} {'(R)' if res[3]<0 else '(D)'} {int(pos):02d}°{int((pos%1)*60):02d}' - {'Forte' if dist <= 1.0 else 'Médio' if dist <= 2.5 else 'Fraco'}"
         all_data.append(row)
     return pd.DataFrame(all_data).infer_objects(copy=False), planetas_cfg
 
-# Execução
 df_mov_anual = get_annual_movements(ano)
 df, lista_planetas = get_planetary_data(ano, grau_decimal, incluir_lua, mes_selecionado)
 grau_limpo_file = str(grau_input).replace('.', '_')
@@ -172,26 +138,24 @@ grau_limpo_file = str(grau_input).replace('.', '_')
 # --- GRÁFICO ---
 fig = go.Figure()
 for p in lista_planetas:
-    df_plot = df.copy()
-    df_plot.loc[df_plot[p['nome']] == 0, p['nome']] = None
-    fig.add_trace(go.Scatter(
-        x=df_plot['date'], y=df_plot[p['nome']], mode='lines', name=p['nome'],
-        line=dict(color=p['cor'], width=2.5), fill='tozeroy', fillcolor=hex_to_rgba(p['cor'], 0.15),
-        customdata=df[f"{p['nome']}_info"], hovertemplate="<b>%{customdata}</b><extra></extra>", connectgaps=False 
-    ))
-    serie_p = df[p['nome']].fillna(0)
-    picos = df[(serie_p > 0.98) & (serie_p > serie_p.shift(1)) & (serie_p > serie_p.shift(-1))]
+    df_p = df.copy()
+    df_p.loc[df_p[p['nome']] == 0, p['nome']] = None
+    fig.add_trace(go.Scatter(x=df_p['date'], y=df_p[p['nome']], name=p['nome'], mode='lines', line=dict(color=p['cor'], width=2.5),
+                             fill='tozeroy', fillcolor=hex_to_rgba(p['cor'], 0.15), customdata=df[f"{p['nome']}_info"],
+                             hovertemplate="<b>%{customdata}</b><extra></extra>", connectgaps=False))
+    
+    serie = df[p['nome']].fillna(0)
+    picos = df[(serie > 0.98) & (serie > serie.shift(1)) & (serie > serie.shift(-1))]
     if not picos.empty:
-        fig.add_trace(go.Scatter(
-            x=picos['date'], y=picos[p['nome']] + 0.04, mode='markers+text', text=picos['date'].dt.strftime('%d/%m'),
-            textposition="top center", marker=dict(symbol="triangle-down", color=p['cor'], size=8), showlegend=False, hoverinfo='skip', hovertemplate=""
-        ))
+        fig.add_trace(go.Scatter(x=picos['date'], y=picos[p['nome']]+0.04, mode='markers+text', text=picos['date'].dt.strftime('%d/%m'),
+                                 textposition="top center", marker=dict(symbol="triangle-down", color=p['cor'], size=8), showlegend=False, hoverinfo='skip'))
 
 fig.update_layout(height=700, xaxis=dict(rangeslider=dict(visible=True, thickness=0.08), type='date', tickformat='%d/%m\n%Y', hoverformat='%d/%m/%Y %H:%M'),
                   yaxis=dict(title='Intensidade', range=[0, 1.3], fixedrange=True), template='plotly_white', hovermode='x unified', dragmode='pan')
 st.plotly_chart(fig, width='stretch', config={'scrollZoom': True})
 
 # --- TABELAS ---
+# O segredo para remover o scroll é não definir height ou usar um valor que acomode tudo.
 st.write("### 📅 Tabela de Trânsitos e Aspectos (Ponto Natal)")
 eventos = []
 if planeta_selecionado != "Escolha um planeta" and signo_selecionado != "Escolha um signo":
@@ -208,16 +172,16 @@ if planeta_selecionado != "Escolha um planeta" and signo_selecionado != "Escolha
                     "Data e Hora Início": df.iloc[idx_ini]['date'].strftime('%d/%m/%Y %H:%M'),
                     "Data e Hora Pico": row_pico['date'].strftime('%d/%m/%Y %H:%M'),
                     "Data e Hora Término": df.iloc[idx_fim]['date'].strftime('%d/%m/%Y %H:%M'),
-                    "Grau Natal": f"{grau_input}°", 
-                    "Planeta e Signo Natal": f"{planeta_selecionado} em {signo_selecionado}",
+                    "Grau Natal": f"{grau_input}°", "Planeta e Signo Natal": f"{planeta_selecionado} em {signo_selecionado}",
                     "Planeta e Signo em Trânsito": f"{p['nome'].capitalize()} em {get_signo(row_pico[p['nome']+'_long'])}",
-                    "Trânsito": row_pico[p['nome']+'_status'], 
-                    "Aspecto": calcular_aspecto(row_pico[p['nome']+'_long'], long_natal)
+                    "Trânsito": row_pico[p['nome']+'_status'], "Aspecto": calcular_aspecto(row_pico[p['nome']+'_long'], long_natal)
                 })
-st.dataframe(pd.DataFrame(eventos), width='stretch')
+
+# Exibição das tabelas sem scroll (height=None expande a tabela conforme o conteúdo)
+st.dataframe(pd.DataFrame(eventos), width='stretch', height=None)
 
 st.write(f"### 🔄 Movimento Anual dos Planetas em {ano}")
-st.dataframe(df_mov_anual, width='stretch')
+st.dataframe(df_mov_anual, width='stretch', height=None)
 
 # --- DOWNLOADS ---
 st.divider()
