@@ -162,7 +162,7 @@ def get_planetary_data(ano_ref, grau_ref_val, analisar_lua, mes_unico, long_nata
             
             # Cálculo do símbolo para a legenda do gráfico - TAMANHO AJUSTADO AQUI
             simbolo = obter_simbolo_aspecto(res[0], long_natal_ref) if long_natal_ref > 0 else ""
-            simbolo_html = f"<span style='font-size: 20px;'>{simbolo}</span>" if simbolo else ""
+            simbolo_html = f"<span style='font-size: 15px;'>{simbolo}</span>" if simbolo else ""
             
             row[p["nome"]] = np.exp(-0.5 * (dist / 1.7)**2) if dist <= 5.0 else 0
             row[f"{p['nome']}_long"] = res[0]
