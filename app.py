@@ -141,7 +141,7 @@ def get_planetary_data(ano_ref, grau_ref_val, analisar_lua, mes_unico):
             dist = abs(((pos_no_signo - grau_ref_val + 15) % 30) - 15)
             
             val = np.exp(-0.5 * (dist / 1.7)**2)
-            row[p["nome"]] = val if dist <= 5.0 else 0 # Mudado para 0 para facilitar lógica da tabela
+            row[p["nome"]] = val if dist <= 5.0 else 0
             row[f"{p['nome']}_long"] = long_abs
             row[f"{p['nome']}_status"] = "Retrógrado" if velocidade < 0 else "Direto"
             row[f"{p['nome']}_info"] = f"{get_signo(long_abs)}{mov}"
@@ -156,7 +156,6 @@ df, lista_planetas = get_planetary_data(ano, grau_decimal, incluir_lua, mes_sele
 fig = go.Figure()
 
 for p in lista_planetas:
-    # Filtra para o gráfico não exibir linhas em zero
     df_plot = df.copy()
     df_plot.loc[df_plot[p['nome']] == 0, p['nome']] = None
 
@@ -213,25 +212,37 @@ st.plotly_chart(fig, use_container_width=True, config={'scrollZoom': True})
 st.write("### 📅 Tabela de Trânsitos e Aspectos")
 
 eventos = []
-# Só gera a tabela se ambos os campos estiverem selecionados
+movimentos_anuais = [] # Nova lista para movimentos anuais
+
 if planeta_selecionado != "Escolha um planeta" and signo_selecionado != "Escolha um signo":
-    # Cálculo da longitude absoluta natal do usuário para o cálculo do aspecto
     idx_signo_natal = SIGNOS.index(signo_selecionado)
     long_natal_absoluta = (idx_signo_natal * 30) + grau_decimal
 
     for p in lista_planetas:
         nome_p = p["nome"]
-        serie_tabela = df[nome_p].values
         
+        # Lógica para Movimentos Anuais (D/R)
+        status_atual = df.iloc[0][f"{nome_p}_status"]
+        data_inicio = df.iloc[0]['date']
+        for idx_m in range(1, len(df)):
+            status_ponto = df.iloc[idx_m][f"{nome_p}_status"]
+            if status_ponto != status_atual or idx_m == len(df) - 1:
+                movimentos_anuais.append({
+                    "Planeta": nome_p.capitalize(),
+                    "Início": data_inicio.strftime('%d/%m/%Y'),
+                    "Término": df.iloc[idx_m]['date'].strftime('%d/%m/%Y'),
+                    "Trânsito": status_atual
+                })
+                status_atual = status_ponto
+                data_inicio = df.iloc[idx_m]['date']
+
+        # Lógica para Tabela de Trânsitos
+        serie_tabela = df[nome_p].values
         for i in range(1, len(serie_tabela) - 1):
             if serie_tabela[i] > 0.98 and serie_tabela[i] > serie_tabela[i-1] and serie_tabela[i] > serie_tabela[i+1]:
-                
-                # Encontrar Início
                 idx_ini = i
                 while idx_ini > 0 and serie_tabela[idx_ini] > 0.01:
                     idx_ini -= 1
-                
-                # Encontrar Término
                 idx_fim = i
                 while idx_fim < len(serie_tabela) - 1 and serie_tabela[idx_fim] > 0.01:
                     idx_fim += 1
@@ -253,9 +264,14 @@ if planeta_selecionado != "Escolha um planeta" and signo_selecionado != "Escolha
 df_eventos = pd.DataFrame(eventos)
 st.dataframe(df_eventos, use_container_width=True)
 
+if movimentos_anuais:
+    st.write("### 🔄 Movimento Anual dos Planetas (Direto/Retrógrado)")
+    df_mov = pd.DataFrame(movimentos_anuais)
+    st.dataframe(df_mov, use_container_width=True)
+
 # --- DOWNLOADS ---
 st.divider()
-col1, col2, col3 = st.columns(3)
+col1, col2, col3, col4 = st.columns(4) # Adicionada quarta coluna para download
 
 p_file = p_texto.replace(" ", "_")
 s_file = s_texto.replace(" ", "_")
@@ -272,10 +288,19 @@ with col2:
         output = io.BytesIO()
         with pd.ExcelWriter(output, engine='openpyxl') as writer:
             df_eventos.to_excel(writer, index=False)
-        st.download_button("📂 Baixar Tabela (Excel)", output.getvalue(), f"tabela_{nome_arquivo_base}.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        st.download_button("📂 Baixar Tabela Trânsitos (Excel)", output.getvalue(), f"trânsitos_{nome_arquivo_base}.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
     else:
-        st.button("📂 Baixar Tabela (Excel)", disabled=True, help="Selecione os dados na lateral para habilitar")
+        st.button("📂 Baixar Tabela Trânsitos (Excel)", disabled=True)
 
 with col3:
+    if movimentos_anuais:
+        output_mov = io.BytesIO()
+        with pd.ExcelWriter(output_mov, engine='openpyxl') as writer:
+            pd.DataFrame(movimentos_anuais).to_excel(writer, index=False)
+        st.download_button("🔄 Baixar Movimento Anual (Excel)", output_mov.getvalue(), f"movimentos_{ano}.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    else:
+        st.button("🔄 Baixar Movimento Anual (Excel)", disabled=True)
+
+with col4:
     csv_data = df.to_csv(index=False).encode('utf-8')
     st.download_button("📊 Baixar Dados Brutos (CSV)", csv_data, f"dados_{nome_arquivo_base}.csv", "text/csv")

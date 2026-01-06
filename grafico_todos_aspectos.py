@@ -80,73 +80,96 @@ def generate_degree_transit_chart():
         for p in planetas_monitorados:
             res, _ = swe.calc_ut(jd, p["id"], flags)
             long_abs, velocidade = res[0], res[3]
-            mov = " (R)" if velocidade < 0 else " (D)"
+            status = "Retrógrado" if velocidade < 0 else "Direto"
+            mov_abrev = " (R)" if velocidade < 0 else " (D)"
             
-            dist = abs(((long_abs % 30 - grau_decimal + 15) % 30) - 15)
+            pos_no_signo = long_abs % 30
+            grau = int(pos_no_signo)
+            minutos = int((pos_no_signo % 1) * 60)
+            
+            dist = abs(((pos_no_signo - grau_decimal + 15) % 30) - 15)
             val = np.exp(-0.5 * (dist / 1.7)**2)
             
+            if dist <= 1.0:
+                intensidade_txt = "Forte"
+            elif dist <= 2.5:
+                intensidade_txt = "Médio"
+            else:
+                intensidade_txt = "Fraco"
+
             row[p["nome"]] = val if dist <= 5.0 else None
             row[f"{p['nome']}_long"] = long_abs
-            row[f"{p['nome']}_status"] = "Retrógrado" if velocidade < 0 else "Direto"
-            row[f"{p['nome']}_info"] = f"{get_signo(long_abs)}{mov}"
+            row[f"{p['nome']}_status"] = status
+            row[f"{p['nome']}_info"] = f"{get_signo(long_abs)}{mov_abrev} {grau:02d}°{minutos:02d}' - {intensidade_txt}"
             
         all_data.append(row)
 
     df = pd.DataFrame(all_data).infer_objects(copy=False)
-
-    # Preparação do nome base para os arquivos
     grau_limpo = str(grau_alvo_natal).replace('.', '_')
 
     # ==========================================
-    # 3. GERAÇÃO DA TABELA EXCEL
+    # 3. GERAÇÃO DA TABELA EXCEL (ASPECTOS)
     # ==========================================
-    eventos = []
+    eventos_aspectos = []
     for p in planetas_monitorados:
         nome = p["nome"]
         serie_tabela = df[nome].fillna(0).values
-        
         for i in range(1, len(serie_tabela) - 1):
             if serie_tabela[i] > 0.98 and serie_tabela[i] > serie_tabela[i-1] and serie_tabela[i] > serie_tabela[i+1]:
-                
                 idx_ini = i
-                while idx_ini > 0 and serie_tabela[idx_ini] > 0.01:
-                    idx_ini -= 1
-                
+                while idx_ini > 0 and serie_tabela[idx_ini] > 0.01: idx_ini -= 1
                 idx_fim = i
-                while idx_fim < len(serie_tabela) - 1 and serie_tabela[idx_fim] > 0.01:
-                    idx_fim += 1
+                while idx_fim < len(serie_tabela) - 1 and serie_tabela[idx_fim] > 0.01: idx_fim += 1
                 
                 row_pico = df.iloc[i]
                 long_trans = row_pico[f"{nome}_long"]
-                
-                eventos.append({
+                eventos_aspectos.append({
                     "Data e Hora Início": df.iloc[idx_ini]['date'].strftime('%d/%m/%Y %H:%M'),
                     "Data e Hora Pico": row_pico['date'].strftime('%d/%m/%Y %H:%M'),
                     "Data e Hora Término": df.iloc[idx_fim]['date'].strftime('%d/%m/%Y %H:%M'),
                     "Grau Natal": f"{grau_alvo_natal}°",
                     "Planeta e Signo Natal": f"{planeta_natal_ui} em {signo_natal_ui}",
                     "Planeta e Signo em Trânsito": f"{nome.capitalize()} em {get_signo(long_trans)}",
-                    "Status": row_pico[f"{nome}_status"],
+                    "Trânsito": row_pico[f"{nome}_status"],
                     "Aspecto": calcular_aspecto(long_trans, long_natal_absoluta)
                 })
 
-    if eventos:
-        df_excel = pd.DataFrame(eventos)
-        # NOME DO ARQUIVO EXCEL COM O GRAU
-        excel_name = f"tabela_transitos_{ano}_grau_{grau_limpo}.xlsx"
-        df_excel.to_excel(excel_name, index=False)
-        print(f"Sucesso! Tabela Excel gerada: {excel_name}")
+    if eventos_aspectos:
+        pd.DataFrame(eventos_aspectos).to_excel(f"tabela_transitos_{ano}_grau_{grau_limpo}.xlsx", index=False)
+
+    # ==========================================
+    # 3.1 GERAÇÃO DA TABELA DE MOVIMENTO ANUAL (D/R)
+    # ==========================================
+    movimentos_anuais = []
+    for p in planetas_monitorados:
+        nome = p["nome"]
+        status_atual = df.iloc[0][f"{nome}_status"]
+        data_inicio = df.iloc[0]['date']
+        
+        for i in range(1, len(df)):
+            status_ponto = df.iloc[i][f"{nome}_status"]
+            if status_ponto != status_atual or i == len(df) - 1:
+                movimentos_anuais.append({
+                    "Planeta": nome.capitalize(), # Alterado para Primeira letra maiúscula
+                    "Início": data_inicio.strftime('%d/%m/%Y'),
+                    "Término": df.iloc[i]['date'].strftime('%d/%m/%Y'),
+                    "Trânsito": status_atual
+                })
+                status_atual = status_ponto
+                data_inicio = df.iloc[i]['date']
+
+    df_mov = pd.DataFrame(movimentos_anuais)
+    df_mov.to_excel(f"movimento_planetas_{ano}.xlsx", index=False)
+    print(f"Sucesso! Tabela de movimento anual gerada: movimento_planetas_{ano}.xlsx")
 
     # ==========================================
     # 4. CONSTRUÇÃO DO GRÁFICO
     # ==========================================
     fig = go.Figure()
-
     for p in planetas_monitorados:
         fig.add_trace(go.Scatter(
             x=df['date'], y=df[p['nome']],
-            mode='lines',
-            name=p['nome'],
+            mode='lines', name=p['nome'],
             legendgroup=p['nome'],
             line=dict(color=p['cor'], width=2.5),
             fill='tozeroy',
@@ -159,41 +182,26 @@ def generate_degree_transit_chart():
         serie_p = df[p['nome']].fillna(0).infer_objects(copy=False)
         peak_mask = (serie_p > 0.98) & (serie_p > serie_p.shift(1)) & (serie_p > serie_p.shift(-1))
         picos = df[peak_mask]
-        
         if not picos.empty:
             fig.add_trace(go.Scatter(
-                x=picos['date'],
-                y=picos[p['nome']] + 0.04,
+                x=picos['date'], y=picos[p['nome']] + 0.04,
                 mode='markers+text',
                 text=picos['date'].dt.strftime('%d/%m'),
                 textposition="top center",
                 textfont=dict(family="Arial Black", size=10, color="#CCCCCC"),
                 marker=dict(symbol="triangle-down", color=p['cor'], size=8),
-                legendgroup=p['nome'],
-                showlegend=False,
-                hoverinfo='skip'
+                legendgroup=p['nome'], showlegend=False, hoverinfo='skip'
             ))
 
     fig.update_layout(
-        title=dict(text=f'Revolucao Planetaria {ano}: Grau {grau_alvo_natal}', x=0.5),
-        xaxis=dict(
-            type='date', 
-            tickformat='%d/%m\n%Y', 
-            hoverformat='%d/%m/%Y %H:%M',
-            rangeslider=dict(visible=True, thickness=0.08)
-        ),
+        title=dict(text=f'Revolução Planetária {ano}: Grau {grau_alvo_natal}', x=0.5),
+        xaxis=dict(type='date', tickformat='%d/%m\n%Y', hoverformat='%d/%m/%Y %H:%M', rangeslider=dict(visible=True, thickness=0.08)),
         yaxis=dict(title='Intensidade', range=[0, 1.25], fixedrange=True),
-        template='plotly_white',
-        hovermode='x unified', 
-        dragmode='pan',
-        margin=dict(t=100)
+        template='plotly_white', hovermode='x unified', dragmode='pan', margin=dict(t=100)
     )
 
-    # NOME DO ARQUIVO HTML COM O GRAU
-    html_file = f"revolucao_{ano}_grau_{grau_limpo}.html"
-    fig.write_html(html_file, config={'scrollZoom': True})
-    
-    print(f"Sucesso! Grafico gerado: {html_file}")
+    fig.write_html(f"revolucao_{ano}_grau_{grau_limpo}.html", config={'scrollZoom': True})
+    print(f"Sucesso! Gráfico gerado: revolucao_{ano}_grau_{grau_limpo}.html")
 
 if __name__ == "__main__":
     generate_degree_transit_chart()
