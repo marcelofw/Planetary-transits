@@ -162,7 +162,6 @@ def get_planetary_data(ano_ref, grau_ref_val, analisar_lua, mes_unico, long_nata
             pos = res[0] % 30
             dist = abs(((pos - grau_ref_val + 15) % 30) - 15)
             
-            # --- ALTERAÇÃO SOLICITADA: Aumenta o símbolo e força o alinhamento na base ---
             simbolo = obter_simbolo_aspecto(res[0], long_natal_ref) if long_natal_ref > 0 else ""
             simbolo_html = f"<span style='font-size: 16px; line-height: 0; vertical-align: baseline;'><b>{simbolo}</b></span>" if simbolo else ""
             
@@ -196,31 +195,30 @@ fig.update_layout(height=700, xaxis=dict(rangeslider=dict(visible=True, thicknes
                   yaxis=dict(title='Intensidade', range=[0, 1.3], fixedrange=True), template='plotly_white', hovermode='x unified', dragmode='pan')
 st.plotly_chart(fig, use_container_width=True, config={'scrollZoom': True})
 
-# --- SEÇÃO DE CONSULTA IA COM CALENDÁRIO AMPLO E HORA ABERTA ---
+# --- SEÇÃO DE CONSULTA IA CENTRALIZADA (ABAIXO DO GRÁFICO) ---
 st.divider()
-st.subheader("🤖 Interpretação Astrológica")
+col_esq, col_central, col_dir = st.columns([1, 2, 1])
 
-col_ia1, col_ia2 = st.columns([1, 2])
-
-with col_ia1:
-    # Seleção de Data com range de 1900 a 2100
+with col_central:
+    st.markdown("<h2 style='text-align: center;'>🤖 Previsão Astrológica</h2>", unsafe_allow_html=True)
+    
+    # Seleção de Data
     data_consulta = st.date_input(
         "Escolha a data", 
         value=date(ano, 1, 7),
         min_value=date(1900, 1, 1),
         max_value=date(2100, 12, 31),
+        key="ia_data_key" # Key única para evitar erro
     )
     
-    # Campo Aberto para Hora com Placeholder
-    hora_input = st.text_input("Escolha a hora (ex: 14:30)", placeholder="12:00", help="Use o formato HH:MM")
+    # Campo Aberto para Hora
+    hora_input = st.text_input("Escolha a hora (ex: 14:30)", placeholder="12:00", key="ia_hora_key")
     
-    btn_gerar = st.button("Preparar Análise")
+    btn_gerar = st.button("Preparar Análise para o Gemini", use_container_width=True)
 
 if btn_gerar:
-    # --- TRATAMENTO E VALIDAÇÃO DA HORA ---
     hora_valida = "12:00"
     if hora_input.strip():
-        # Regex aceita H:MM ou HH:MM
         if re.match(r"^([0-9]|0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$", hora_input.strip()):
             hora_valida = hora_input.strip()
         else:
@@ -229,7 +227,6 @@ if btn_gerar:
     h_str, m_str = hora_valida.split(":")
     hora_decimal = int(h_str) + (int(m_str) / 60.0)
     
-    # --- CÁLCULO DE ALTA PRECISÃO ---
     jd_ia = swe.julday(data_consulta.year, data_consulta.month, data_consulta.day, hora_decimal)
     
     ativos_ia = []
@@ -262,34 +259,24 @@ if btn_gerar:
         if aspecto_nome != "Nenhum":
             status = "Retrógrado" if res[3] < 0 else "Direto"
             forca = "Forte" if menor_orbe <= 1.0 else "Médio" if menor_orbe <= 2.5 else "Fraco"
-            
-            info = f"{p['nome']} em {get_signo(long_transito)} ({status}) {int(pos_no_signo):02d}°{int((pos_no_signo%1)*60):02d}' fazendo {aspecto_nome} - {forca}"
-            ativos_ia.append(info)
+            ativos_ia.append(f"{p['nome']} em {get_signo(long_transito)} ({status}) {int(pos_no_signo):02d}°{int((pos_no_signo%1)*60):02d}' fazendo {aspecto_nome} - {forca}")
 
-    if ativos_ia:
-        # --- MONTAGEM DO PROMPT ---
-        data_hora_str = f"{data_consulta.strftime('%d/%m/%Y')} às {hora_valida}"
-        
-        prompt_final = f"""Você é um astrólogo profissional. Interprete o momento: {data_hora_str}.
+    with col_central:
+        if ativos_ia:
+            data_hora_str = f"{data_consulta.strftime('%d/%m/%Y')} às {hora_valida}"
+            prompt_final = f"""Você é um astrólogo profissional. Interprete o momento: {data_hora_str}.
 Ponto Natal: {planeta_selecionado} a {grau_input}° de {signo_selecionado}.
 Trânsitos ativos para este ponto: {'; '.join(ativos_ia)}.
 Explique como esses trânsitos afetam esse ponto natal específico."""
 
-        st.write("### 📝 Seu Prompt está pronto!")
-        st.text_area("Texto do Prompt:", value=prompt_final, height=200)
-        
-        query_codificada = urllib.parse.quote(prompt_final)
-        link_gemini = f"https://gemini.google.com/app?prompt={query_codificada}"
-        
-        st.markdown(f"""
-            <a href="{link_gemini}" target="_blank" style="text-decoration: none;">
-                <div style="background-color: #4285F4; color: white; text-align: center; padding: 15px; border-radius: 8px; font-weight: bold; font-size: 1.1rem;">
-                    🚀 Abrir Gemini e Analisar ({hora_valida})
-                </div>
-            </a>
-        """, unsafe_allow_html=True)
-    else:
-        st.info(f"Não há aspectos significativos para {data_consulta.strftime('%d/%m/%Y')} às {hora_valida}.")
+            st.write("### 📝 Seu Prompt está pronto!")
+            st.text_area("Texto do Prompt:", value=prompt_final, height=200)
+            
+            query_codificada = urllib.parse.quote(prompt_final)
+            link_gemini = f"https://gemini.google.com/app?prompt={query_codificada}"
+            st.markdown(f'<a href="{link_gemini}" target="_blank" style="text-decoration: none;"><div style="background-color: #4285F4; color: white; text-align: center; padding: 15px; border-radius: 8px; font-weight: bold; font-size: 1.1rem;">🚀 Abrir Gemini e Analisar Agora</div></a>', unsafe_allow_html=True)
+        else:
+            st.info("Não há aspectos significativos para este momento.")
 
 # --- LÓGICA DA TABELA DE ASPECTOS ---
 eventos_aspectos = []
@@ -320,7 +307,8 @@ if planeta_selecionado != "Escolha um planeta" and signo_selecionado != "Escolha
                     "Aspecto": calcular_aspecto(long_trans, long_natal_absoluta)
                 })
 
-# --- EXIBIÇÃO DAS TABELAS SEM ÍNDICE E SEM SCROLL ---
+# --- EXIBIÇÃO DAS TABELAS ---
+st.divider()
 st.markdown("<h3 style='text-align: center;'>📅 Tabela de Trânsitos e Aspectos (Ponto Natal)</h3>", unsafe_allow_html=True)
 col_a1, col_a2, col_a3 = st.columns([0.05, 0.9, 0.05])
 with col_a2:
@@ -350,4 +338,3 @@ with c3:
     out_m = io.BytesIO()
     with pd.ExcelWriter(out_m, engine='openpyxl') as w: df_mov_anual.to_excel(w, index=False)
     st.download_button("🔄 Baixar Movimento Anual (Excel)", out_m.getvalue(), f"movimento_planetas_{ano}.xlsx")
-
