@@ -4,6 +4,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import numpy as np
 from datetime import datetime
+from datetime import date
 import io
 import re
 import urllib.parse
@@ -195,70 +196,6 @@ fig.update_layout(height=700, xaxis=dict(rangeslider=dict(visible=True, thicknes
                   yaxis=dict(title='Intensidade', range=[0, 1.3], fixedrange=True), template='plotly_white', hovermode='x unified', dragmode='pan')
 st.plotly_chart(fig, use_container_width=True, config={'scrollZoom': True})
 
-# --- LÓGICA DA TABELA DE ASPECTOS ---
-eventos_aspectos = []
-if planeta_selecionado != "Escolha um planeta" and signo_selecionado != "Escolha um signo":
-    idx_signo_natal = SIGNOS.index(signo_selecionado)
-    long_natal_absoluta = (idx_signo_natal * 30) + grau_decimal
-    
-    for p in lista_planetas:
-        nome_p = p["nome"]
-        serie_tabela = df[nome_p].fillna(0).values
-        for i in range(1, len(serie_tabela) - 1):
-            if serie_tabela[i] > 0.98 and serie_tabela[i] > serie_tabela[i-1] and serie_tabela[i] > serie_tabela[i+1]:
-                idx_ini = i
-                while idx_ini > 0 and serie_tabela[idx_ini] > 0.01: idx_ini -= 1
-                idx_fim = i
-                while idx_fim < len(serie_tabela) - 1 and serie_tabela[idx_fim] > 0.01: idx_fim += 1
-                
-                row_pico = df.iloc[i]
-                long_trans = row_pico[f"{nome_p}_long"]
-                
-                eventos_aspectos.append({
-                    "Início": df.iloc[idx_ini]['date'].strftime('%d/%m/%Y %H:%M'),
-                    "Pico": row_pico['date'].strftime('%d/%m/%Y %H:%M'),
-                    "Término": df.iloc[idx_fim]['date'].strftime('%d/%m/%Y %H:%M'),
-                    "Planeta e Signo Natal": f"{planeta_selecionado} em {signo_selecionado}",
-                    "Planeta e Signo em Trânsito": f"{nome_p.capitalize()} em {get_signo(long_trans)}",
-                    "Trânsito": row_pico[f"{nome_p}_status"],
-                    "Aspecto": calcular_aspecto(long_trans, long_natal_absoluta)
-                })
-
-# --- EXIBIÇÃO DAS TABELAS SEM ÍNDICE E SEM SCROLL ---
-st.markdown("<h3 style='text-align: center;'>📅 Tabela de Trânsitos e Aspectos (Ponto Natal)</h3>", unsafe_allow_html=True)
-col_a1, col_a2, col_a3 = st.columns([0.05, 0.9, 0.05])
-with col_a2:
-    if eventos_aspectos:
-        st.dataframe(pd.DataFrame(eventos_aspectos), use_container_width=True, hide_index=True, height=(len(eventos_aspectos) + 1) * 35 + 3)
-
-st.markdown(f"<h3 style='text-align: center;'>🔄 Movimento Anual dos Planetas em {ano}</h3>", unsafe_allow_html=True)
-col_m1, col_m2, col_m3 = st.columns([1, 2, 1])
-with col_m2:
-    st.dataframe(df_mov_anual, use_container_width=True, hide_index=True, height=(len(df_mov_anual) + 1) * 35 + 3)
-
-# --- DOWNLOADS ---
-st.divider()
-c1, c2, c3 = st.columns(3)
-with c1:
-    buf = io.StringIO()
-    fig.write_html(buf, config={'scrollZoom': True})
-    st.download_button("📥 Baixar Gráfico (HTML)", buf.getvalue(), f"revolucao_{ano}_grau_{grau_limpo_file}.html", "text/html")
-with c2:
-    if eventos_aspectos:
-        out = io.BytesIO()
-        with pd.ExcelWriter(out, engine='openpyxl') as w: pd.DataFrame(eventos_aspectos).to_excel(w, index=False)
-        st.download_button("📂 Baixar Tabela Aspectos (Excel)", out.getvalue(), f"tabela_transitos_{ano}_grau_{grau_limpo_file}.xlsx")
-    else:
-        st.button("📂 Baixar Tabela Aspectos (Excel)", disabled=True)
-with c3:
-    out_m = io.BytesIO()
-    with pd.ExcelWriter(out_m, engine='openpyxl') as w: df_mov_anual.to_excel(w, index=False)
-    st.download_button("🔄 Baixar Movimento Anual (Excel)", out_m.getvalue(), f"movimento_planetas_{ano}.xlsx")
-
-import urllib.parse
-import re
-from datetime import date
-
 # --- SEÇÃO DE CONSULTA IA COM CALENDÁRIO AMPLO E HORA ABERTA ---
 st.divider()
 st.subheader("🤖 Interpretação Astrológica")
@@ -353,3 +290,64 @@ Explique como esses trânsitos afetam esse ponto natal específico."""
         """, unsafe_allow_html=True)
     else:
         st.info(f"Não há aspectos significativos para {data_consulta.strftime('%d/%m/%Y')} às {hora_valida}.")
+
+# --- LÓGICA DA TABELA DE ASPECTOS ---
+eventos_aspectos = []
+if planeta_selecionado != "Escolha um planeta" and signo_selecionado != "Escolha um signo":
+    idx_signo_natal = SIGNOS.index(signo_selecionado)
+    long_natal_absoluta = (idx_signo_natal * 30) + grau_decimal
+    
+    for p in lista_planetas:
+        nome_p = p["nome"]
+        serie_tabela = df[nome_p].fillna(0).values
+        for i in range(1, len(serie_tabela) - 1):
+            if serie_tabela[i] > 0.98 and serie_tabela[i] > serie_tabela[i-1] and serie_tabela[i] > serie_tabela[i+1]:
+                idx_ini = i
+                while idx_ini > 0 and serie_tabela[idx_ini] > 0.01: idx_ini -= 1
+                idx_fim = i
+                while idx_fim < len(serie_tabela) - 1 and serie_tabela[idx_fim] > 0.01: idx_fim += 1
+                
+                row_pico = df.iloc[i]
+                long_trans = row_pico[f"{nome_p}_long"]
+                
+                eventos_aspectos.append({
+                    "Início": df.iloc[idx_ini]['date'].strftime('%d/%m/%Y %H:%M'),
+                    "Pico": row_pico['date'].strftime('%d/%m/%Y %H:%M'),
+                    "Término": df.iloc[idx_fim]['date'].strftime('%d/%m/%Y %H:%M'),
+                    "Planeta e Signo Natal": f"{planeta_selecionado} em {signo_selecionado}",
+                    "Planeta e Signo em Trânsito": f"{nome_p.capitalize()} em {get_signo(long_trans)}",
+                    "Trânsito": row_pico[f"{nome_p}_status"],
+                    "Aspecto": calcular_aspecto(long_trans, long_natal_absoluta)
+                })
+
+# --- EXIBIÇÃO DAS TABELAS SEM ÍNDICE E SEM SCROLL ---
+st.markdown("<h3 style='text-align: center;'>📅 Tabela de Trânsitos e Aspectos (Ponto Natal)</h3>", unsafe_allow_html=True)
+col_a1, col_a2, col_a3 = st.columns([0.05, 0.9, 0.05])
+with col_a2:
+    if eventos_aspectos:
+        st.dataframe(pd.DataFrame(eventos_aspectos), use_container_width=True, hide_index=True, height=(len(eventos_aspectos) + 1) * 35 + 3)
+
+st.markdown(f"<h3 style='text-align: center;'>🔄 Movimento Anual dos Planetas em {ano}</h3>", unsafe_allow_html=True)
+col_m1, col_m2, col_m3 = st.columns([1, 2, 1])
+with col_m2:
+    st.dataframe(df_mov_anual, use_container_width=True, hide_index=True, height=(len(df_mov_anual) + 1) * 35 + 3)
+
+# --- DOWNLOADS ---
+st.divider()
+c1, c2, c3 = st.columns(3)
+with c1:
+    buf = io.StringIO()
+    fig.write_html(buf, config={'scrollZoom': True})
+    st.download_button("📥 Baixar Gráfico (HTML)", buf.getvalue(), f"revolucao_{ano}_grau_{grau_limpo_file}.html", "text/html")
+with c2:
+    if eventos_aspectos:
+        out = io.BytesIO()
+        with pd.ExcelWriter(out, engine='openpyxl') as w: pd.DataFrame(eventos_aspectos).to_excel(w, index=False)
+        st.download_button("📂 Baixar Tabela Aspectos (Excel)", out.getvalue(), f"tabela_transitos_{ano}_grau_{grau_limpo_file}.xlsx")
+    else:
+        st.button("📂 Baixar Tabela Aspectos (Excel)", disabled=True)
+with c3:
+    out_m = io.BytesIO()
+    with pd.ExcelWriter(out_m, engine='openpyxl') as w: df_mov_anual.to_excel(w, index=False)
+    st.download_button("🔄 Baixar Movimento Anual (Excel)", out_m.getvalue(), f"movimento_planetas_{ano}.xlsx")
+
