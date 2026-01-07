@@ -255,53 +255,75 @@ with c3:
     with pd.ExcelWriter(out_m, engine='openpyxl') as w: df_mov_anual.to_excel(w, index=False)
     st.download_button("🔄 Baixar Movimento Anual (Excel)", out_m.getvalue(), f"movimento_planetas_{ano}.xlsx")
 
-# --- SEÇÃO DE CONSULTA EXTERNA (LINK DIRETO) ---
+import urllib.parse
+
+# --- SEÇÃO DE CONSULTA EXTERNA CORRIGIDA ---
 st.divider()
 st.subheader("🤖 Interpretação Astrológica")
 
 col_ia1, col_ia2 = st.columns([1, 2])
 
 with col_ia1:
+    # O usuário pode escolher qualquer data, independente do gráfico
     data_consulta = st.date_input("Escolha a data para interpretar", value=datetime(ano, 1, 7))
-    btn_gerar = st.button("Gerar Prompt")
+    btn_gerar = st.button("Preparar Análise")
 
 if btn_gerar:
-    dt_target = pd.Timestamp(data_consulta)
-    df['diff_ia'] = abs(df['date'] - dt_target)
-    ponto_ia = df.loc[df['diff_ia'].idxmin()]
+    # 1. CÁLCULO DINÂMICO DOS TRÂNSITOS PARA A DATA ESCOLHIDA (Independente do DataFrame do gráfico)
+    # Convertemos a data para Julian Day (formato usado pela biblioteca swisseph)
+    jd_ia = swe.julday(data_consulta.year, data_consulta.month, data_consulta.day, 12.0) # 12h para média do dia
     
-    ativos = []
-    for p in lista_planetas:
-        if ponto_ia[p['nome']] > 0:
-            info_limpa = re.sub('<[^<]+?>', '', ponto_ia[f"{p['nome']}_info"])
-            ativos.append(f"{p['nome']}: {info_limpa}")
+    ativos_ia = []
     
-    if ativos:
+    # Lista de planetas para cálculo (mesma ordem do gráfico)
+    planetas_para_calculo = [
+        {"id": swe.SUN, "nome": "Sol"}, {"id": swe.MOON, "nome": "Lua"},
+        {"id": swe.MERCURY, "nome": "Mercúrio"}, {"id": swe.VENUS, "nome": "Vênus"},
+        {"id": swe.MARS, "nome": "Marte"}, {"id": swe.JUPITER, "nome": "Júpiter"},
+        {"id": swe.SATURN, "nome": "Saturno"}, {"id": swe.URANUS, "nome": "Urano"},
+        {"id": swe.NEPTUNE, "nome": "Netuno"}, {"id": swe.PLUTO, "nome": "Plutão"}
+    ]
+
+    for p in planetas_para_calculo:
+        res, _ = swe.calc_ut(jd_ia, p["id"], swe.FLG_SWIEPH | swe.FLG_SPEED)
+        pos_transito = res[0]
+        pos_relativa = pos_transito % 30
+        
+        # Calcula a distância (orbe) em relação ao ponto natal absoluto
+        # long_natal_absoluta_calc foi definida no início do seu app.py
+        dist = abs(((pos_transito - long_natal_absoluta_calc + 180) % 360) - 180)
+        
+        # Só incluímos no prompt se estiver dentro de uma orbe de aspecto (ex: conjunção, quadratura, etc)
+        # Para simplificar e pegar o "clima", verificamos se a distância para o grau exato é menor que 5°
+        dist_ponto_exato = abs(((pos_relativa - grau_decimal + 15) % 30) - 15)
+        
+        if dist_ponto_exato <= 5.0:
+            status = "Retrógrado" if res[3] < 0 else "Direto"
+            # Define a força baseada na distância
+            forca = "Forte" if dist_ponto_exato <= 1.2 else "Médio" if dist_ponto_exato <= 3.0 else "Fraco"
+            
+            info = f"{p['nome']}: {get_signo(pos_transito)} ({status}) {int(pos_relativa):02d}°{int((pos_relativa%1)*60):02d}' - {forca}"
+            ativos_ia.append(info)
+
+    if ativos_ia:
+        # 2. MONTAGEM DO PROMPT COM OS DADOS CALCULADOS NA HORA
         prompt_final = f"""Você é um astrólogo profissional. Interprete o dia {data_consulta.strftime('%d/%m/%Y')}.
 Ponto Natal: {planeta_selecionado} a {grau_input}° de {signo_selecionado}.
-Trânsitos: {'; '.join(ativos)}.
-Explique como esses trânsitos afetam esse ponto natal específico.
-Dê dicas de como melhorar aproveitar essa data com relação às potencialidades, desafios e riscos."""
+Trânsitos ativos para este ponto: {'; '.join(ativos_ia)}.
+Explique como esses trânsitos afetam esse ponto natal específico."""
 
-        # Exibe o prompt para conferência
         st.write("### 📝 Seu Prompt está pronto!")
         st.text_area("Copie o texto abaixo caso ele não apareça automaticamente:", value=prompt_final, height=180)
         
-        # Link para o Gemini
         query_codificada = urllib.parse.quote(prompt_final)
         link_gemini = f"https://gemini.google.com/app?prompt={query_codificada}"
         
         st.markdown(f"""
-            <div style="display: flex; gap: 10px;">
-                <a href="{link_gemini}" target="_blank" style="text-decoration: none; flex: 1;">
-                    <div style="background-color: #4285F4; color: white; text-align: center; padding: 15px; border-radius: 8px; font-weight: bold;">
-                        Abrir Gemini
-                    </div>
-                </a>
-            </div>
-            <p style="font-size: 0.85rem; margin-top: 10px; color: #666;">
-                <b>Dica:</b> Se o campo de chat abrir vazio, copie o texto acima e cole no Gemini.
-            </p>
+            <a href="{link_gemini}" target="_blank" style="text-decoration: none;">
+                <div style="background-color: #4285F4; color: white; text-align: center; padding: 15px; border-radius: 8px; font-weight: bold;">
+                    🚀 Abrir Gemini e Analisar
+                </div>
+            </a>
         """, unsafe_allow_html=True)
     else:
-        st.info("Não há aspectos ativos nesta data.")
+        st.info(f"Não foram encontrados aspectos significativos para o dia {data_consulta.strftime('%d/%m/%Y')} em relação ao seu ponto natal.")
