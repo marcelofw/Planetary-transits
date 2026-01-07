@@ -196,50 +196,46 @@ fig.update_layout(height=700, xaxis=dict(rangeslider=dict(visible=True, thicknes
                   yaxis=dict(title='Intensidade', range=[0, 1.3], fixedrange=True), template='plotly_white', hovermode='x unified', dragmode='pan')
 st.plotly_chart(fig, use_container_width=True, config={'scrollZoom': True})
 
-# --- SEÇÃO DE CONSULTA IA COM CALENDÁRIO AMPLO E HORA ABERTA ---
+# --- LOGO APÓS O GRÁFICO ---
+st.plotly_chart(fig, use_container_width=True)
+
+# --- SEÇÃO CENTRALIZADA: PREVISÃO ASTROLÓGICA ---
 st.divider()
-st.subheader("🤖 Interpretação Astrológica")
 
-col_ia1, col_ia2 = st.columns([1, 2])
+# Criamos 3 colunas, onde a do meio é a principal (mais larga) para centralizar o título e os inputs
+col_esq, col_central, col_dir = st.columns([1, 2, 1])
 
-with col_ia1:
-    # Seleção de Data com range de 1900 a 2100
+with col_central:
+    st.markdown("<h2 style='text-align: center;'>🤖 Previsão Astrológica</h2>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center;'>Configure os dados para a análise da IA</p>", unsafe_allow_html=True)
+
+    # Inputs centralizados
     data_consulta = st.date_input(
-        "Escolha a data", 
-        value=date(ano, 1, 7),
-        min_value=date(1900, 1, 1),
-        max_value=date(2100, 12, 31),
+        "Data da Consulta", 
+        value=datetime(ano, 1, 7),
+        min_value=datetime(1900, 1, 1),
+        max_value=datetime(2100, 12, 31),
+        key="data_ia_central"
     )
     
-    # Campo Aberto para Hora com Placeholder
-    hora_input = st.text_input("Escolha a hora (ex: 14:30)", placeholder="12:00", help="Use o formato HH:MM")
+    hora_input = st.text_input("Hora da Consulta", placeholder="12:00", key="hora_ia_central")
     
-    btn_gerar = st.button("Preparar Análise")
+    # Botão centralizado usando CSS
+    btn_gerar = st.button("Gerar Análise para o Gemini", use_container_width=True)
 
 if btn_gerar:
-    # --- TRATAMENTO E VALIDAÇÃO DA HORA ---
+    # Validação de hora
     hora_valida = "12:00"
-    if hora_input.strip():
-        # Regex aceita H:MM ou HH:MM
-        if re.match(r"^([0-9]|0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$", hora_input.strip()):
-            hora_valida = hora_input.strip()
-        else:
-            st.warning("Formato de hora inválido. Usando 12:00 por padrão.")
+    if hora_input.strip() and re.match(r"^([0-9]|0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$", hora_input.strip()):
+        hora_valida = hora_input.strip()
 
     h_str, m_str = hora_valida.split(":")
     hora_decimal = int(h_str) + (int(m_str) / 60.0)
     
-    # --- CÁLCULO DE ALTA PRECISÃO ---
+    # Cálculos astronômicos
     jd_ia = swe.julday(data_consulta.year, data_consulta.month, data_consulta.day, hora_decimal)
-    
     ativos_ia = []
-    planetas_ia = [
-        {"id": swe.SUN, "nome": "Sol"}, {"id": swe.MOON, "nome": "Lua"},
-        {"id": swe.MERCURY, "nome": "Mercúrio"}, {"id": swe.VENUS, "nome": "Vênus"},
-        {"id": swe.MARS, "nome": "Marte"}, {"id": swe.JUPITER, "nome": "Júpiter"},
-        {"id": swe.SATURN, "nome": "Saturno"}, {"id": swe.URANUS, "nome": "Urano"},
-        {"id": swe.NEPTUNE, "nome": "Netuno"}, {"id": swe.PLUTO, "nome": "Plutão"}
-    ]
+    planetas_ia = [{"id": i, "nome": n} for i, n in zip([swe.SUN, swe.MOON, swe.MERCURY, swe.VENUS, swe.MARS, swe.JUPITER, swe.SATURN, swe.URANUS, swe.NEPTUNE, swe.PLUTO], ["Sol", "Lua", "Mercúrio", "Vênus", "Marte", "Júpiter", "Saturno", "Urano", "Netuno", "Plutão"])]
 
     for p in planetas_ia:
         res, _ = swe.calc_ut(jd_ia, p["id"], swe.FLG_SWIEPH | swe.FLG_SPEED)
@@ -250,46 +246,51 @@ if btn_gerar:
         if diff > 180: diff = 360 - diff
         
         aspecto_nome = "Nenhum"
-        menor_orbe = 999
-        
         for angulo, (nome, simbolo) in ASPECTOS.items():
-            orbe_atual = abs(diff - angulo)
-            if orbe_atual <= 5.0:
+            if abs(diff - angulo) <= 5.0:
                 aspecto_nome = nome
-                menor_orbe = orbe_atual
+                orbe_atual = abs(diff - angulo)
                 break
         
         if aspecto_nome != "Nenhum":
             status = "Retrógrado" if res[3] < 0 else "Direto"
-            forca = "Forte" if menor_orbe <= 1.0 else "Médio" if menor_orbe <= 2.5 else "Fraco"
-            
-            info = f"{p['nome']} em {get_signo(long_transito)} ({status}) {int(pos_no_signo):02d}°{int((pos_no_signo%1)*60):02d}' fazendo {aspecto_nome} - {forca}"
-            ativos_ia.append(info)
+            forca = "Forte" if orbe_atual <= 1.0 else "Médio" if orbe_atual <= 2.5 else "Fraco"
+            ativos_ia.append(f"{p['nome']} em {get_signo(long_transito)} ({status}) {int(pos_no_signo):02d}°{int((pos_no_signo%1)*60):02d}' fazendo {aspecto_nome} - {forca}")
 
-    if ativos_ia:
-        # --- MONTAGEM DO PROMPT ---
-        data_hora_str = f"{data_consulta.strftime('%d/%m/%Y')} às {hora_valida}"
-        
-        prompt_final = f"""Você é um astrólogo profissional. Interprete o momento: {data_hora_str}.
+    # Área de resultado também centralizada
+    with col_central:
+        if ativos_ia:
+            prompt_final = f"""Você é um astrólogo profissional. Interprete o momento: {data_consulta.strftime('%d/%m/%Y')} às {hora_valida}.
 Ponto Natal: {planeta_selecionado} a {grau_input}° de {signo_selecionado}.
 Trânsitos ativos para este ponto: {'; '.join(ativos_ia)}.
 Explique como esses trânsitos afetam esse ponto natal específico."""
 
-        st.write("### 📝 Seu Prompt está pronto!")
-        st.text_area("Texto do Prompt:", value=prompt_final, height=200)
-        
-        query_codificada = urllib.parse.quote(prompt_final)
-        link_gemini = f"https://gemini.google.com/app?prompt={query_codificada}"
-        
-        st.markdown(f"""
-            <a href="{link_gemini}" target="_blank" style="text-decoration: none;">
-                <div style="background-color: #4285F4; color: white; text-align: center; padding: 15px; border-radius: 8px; font-weight: bold; font-size: 1.1rem;">
-                    🚀 Abrir Gemini e Analisar ({hora_valida})
-                </div>
-            </a>
-        """, unsafe_allow_html=True)
-    else:
-        st.info(f"Não há aspectos significativos para {data_consulta.strftime('%d/%m/%Y')} às {hora_valida}.")
+            st.text_area("Prompt Gerado:", value=prompt_final, height=180)
+            
+            query_codificada = urllib.parse.quote(prompt_final)
+            link_gemini = f"https://gemini.google.com/app?prompt={query_codificada}"
+            
+            st.markdown(f'''
+                <a href="{link_gemini}" target="_blank">
+                    <button style="
+                        width:100%; 
+                        background-color:#4285F4; 
+                        color:white; 
+                        border:none; 
+                        padding:15px; 
+                        border-radius:8px; 
+                        font-weight:bold; 
+                        font-size: 1.1rem;
+                        cursor:pointer;">
+                        🚀 Abrir Gemini
+                    </button>
+                </a>
+            ''', unsafe_allow_html=True)
+        else:
+            st.info("Nenhum trânsito ativo para este horário.")
+
+# --- AS TABELAS CONTINUAM ABAIXO DAQUI ---
+st.divider()
 
 # --- LÓGICA DA TABELA DE ASPECTOS ---
 eventos_aspectos = []
