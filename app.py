@@ -255,56 +255,69 @@ with c3:
     with pd.ExcelWriter(out_m, engine='openpyxl') as w: df_mov_anual.to_excel(w, index=False)
     st.download_button("🔄 Baixar Movimento Anual (Excel)", out_m.getvalue(), f"movimento_planetas_{ano}.xlsx")
 
-# --- SEÇÃO DE INTERPRETAÇÃO COM IA ---
+# --- SEÇÃO DE INTERPRETAÇÃO COM IA (COM TODAS AS INTENSIDADES) ---
 st.divider()
-st.sidebar.markdown("---")
-api_key = st.sidebar.text_input("Gemini API Key", type="password", help="Obtenha sua chave em aistudio.google.com")
-
 st.subheader("🤖 Interpretação Astrológica com IA")
+
+# Tenta carregar a chave automaticamente dos Secrets do Streamlit
+try:
+    api_key_interna = st.secrets["GEMINI_API_KEY"]
+except Exception:
+    api_key_interna = None
+
 col_ia1, col_ia2 = st.columns([1, 2])
 
 with col_ia1:
     data_consulta = st.date_input("Escolha uma data para interpretar", value=datetime(ano, 1, 7))
-    btn_ia = st.button("Consultar Significado")
+    btn_ia = st.button("Obter Significado Profissional")
 
 if btn_ia:
-    if not api_key:
-        st.warning("⚠️ Por favor, insira sua API Key na barra lateral.")
+    if not api_key_interna:
+        st.error("⚠️ Configuração necessária: A chave GEMINI_API_KEY não foi encontrada nos 'Secrets' do servidor.")
     else:
-        # Configuração do Modelo
-        genai.configure(api_key=api_key)
+        # Configura a IA
+        genai.configure(api_key=api_key_interna)
         model = genai.GenerativeModel('gemini-1.5-flash')
         
-        # Localiza os dados no DataFrame
+        # Localiza os dados para a data escolhida
         dt_target = pd.Timestamp(data_consulta)
         df['diff_ia'] = abs(df['date'] - dt_target)
         ponto_ia = df.loc[df['diff_ia'].idxmin()]
         
-        # Coleta trânsitos ativos (intensidade > 0.3 para pegar a "vizinhança" do aspecto)
+        # 1. COLETA TODOS OS TRÂNSITOS ATIVOS (Mesmo os baixos > 0)
         ativos = []
         for p in lista_planetas:
-            if ponto_ia[p['nome']] > 0.3:
-                # Remove tags HTML do info antes de mandar para a IA
-                info_texto = re.sub('<[^<]+?>', '', ponto_ia[f"{p['nome']}_info"])
-                ativos.append(f"{p['nome']}: {info_texto}")
+            intensidade_valor = ponto_ia[p['nome']]
+            
+            if intensidade_valor > 0: # Pega qualquer aspecto ativo
+                # Extraímos a info do planeta e a classificação de força do seu campo info
+                info_texto_raw = ponto_ia[f"{p['nome']}_info"]
+                # Limpa tags HTML
+                info_limpa = re.sub('<[^<]+?>', '', info_texto_raw)
+                
+                # Adiciona à lista no formato: "Planeta: Info (Intensidade)"
+                ativos.append(f"{p['nome']}: {info_limpa}")
         
         if ativos:
-            prompt = f"""
-            Você é um astrólogo profissional e didático.
-            Interprete o significado astrológico do dia {data_consulta.strftime('%d/%m/%Y')}.
-            Ponto Natal do Usuário: {planeta_selecionado} a {grau_input}° de {signo_selecionado}.
-            Trânsitos Planetários Ativos no momento: {'; '.join(ativos)}.
-            
-            Forneça uma análise concisa, focando em como esses planetas influenciam o ponto natal. 
-            Use uma linguagem inspiradora e prática.
+            # 2. SEU PROMPT PERSONALIZADO COM OS DADOS DINÂMICOS
+            prompt_final = f"""
+            Você é um astrólogo profissional. Interprete o dia {data_consulta.strftime('%d/%m/%Y')}.
+            Ponto Natal: {planeta_selecionado} a {grau_input}° de {signo_selecionado}.
+            Trânsitos: {'; '.join(ativos)}.
+            Explique como esses trânsitos afetam esse ponto natal específico.
             """
             
-            with st.spinner("Analisando o céu..."):
+            with st.spinner("O Gemini está analisando todos os trânsitos ativos..."):
                 try:
-                    response = model.generate_content(prompt)
-                    st.markdown("### 🌌 Análise do Momento")
+                    response = model.generate_content(prompt_final)
+                    st.markdown("### 🌌 Análise Profissional do Momento")
                     st.write(response.text)
+                    
+                    # Opcional: Mostrar o prompt enviado para conferência (pode comentar a linha abaixo depois)
+                    with st.expander("Ver dados enviados para a IA"):
+                        st.code(prompt_final)
+                        
                 except Exception as e:
-                    st.error(f"Erro na consulta: {e}")
+                    st.error(f"Erro ao gerar a interpretação: {e}")
         else:
-            st.info("Não há aspectos planetários fortes o suficiente nesta data para gerar uma interpretação.")
+            st.info("Não há nenhum trânsito ativo (mesmo fraco) nesta data.")
