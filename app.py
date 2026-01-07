@@ -255,25 +255,31 @@ with c3:
     with pd.ExcelWriter(out_m, engine='openpyxl') as w: df_mov_anual.to_excel(w, index=False)
     st.download_button("🔄 Baixar Movimento Anual (Excel)", out_m.getvalue(), f"movimento_planetas_{ano}.xlsx")
 
-# --- SEÇÃO DE CONSULTA IA COM LÓGICA DE PRECISÃO ---
+# --- SEÇÃO DE CONSULTA IA COM DATA E HORA ---
 st.divider()
 st.subheader("🤖 Interpretação Astrológica")
 
 col_ia1, col_ia2 = st.columns([1, 2])
 
 with col_ia1:
-    data_consulta = st.date_input("Escolha a data para interpretar", value=datetime(ano, 1, 7))
+    # Seleção de Data
+    data_consulta = st.date_input("Escolha a data", value=datetime(ano, 1, 7))
+    # Seleção de Hora (novo)
+    hora_consulta = st.time_input("Escolha a hora (UTC/GMT)", value=datetime(ano, 1, 7, 12, 0).time())
     btn_gerar = st.button("Preparar Análise")
 
 if btn_gerar:
-    # 1. CÁLCULO DE ALTA PRECISÃO (Sincronizado com o Gráfico)
-    jd_ia = swe.julday(data_consulta.year, data_consulta.month, data_consulta.day, 12.0)
+    # 1. CÁLCULO DE ALTA PRECISÃO (Incluindo Fração de Dia para a Hora)
+    # Convertemos hora e minuto para decimal (ex: 12h30 = 12.5)
+    hora_decimal = hora_consulta.hour + (hora_consulta.minute / 60.0)
+    
+    # Cálculo do Julian Day com a hora exata
+    jd_ia = swe.julday(data_consulta.year, data_consulta.month, data_consulta.day, hora_decimal)
     
     ativos_ia = []
-    # Lista de planetas completa
     planetas_ia = [
         {"id": swe.SUN, "nome": "Sol"}, {"id": swe.MOON, "nome": "Lua"},
-        {"id": swe.MERCURY, "nome": "Mercúrio"}, {"id": swe.VENUS, "nome": "Vênus"},
+        {"id": swe.MERCURY, "nome": "Mercúrio"}, {"id": swe.VENUS, "nome": "Vénus"},
         {"id": swe.MARS, "nome": "Marte"}, {"id": swe.JUPITER, "nome": "Júpiter"},
         {"id": swe.SATURN, "nome": "Saturno"}, {"id": swe.URANUS, "nome": "Urano"},
         {"id": swe.NEPTUNE, "nome": "Netuno"}, {"id": swe.PLUTO, "nome": "Plutão"}
@@ -284,27 +290,23 @@ if btn_gerar:
         long_transito = res[0]
         pos_no_signo = long_transito % 30
         
-        # CÁLCULO DA ORBE REAL (Mesma lógica do gráfico)
-        # Calcula a menor distância angular no círculo de 360° para os aspectos
+        # CÁLCULO DA ORBE REAL
         diff = abs(long_transito - long_natal_absoluta_calc) % 360
         if diff > 180: diff = 360 - diff
         
         aspecto_nome = "Nenhum"
         menor_orbe = 999
         
-        # Verifica qual aspecto está ativo e qual a orbe
         for angulo, (nome, simbolo) in ASPECTOS.items():
             orbe_atual = abs(diff - angulo)
-            if orbe_atual <= 5.0: # Limite de 5 graus de orbe
+            if orbe_atual <= 5.0:
                 aspecto_nome = nome
                 menor_orbe = orbe_atual
                 break
         
-        # Se encontrou um aspecto, define a intensidade com a regra exata do gráfico
         if aspecto_nome != "Nenhum":
             status = "Retrógrado" if res[3] < 0 else "Direto"
             
-            # Regra de Intensidade idêntica à curva exponencial do gráfico
             if menor_orbe <= 1.0:
                 forca = "Forte"
             elif menor_orbe <= 2.5:
@@ -316,8 +318,10 @@ if btn_gerar:
             ativos_ia.append(info)
 
     if ativos_ia:
-        # 2. MONTAGEM DO PROMPT
-        prompt_final = f"""Você é um astrólogo profissional. Interprete o dia {data_consulta.strftime('%d/%m/%Y')}.
+        # 2. MONTAGEM DO PROMPT COM DATA E HORA
+        data_hora_str = f"{data_consulta.strftime('%d/%m/%Y')} às {hora_consulta.strftime('%H:%M')}"
+        
+        prompt_final = f"""Você é um astrólogo profissional. Interprete o momento: {data_hora_str}.
 Ponto Natal: {planeta_selecionado} a {grau_input}° de {signo_selecionado}.
 Trânsitos ativos para este ponto: {'; '.join(ativos_ia)}.
 Explique como esses trânsitos afetam esse ponto natal específico."""
@@ -331,9 +335,9 @@ Explique como esses trânsitos afetam esse ponto natal específico."""
         st.markdown(f"""
             <a href="{link_gemini}" target="_blank" style="text-decoration: none;">
                 <div style="background-color: #4285F4; color: white; text-align: center; padding: 15px; border-radius: 8px; font-weight: bold; font-size: 1.1rem;">
-                    🚀 Abrir Gemini e Analisar Agora
+                    🚀 Abrir Gemini e Analisar ({hora_consulta.strftime('%H:%M')})
                 </div>
             </a>
         """, unsafe_allow_html=True)
     else:
-        st.info(f"Não há aspectos planetários (até 5° de orbe) para o dia {data_consulta.strftime('%d/%m/%Y')}.")
+        st.info(f"Não há aspectos significativos para {data_consulta.strftime('%d/%m/%Y')} às {hora_consulta.strftime('%H:%M')}.")
