@@ -294,7 +294,7 @@ Explique como esses trânsitos afetam esse ponto natal específico."""
             <div style="display: flex; gap: 10px;">
                 <a href="{link_gemini}" target="_blank" style="text-decoration: none; flex: 1;">
                     <div style="background-color: #4285F4; color: white; text-align: center; padding: 15px; border-radius: 8px; font-weight: bold;">
-                        1. Abrir Gemini
+                        Abrir Gemini
                     </div>
                 </a>
             </div>
