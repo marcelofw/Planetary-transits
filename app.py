@@ -272,7 +272,6 @@ with col_ia1:
         value=date(ano, 1, 7),
         min_value=date(1900, 1, 1),
         max_value=date(2100, 12, 31),
-        help="Selecione qualquer data entre 1900 e 2100"
     )
     
     # Campo Aberto para Hora com Placeholder
