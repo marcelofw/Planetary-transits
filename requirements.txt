@@ -3,3 +3,4 @@ pyswisseph
 pandas
 plotly
 openpyxl
+google-generativeai
