@@ -255,28 +255,23 @@ with c3:
     with pd.ExcelWriter(out_m, engine='openpyxl') as w: df_mov_anual.to_excel(w, index=False)
     st.download_button("🔄 Baixar Movimento Anual (Excel)", out_m.getvalue(), f"movimento_planetas_{ano}.xlsx")
 
-import urllib.parse
-
-# --- SEÇÃO DE CONSULTA EXTERNA CORRIGIDA ---
+# --- SEÇÃO DE CONSULTA IA COM LÓGICA DE PRECISÃO ---
 st.divider()
 st.subheader("🤖 Interpretação Astrológica")
 
 col_ia1, col_ia2 = st.columns([1, 2])
 
 with col_ia1:
-    # O usuário pode escolher qualquer data, independente do gráfico
     data_consulta = st.date_input("Escolha a data para interpretar", value=datetime(ano, 1, 7))
     btn_gerar = st.button("Preparar Análise")
 
 if btn_gerar:
-    # 1. CÁLCULO DINÂMICO DOS TRÂNSITOS PARA A DATA ESCOLHIDA (Independente do DataFrame do gráfico)
-    # Convertemos a data para Julian Day (formato usado pela biblioteca swisseph)
-    jd_ia = swe.julday(data_consulta.year, data_consulta.month, data_consulta.day, 12.0) # 12h para média do dia
+    # 1. CÁLCULO DE ALTA PRECISÃO (Sincronizado com o Gráfico)
+    jd_ia = swe.julday(data_consulta.year, data_consulta.month, data_consulta.day, 12.0)
     
     ativos_ia = []
-    
-    # Lista de planetas para cálculo (mesma ordem do gráfico)
-    planetas_para_calculo = [
+    # Lista de planetas completa
+    planetas_ia = [
         {"id": swe.SUN, "nome": "Sol"}, {"id": swe.MOON, "nome": "Lua"},
         {"id": swe.MERCURY, "nome": "Mercúrio"}, {"id": swe.VENUS, "nome": "Vênus"},
         {"id": swe.MARS, "nome": "Marte"}, {"id": swe.JUPITER, "nome": "Júpiter"},
@@ -284,46 +279,61 @@ if btn_gerar:
         {"id": swe.NEPTUNE, "nome": "Netuno"}, {"id": swe.PLUTO, "nome": "Plutão"}
     ]
 
-    for p in planetas_para_calculo:
+    for p in planetas_ia:
         res, _ = swe.calc_ut(jd_ia, p["id"], swe.FLG_SWIEPH | swe.FLG_SPEED)
-        pos_transito = res[0]
-        pos_relativa = pos_transito % 30
+        long_transito = res[0]
+        pos_no_signo = long_transito % 30
         
-        # Calcula a distância (orbe) em relação ao ponto natal absoluto
-        # long_natal_absoluta_calc foi definida no início do seu app.py
-        dist = abs(((pos_transito - long_natal_absoluta_calc + 180) % 360) - 180)
+        # CÁLCULO DA ORBE REAL (Mesma lógica do gráfico)
+        # Calcula a menor distância angular no círculo de 360° para os aspectos
+        diff = abs(long_transito - long_natal_absoluta_calc) % 360
+        if diff > 180: diff = 360 - diff
         
-        # Só incluímos no prompt se estiver dentro de uma orbe de aspecto (ex: conjunção, quadratura, etc)
-        # Para simplificar e pegar o "clima", verificamos se a distância para o grau exato é menor que 5°
-        dist_ponto_exato = abs(((pos_relativa - grau_decimal + 15) % 30) - 15)
+        aspecto_nome = "Nenhum"
+        menor_orbe = 999
         
-        if dist_ponto_exato <= 5.0:
+        # Verifica qual aspecto está ativo e qual a orbe
+        for angulo, (nome, simbolo) in ASPECTOS.items():
+            orbe_atual = abs(diff - angulo)
+            if orbe_atual <= 5.0: # Limite de 5 graus de orbe
+                aspecto_nome = nome
+                menor_orbe = orbe_atual
+                break
+        
+        # Se encontrou um aspecto, define a intensidade com a regra exata do gráfico
+        if aspecto_nome != "Nenhum":
             status = "Retrógrado" if res[3] < 0 else "Direto"
-            # Define a força baseada na distância
-            forca = "Forte" if dist_ponto_exato <= 1.2 else "Médio" if dist_ponto_exato <= 3.0 else "Fraco"
             
-            info = f"{p['nome']}: {get_signo(pos_transito)} ({status}) {int(pos_relativa):02d}°{int((pos_relativa%1)*60):02d}' - {forca}"
+            # Regra de Intensidade idêntica à curva exponencial do gráfico
+            if menor_orbe <= 1.0:
+                forca = "Forte"
+            elif menor_orbe <= 2.5:
+                forca = "Médio"
+            else:
+                forca = "Fraco"
+            
+            info = f"{p['nome']} em {get_signo(long_transito)} ({status}) {int(pos_no_signo):02d}°{int((pos_no_signo%1)*60):02d}' fazendo {aspecto_nome} - {forca}"
             ativos_ia.append(info)
 
     if ativos_ia:
-        # 2. MONTAGEM DO PROMPT COM OS DADOS CALCULADOS NA HORA
+        # 2. MONTAGEM DO PROMPT
         prompt_final = f"""Você é um astrólogo profissional. Interprete o dia {data_consulta.strftime('%d/%m/%Y')}.
 Ponto Natal: {planeta_selecionado} a {grau_input}° de {signo_selecionado}.
 Trânsitos ativos para este ponto: {'; '.join(ativos_ia)}.
 Explique como esses trânsitos afetam esse ponto natal específico."""
 
         st.write("### 📝 Seu Prompt está pronto!")
-        st.text_area("Copie o texto abaixo caso ele não apareça automaticamente:", value=prompt_final, height=180)
+        st.text_area("Texto do Prompt:", value=prompt_final, height=200)
         
         query_codificada = urllib.parse.quote(prompt_final)
         link_gemini = f"https://gemini.google.com/app?prompt={query_codificada}"
         
         st.markdown(f"""
             <a href="{link_gemini}" target="_blank" style="text-decoration: none;">
-                <div style="background-color: #4285F4; color: white; text-align: center; padding: 15px; border-radius: 8px; font-weight: bold;">
-                    🚀 Abrir Gemini e Analisar
+                <div style="background-color: #4285F4; color: white; text-align: center; padding: 15px; border-radius: 8px; font-weight: bold; font-size: 1.1rem;">
+                    🚀 Abrir Gemini e Analisar Agora
                 </div>
             </a>
         """, unsafe_allow_html=True)
     else:
-        st.info(f"Não foram encontrados aspectos significativos para o dia {data_consulta.strftime('%d/%m/%Y')} em relação ao seu ponto natal.")
+        st.info(f"Não há aspectos planetários (até 5° de orbe) para o dia {data_consulta.strftime('%d/%m/%Y')}.")
