@@ -277,7 +277,13 @@ Explique como esses trânsitos afetam esse ponto natal específico."""
             
             query_codificada = urllib.parse.quote(prompt_final)
             link_gemini = f"https://gemini.google.com/app?prompt={query_codificada}"
-            st.markdown(f'<a href="{link_gemini}" target="_blank" style="text-decoration: none;"><div style="background-color: #4285F4; color: black; text-align: center; padding: 15px; border-radius: 8px; font-weight: bold; font-size: 1.1rem;">🚀 Abrir Gemini e Analisar Agora</div></a>', unsafe_allow_html=True)
+            st.markdown(f'''
+    <a href="{link_gemini}" target="_blank" style="text-decoration: none; color: white !important;">
+        <div style="background-color: #4285F4; color: white; text-align: center; padding: 15px; border-radius: 8px; font-weight: bold; font-size: 1.1rem;">
+            🚀 Abrir Gemini e Analisar Agora
+        </div>
+    </a>
+''', unsafe_allow_html=True)
         else:
             st.info("Não há aspectos significativos para este momento.")
 
