@@ -255,69 +255,64 @@ with c3:
     with pd.ExcelWriter(out_m, engine='openpyxl') as w: df_mov_anual.to_excel(w, index=False)
     st.download_button("🔄 Baixar Movimento Anual (Excel)", out_m.getvalue(), f"movimento_planetas_{ano}.xlsx")
 
-# --- SEÇÃO DE INTERPRETAÇÃO COM IA (COM TODAS AS INTENSIDADES) ---
-st.divider()
-st.subheader("🤖 Interpretação Astrológica com IA")
+import urllib.parse
 
-# Tenta carregar a chave automaticamente dos Secrets do Streamlit
-try:
-    api_key_interna = st.secrets["GEMINI_API_KEY"]
-except Exception:
-    api_key_interna = None
+# --- SEÇÃO DE CONSULTA EXTERNA (SEM API) ---
+st.divider()
+st.subheader("🤖 Interpretação Astrológica")
 
 col_ia1, col_ia2 = st.columns([1, 2])
 
 with col_ia1:
-    data_consulta = st.date_input("Escolha uma data para interpretar", value=datetime(ano, 1, 7))
-    btn_ia = st.button("Obter Significado Profissional")
+    data_consulta = st.date_input("Escolha a data para interpretar", value=datetime(ano, 1, 7))
+    btn_gerar_link = st.button("Preparar Análise para o Gemini")
 
-if btn_ia:
-    if not api_key_interna:
-        st.error("⚠️ Configuração necessária: A chave GEMINI_API_KEY não foi encontrada nos 'Secrets' do servidor.")
+if btn_gerar_link:
+    # 1. Localiza os dados para a data escolhida
+    dt_target = pd.Timestamp(data_consulta)
+    df['diff_ia'] = abs(df['date'] - dt_target)
+    ponto_ia = df.loc[df['diff_ia'].idxmin()]
+    
+    # 2. Coleta TODOS os trânsitos ativos e suas intensidades
+    ativos = []
+    for p in lista_planetas:
+        if ponto_ia[p['nome']] > 0: # Captura todos, mesmo intensidade baixa
+            # Limpa o texto das tags HTML (remove o símbolo e formatação)
+            info_limpa = re.sub('<[^<]+?>', '', ponto_ia[f"{p['nome']}_info"])
+            ativos.append(f"{p['nome']}: {info_limpa}")
+    
+    if ativos:
+        # 3. Monta o seu prompt exatamente como solicitado
+        prompt_final = f"""Você é um astrólogo profissional. Interprete o dia {data_consulta.strftime('%d/%m/%Y')}.
+Ponto Natal: {planeta_selecionado} a {grau_input}° de {signo_selecionado}.
+Trânsitos: {'; '.join(ativos)}.
+Explique como esses trânsitos afetam esse ponto natal específico."""
+
+        # 4. Gera o link para o Gemini
+        query_codificada = urllib.parse.quote(prompt_final)
+        link_gemini = f"https://gemini.google.com/app?prompt={query_codificada}"
+        
+        st.success("✅ Prompt gerado com sucesso!")
+        
+        # Exibe o prompt para o usuário ver o que será enviado
+        st.text_area("Conteúdo do Prompt:", value=prompt_final, height=180)
+        
+        # Botão visual para abrir o link
+        st.markdown(f"""
+            <a href="{link_gemini}" target="_blank">
+                <button style="
+                    background-color: #4285F4; 
+                    color: white; 
+                    border: none; 
+                    padding: 12px 24px; 
+                    border-radius: 8px; 
+                    cursor: pointer; 
+                    font-weight: bold;
+                    width: 100%;">
+                    🚀 Abrir Gemini e Ver Significado
+                </button>
+            </a>
+        """, unsafe_allow_html=True)
+        st.caption("Nota: Você precisará estar logado na sua conta Google no navegador.")
     else:
-        # Configura a IA
-        genai.configure(api_key=api_key_interna)
-        model = genai.GenerativeModel('gemini-1.5-flash')
-        
-        # Localiza os dados para a data escolhida
-        dt_target = pd.Timestamp(data_consulta)
-        df['diff_ia'] = abs(df['date'] - dt_target)
-        ponto_ia = df.loc[df['diff_ia'].idxmin()]
-        
-        # 1. COLETA TODOS OS TRÂNSITOS ATIVOS (Mesmo os baixos > 0)
-        ativos = []
-        for p in lista_planetas:
-            intensidade_valor = ponto_ia[p['nome']]
-            
-            if intensidade_valor > 0: # Pega qualquer aspecto ativo
-                # Extraímos a info do planeta e a classificação de força do seu campo info
-                info_texto_raw = ponto_ia[f"{p['nome']}_info"]
-                # Limpa tags HTML
-                info_limpa = re.sub('<[^<]+?>', '', info_texto_raw)
-                
-                # Adiciona à lista no formato: "Planeta: Info (Intensidade)"
-                ativos.append(f"{p['nome']}: {info_limpa}")
-        
-        if ativos:
-            # 2. SEU PROMPT PERSONALIZADO COM OS DADOS DINÂMICOS
-            prompt_final = f"""
-            Você é um astrólogo profissional. Interprete o dia {data_consulta.strftime('%d/%m/%Y')}.
-            Ponto Natal: {planeta_selecionado} a {grau_input}° de {signo_selecionado}.
-            Trânsitos: {'; '.join(ativos)}.
-            Explique como esses trânsitos afetam esse ponto natal específico.
-            """
-            
-            with st.spinner("O Gemini está analisando todos os trânsitos ativos..."):
-                try:
-                    response = model.generate_content(prompt_final)
-                    st.markdown("### 🌌 Análise Profissional do Momento")
-                    st.write(response.text)
-                    
-                    # Opcional: Mostrar o prompt enviado para conferência (pode comentar a linha abaixo depois)
-                    with st.expander("Ver dados enviados para a IA"):
-                        st.code(prompt_final)
-                        
-                except Exception as e:
-                    st.error(f"Erro ao gerar a interpretação: {e}")
-        else:
-            st.info("Não há nenhum trânsito ativo (mesmo fraco) nesta data.")
+        st.info("Não há aspectos ativos nesta data para gerar um prompt.")
