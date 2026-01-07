@@ -255,7 +255,7 @@ with c3:
     with pd.ExcelWriter(out_m, engine='openpyxl') as w: df_mov_anual.to_excel(w, index=False)
     st.download_button("🔄 Baixar Movimento Anual (Excel)", out_m.getvalue(), f"movimento_planetas_{ano}.xlsx")
 
-# --- SEÇÃO DE CONSULTA IA COM DATA E HORA ---
+# --- SEÇÃO DE CONSULTA IA COM CAMPO DE HORA ABERTO ---
 st.divider()
 st.subheader("🤖 Interpretação Astrológica")
 
@@ -264,22 +264,32 @@ col_ia1, col_ia2 = st.columns([1, 2])
 with col_ia1:
     # Seleção de Data
     data_consulta = st.date_input("Escolha a data", value=datetime(ano, 1, 7))
-    # Seleção de Hora (novo)
-    hora_consulta = st.time_input("Escolha a hora (UTC/GMT)", value=datetime(ano, 1, 7, 12, 0).time())
+    
+    # Campo Aberto para Hora com Placeholder
+    hora_input = st.text_input("Escolha a hora (ex: 14:30)", placeholder="12:00", help="Use o formato HH:MM")
+    
     btn_gerar = st.button("Preparar Análise")
 
 if btn_gerar:
-    # 1. CÁLCULO DE ALTA PRECISÃO (Incluindo Fração de Dia para a Hora)
-    # Convertemos hora e minuto para decimal (ex: 12h30 = 12.5)
-    hora_decimal = hora_consulta.hour + (hora_consulta.minute / 60.0)
+    # --- TRATAMENTO E VALIDAÇÃO DA HORA ---
+    # Se o campo estiver vazio, usa 12:00. Se não, tenta validar o formato HH:MM
+    hora_valida = "12:00"
+    if hora_input.strip():
+        if re.match(r"^([01]?[0-9]|2[0-3]):[0-5][0-9]$", hora_input.strip()):
+            hora_valida = hora_input.strip()
+        else:
+            st.warning("Formato de hora inválido. Usando 12:00 por padrão.")
+
+    h_str, m_str = hora_valida.split(":")
+    hora_decimal = int(h_str) + (int(m_str) / 60.0)
     
-    # Cálculo do Julian Day com a hora exata
+    # --- CÁLCULO DE ALTA PRECISÃO ---
     jd_ia = swe.julday(data_consulta.year, data_consulta.month, data_consulta.day, hora_decimal)
     
     ativos_ia = []
     planetas_ia = [
         {"id": swe.SUN, "nome": "Sol"}, {"id": swe.MOON, "nome": "Lua"},
-        {"id": swe.MERCURY, "nome": "Mercúrio"}, {"id": swe.VENUS, "nome": "Vénus"},
+        {"id": swe.MERCURY, "nome": "Mercúrio"}, {"id": swe.VENUS, "nome": "Vênus"},
         {"id": swe.MARS, "nome": "Marte"}, {"id": swe.JUPITER, "nome": "Júpiter"},
         {"id": swe.SATURN, "nome": "Saturno"}, {"id": swe.URANUS, "nome": "Urano"},
         {"id": swe.NEPTUNE, "nome": "Netuno"}, {"id": swe.PLUTO, "nome": "Plutão"}
@@ -290,7 +300,6 @@ if btn_gerar:
         long_transito = res[0]
         pos_no_signo = long_transito % 30
         
-        # CÁLCULO DA ORBE REAL
         diff = abs(long_transito - long_natal_absoluta_calc) % 360
         if diff > 180: diff = 360 - diff
         
@@ -306,20 +315,14 @@ if btn_gerar:
         
         if aspecto_nome != "Nenhum":
             status = "Retrógrado" if res[3] < 0 else "Direto"
-            
-            if menor_orbe <= 1.0:
-                forca = "Forte"
-            elif menor_orbe <= 2.5:
-                forca = "Médio"
-            else:
-                forca = "Fraco"
+            forca = "Forte" if menor_orbe <= 1.0 else "Médio" if menor_orbe <= 2.5 else "Fraco"
             
             info = f"{p['nome']} em {get_signo(long_transito)} ({status}) {int(pos_no_signo):02d}°{int((pos_no_signo%1)*60):02d}' fazendo {aspecto_nome} - {forca}"
             ativos_ia.append(info)
 
     if ativos_ia:
-        # 2. MONTAGEM DO PROMPT COM DATA E HORA
-        data_hora_str = f"{data_consulta.strftime('%d/%m/%Y')} às {hora_consulta.strftime('%H:%M')}"
+        # --- MONTAGEM DO PROMPT ---
+        data_hora_str = f"{data_consulta.strftime('%d/%m/%Y')} às {hora_valida}"
         
         prompt_final = f"""Você é um astrólogo profissional. Interprete o momento: {data_hora_str}.
 Ponto Natal: {planeta_selecionado} a {grau_input}° de {signo_selecionado}.
@@ -335,9 +338,9 @@ Explique como esses trânsitos afetam esse ponto natal específico."""
         st.markdown(f"""
             <a href="{link_gemini}" target="_blank" style="text-decoration: none;">
                 <div style="background-color: #4285F4; color: white; text-align: center; padding: 15px; border-radius: 8px; font-weight: bold; font-size: 1.1rem;">
-                    🚀 Abrir Gemini e Analisar ({hora_consulta.strftime('%H:%M')})
+                    🚀 Abrir Gemini e Analisar ({hora_valida})
                 </div>
             </a>
         """, unsafe_allow_html=True)
     else:
-        st.info(f"Não há aspectos significativos para {data_consulta.strftime('%d/%m/%Y')} às {hora_consulta.strftime('%H:%M')}.")
+        st.info(f"Não há aspectos significativos para {data_consulta.strftime('%d/%m/%Y')} às {hora_valida}.")
