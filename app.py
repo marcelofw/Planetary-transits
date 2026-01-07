@@ -197,22 +197,25 @@ st.plotly_chart(fig, use_container_width=True, config={'scrollZoom': True})
 
 # --- SEÇÃO DE CONSULTA IA CENTRALIZADA (ABAIXO DO GRÁFICO) ---
 st.divider()
-col_esq, col_central, col_dir = st.columns([1, 2, 1])
+col_esq, col_central, col_dir = st.columns([1, 1.5, 1])
 
 with col_central:
     st.markdown("<h2 style='text-align: center;'>🤖 Previsão Astrológica</h2>", unsafe_allow_html=True)
     
-    # Seleção de Data
-    data_consulta = st.date_input(
-        "Escolha a data", 
-        value=date(ano, 1, 7),
-        min_value=date(1900, 1, 1),
-        max_value=date(2100, 12, 31),
-        key="ia_data_key" # Key única para evitar erro
-    )
+    # Sub-colunas para encurtar os campos de entrada
+    sub_col1, sub_col2 = st.columns(2)
     
-    # Campo Aberto para Hora
-    hora_input = st.text_input("Escolha a hora (ex: 14:30)", placeholder="12:00", key="ia_hora_key")
+    with sub_col1:
+        data_consulta = st.date_input(
+            "Escolha a data", 
+            value=date(ano, 1, 7),
+            min_value=date(1900, 1, 1),
+            max_value=date(2100, 12, 31),
+            key="ia_data_key" 
+        )
+    
+    with sub_col2:
+        hora_input = st.text_input("Escolha a hora (HH:MM)", placeholder="12:00", key="ia_hora_key")
     
     btn_gerar = st.button("Preparar Análise para o Gemini", use_container_width=True)
 
