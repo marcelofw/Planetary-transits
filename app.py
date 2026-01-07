@@ -257,7 +257,9 @@ with c3:
 
 import urllib.parse
 
-# --- SEÇÃO DE CONSULTA EXTERNA (SEM API) ---
+import urllib.parse
+
+# --- SEÇÃO DE CONSULTA EXTERNA (LINK DIRETO) ---
 st.divider()
 st.subheader("🤖 Interpretação Astrológica")
 
@@ -265,54 +267,44 @@ col_ia1, col_ia2 = st.columns([1, 2])
 
 with col_ia1:
     data_consulta = st.date_input("Escolha a data para interpretar", value=datetime(ano, 1, 7))
-    btn_gerar_link = st.button("Preparar Análise para o Gemini")
+    btn_gerar = st.button("Gerar Análise")
 
-if btn_gerar_link:
-    # 1. Localiza os dados para a data escolhida
+if btn_gerar:
     dt_target = pd.Timestamp(data_consulta)
     df['diff_ia'] = abs(df['date'] - dt_target)
     ponto_ia = df.loc[df['diff_ia'].idxmin()]
     
-    # 2. Coleta TODOS os trânsitos ativos e suas intensidades
     ativos = []
     for p in lista_planetas:
-        if ponto_ia[p['nome']] > 0: # Captura todos, mesmo intensidade baixa
-            # Limpa o texto das tags HTML (remove o símbolo e formatação)
+        if ponto_ia[p['nome']] > 0:
             info_limpa = re.sub('<[^<]+?>', '', ponto_ia[f"{p['nome']}_info"])
             ativos.append(f"{p['nome']}: {info_limpa}")
     
     if ativos:
-        # 3. Monta o seu prompt exatamente como solicitado
         prompt_final = f"""Você é um astrólogo profissional. Interprete o dia {data_consulta.strftime('%d/%m/%Y')}.
 Ponto Natal: {planeta_selecionado} a {grau_input}° de {signo_selecionado}.
 Trânsitos: {'; '.join(ativos)}.
 Explique como esses trânsitos afetam esse ponto natal específico."""
 
-        # 4. Gera o link para o Gemini
+        # Exibe o prompt para conferência
+        st.write("### 📝 Seu Prompt está pronto!")
+        st.text_area("Copie o texto abaixo caso ele não apareça automaticamente:", value=prompt_final, height=180)
+        
+        # Link para o Gemini
         query_codificada = urllib.parse.quote(prompt_final)
         link_gemini = f"https://gemini.google.com/app?prompt={query_codificada}"
         
-        st.success("✅ Prompt gerado com sucesso!")
-        
-        # Exibe o prompt para o usuário ver o que será enviado
-        st.text_area("Conteúdo do Prompt:", value=prompt_final, height=180)
-        
-        # Botão visual para abrir o link
         st.markdown(f"""
-            <a href="{link_gemini}" target="_blank">
-                <button style="
-                    background-color: #4285F4; 
-                    color: white; 
-                    border: none; 
-                    padding: 12px 24px; 
-                    border-radius: 8px; 
-                    cursor: pointer; 
-                    font-weight: bold;
-                    width: 100%;">
-                    🚀 Abrir Gemini e Ver Significado
-                </button>
-            </a>
+            <div style="display: flex; gap: 10px;">
+                <a href="{link_gemini}" target="_blank" style="text-decoration: none; flex: 1;">
+                    <div style="background-color: #4285F4; color: white; text-align: center; padding: 15px; border-radius: 8px; font-weight: bold;">
+                        1. Abrir Gemini
+                    </div>
+                </a>
+            </div>
+            <p style="font-size: 0.85rem; margin-top: 10px; color: #666;">
+                <b>Dica:</b> Se o campo de chat abrir vazio, copie o texto acima e cole no Gemini.
+            </p>
         """, unsafe_allow_html=True)
-        st.caption("Nota: Você precisará estar logado na sua conta Google no navegador.")
     else:
-        st.info("Não há aspectos ativos nesta data para gerar um prompt.")
+        st.info("Não há aspectos ativos nesta data.")
