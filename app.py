@@ -296,11 +296,9 @@ import urllib.parse
 import re
 from datetime import date
 
-# --- (Aqui estaria o código do gráfico e tabelas) ---
-# st.plotly_chart(fig...) 
-# st.dataframe(...)
+# --- (Aqui termina seu código de tabelas anterior) ---
 
-# --- SEÇÃO DE INTERPRETAÇÃO COM IA (AGORA ABAIXO DOS DADOS) ---
+# --- SEÇÃO DE INTERPRETAÇÃO COM IA (CORRIGIDA) ---
 st.divider()
 st.subheader("🤖 Interpretação Astrológica")
 st.info("Configure a data e hora desejada abaixo para gerar um prompt profissional para o Gemini.")
@@ -308,16 +306,21 @@ st.info("Configure a data e hora desejada abaixo para gerar um prompt profission
 col_ia1, col_ia2 = st.columns([1, 2])
 
 with col_ia1:
-    # Calendário com range amplo: 1900 a 2100
+    # ADICIONADA A 'key' para evitar o erro de Duplicate Element ID
     data_consulta = st.date_input(
-        "Escolha a data", 
+        "Escolha a data da consulta", # Mudei levemente o label também
         value=date(ano, 1, 7),
         min_value=date(1900, 1, 1),
-        max_value=date(2100, 12, 31)
+        max_value=date(2100, 12, 31),
+        key="data_ia_unique" 
     )
     
-    # Campo de hora aberto com placeholder
-    hora_input = st.text_input("Escolha a hora (ex: 14:30)", placeholder="12:00")
+    # Campo de hora aberto com placeholder e key única
+    hora_input = st.text_input(
+        "Escolha a hora (ex: 14:30)", 
+        placeholder="12:00",
+        key="hora_ia_unique"
+    )
     
     btn_gerar = st.button("Preparar Análise")
 
@@ -333,7 +336,7 @@ if btn_gerar:
     h_str, m_str = hora_valida.split(":")
     hora_decimal = int(h_str) + (int(m_str) / 60.0)
     
-    # Cálculo astronômico exato para o momento escolhido
+    # Cálculo astronômico exato
     jd_ia = swe.julday(data_consulta.year, data_consulta.month, data_consulta.day, hora_decimal)
     
     ativos_ia = []
@@ -350,7 +353,6 @@ if btn_gerar:
         long_transito = res[0]
         pos_no_signo = long_transito % 30
         
-        # Cálculo da menor distância angular para identificar aspectos
         diff = abs(long_transito - long_natal_absoluta_calc) % 360
         if diff > 180: diff = 360 - diff
         
@@ -395,3 +397,7 @@ Explique como esses trânsitos afetam esse ponto natal específico."""
             """, unsafe_allow_html=True)
         else:
             st.info(f"Não foram encontrados aspectos significativos para este momento.")
+
+# DICA EXTRA: Para os seus gráficos e tabelas acima, substitua:
+# use_container_width=True  --->  width="stretch"
+# Isso resolve os avisos (warnings) amarelos do log.
