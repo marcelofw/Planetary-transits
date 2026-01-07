@@ -6,6 +6,7 @@ import numpy as np
 from datetime import datetime
 import io
 import re
+import google.generativeai as genai
 
 # --- CONFIGURAÇÃO DA PÁGINA ---
 st.set_page_config(page_title="Revolução Planetária", layout="wide")
@@ -253,3 +254,57 @@ with c3:
     out_m = io.BytesIO()
     with pd.ExcelWriter(out_m, engine='openpyxl') as w: df_mov_anual.to_excel(w, index=False)
     st.download_button("🔄 Baixar Movimento Anual (Excel)", out_m.getvalue(), f"movimento_planetas_{ano}.xlsx")
+
+# --- SEÇÃO DE INTERPRETAÇÃO COM IA ---
+st.divider()
+st.sidebar.markdown("---")
+api_key = st.sidebar.text_input("Gemini API Key", type="password", help="Obtenha sua chave em aistudio.google.com")
+
+st.subheader("🤖 Interpretação Astrológica com IA")
+col_ia1, col_ia2 = st.columns([1, 2])
+
+with col_ia1:
+    data_consulta = st.date_input("Escolha uma data para interpretar", value=datetime(ano, 1, 7))
+    btn_ia = st.button("Consultar Significado")
+
+if btn_ia:
+    if not api_key:
+        st.warning("⚠️ Por favor, insira sua API Key na barra lateral.")
+    else:
+        # Configuração do Modelo
+        genai.configure(api_key=api_key)
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        
+        # Localiza os dados no DataFrame
+        dt_target = pd.Timestamp(data_consulta)
+        df['diff_ia'] = abs(df['date'] - dt_target)
+        ponto_ia = df.loc[df['diff_ia'].idxmin()]
+        
+        # Coleta trânsitos ativos (intensidade > 0.3 para pegar a "vizinhança" do aspecto)
+        ativos = []
+        for p in lista_planetas:
+            if ponto_ia[p['nome']] > 0.3:
+                # Remove tags HTML do info antes de mandar para a IA
+                info_texto = re.sub('<[^<]+?>', '', ponto_ia[f"{p['nome']}_info"])
+                ativos.append(f"{p['nome']}: {info_texto}")
+        
+        if ativos:
+            prompt = f"""
+            Você é um astrólogo profissional e didático.
+            Interprete o significado astrológico do dia {data_consulta.strftime('%d/%m/%Y')}.
+            Ponto Natal do Usuário: {planeta_selecionado} a {grau_input}° de {signo_selecionado}.
+            Trânsitos Planetários Ativos no momento: {'; '.join(ativos)}.
+            
+            Forneça uma análise concisa, focando em como esses planetas influenciam o ponto natal. 
+            Use uma linguagem inspiradora e prática.
+            """
+            
+            with st.spinner("Analisando o céu..."):
+                try:
+                    response = model.generate_content(prompt)
+                    st.markdown("### 🌌 Análise do Momento")
+                    st.write(response.text)
+                except Exception as e:
+                    st.error(f"Erro na consulta: {e}")
+        else:
+            st.info("Não há aspectos planetários fortes o suficiente nesta data para gerar uma interpretação.")
