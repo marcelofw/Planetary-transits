@@ -280,7 +280,8 @@ if btn_gerar:
         prompt_final = f"""Você é um astrólogo profissional. Interprete o dia {data_consulta.strftime('%d/%m/%Y')}.
 Ponto Natal: {planeta_selecionado} a {grau_input}° de {signo_selecionado}.
 Trânsitos: {'; '.join(ativos)}.
-Explique como esses trânsitos afetam esse ponto natal específico."""
+Explique como esses trânsitos afetam esse ponto natal específico.
+Dê dicas de como melhorar aproveitar essa data com relação às potencialidades, desafios e riscos."""
 
         # Exibe o prompt para conferência
         st.write("### 📝 Seu Prompt está pronto!")
