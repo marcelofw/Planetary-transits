@@ -6,7 +6,6 @@ import numpy as np
 from datetime import datetime
 import io
 import re
-import google.generativeai as genai
 
 # --- CONFIGURAÇÃO DA PÁGINA ---
 st.set_page_config(page_title="Revolução Planetária", layout="wide")
@@ -254,57 +253,3 @@ with c3:
     out_m = io.BytesIO()
     with pd.ExcelWriter(out_m, engine='openpyxl') as w: df_mov_anual.to_excel(w, index=False)
     st.download_button("🔄 Baixar Movimento Anual (Excel)", out_m.getvalue(), f"movimento_planetas_{ano}.xlsx")
-
-import urllib.parse
-
-import urllib.parse
-
-# --- SEÇÃO DE CONSULTA EXTERNA (LINK DIRETO) ---
-st.divider()
-st.subheader("🤖 Interpretação Astrológica")
-
-col_ia1, col_ia2 = st.columns([1, 2])
-
-with col_ia1:
-    data_consulta = st.date_input("Escolha a data para interpretar", value=datetime(ano, 1, 7))
-    btn_gerar = st.button("Gerar Análise")
-
-if btn_gerar:
-    dt_target = pd.Timestamp(data_consulta)
-    df['diff_ia'] = abs(df['date'] - dt_target)
-    ponto_ia = df.loc[df['diff_ia'].idxmin()]
-    
-    ativos = []
-    for p in lista_planetas:
-        if ponto_ia[p['nome']] > 0:
-            info_limpa = re.sub('<[^<]+?>', '', ponto_ia[f"{p['nome']}_info"])
-            ativos.append(f"{p['nome']}: {info_limpa}")
-    
-    if ativos:
-        prompt_final = f"""Você é um astrólogo profissional. Interprete o dia {data_consulta.strftime('%d/%m/%Y')}.
-Ponto Natal: {planeta_selecionado} a {grau_input}° de {signo_selecionado}.
-Trânsitos: {'; '.join(ativos)}.
-Explique como esses trânsitos afetam esse ponto natal específico."""
-
-        # Exibe o prompt para conferência
-        st.write("### 📝 Seu Prompt está pronto!")
-        st.text_area("Copie o texto abaixo caso ele não apareça automaticamente:", value=prompt_final, height=180)
-        
-        # Link para o Gemini
-        query_codificada = urllib.parse.quote(prompt_final)
-        link_gemini = f"https://gemini.google.com/app?prompt={query_codificada}"
-        
-        st.markdown(f"""
-            <div style="display: flex; gap: 10px;">
-                <a href="{link_gemini}" target="_blank" style="text-decoration: none; flex: 1;">
-                    <div style="background-color: #4285F4; color: white; text-align: center; padding: 15px; border-radius: 8px; font-weight: bold;">
-                        1. Abrir Gemini
-                    </div>
-                </a>
-            </div>
-            <p style="font-size: 0.85rem; margin-top: 10px; color: #666;">
-                <b>Dica:</b> Se o campo de chat abrir vazio, copie o texto acima e cole no Gemini.
-            </p>
-        """, unsafe_allow_html=True)
-    else:
-        st.info("Não há aspectos ativos nesta data.")
