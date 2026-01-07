@@ -292,37 +292,7 @@ if btn_gerar:
     h_str, m_str = hora_valida.split(":")
     hora_decimal = int(h_str) + (int(m_str) / 60.0)
     
-# --- SEÇÃO DE INTERPRETAÇÃO COM IA (ABAIXO DO GRÁFICO E TABELAS) ---
-st.divider()
-st.subheader("🤖 Interpretação Astrológica")
-
-col_ia1, col_ia2 = st.columns([1, 2])
-
-with col_ia1:
-    # Mantendo exatamente sua lógica, apenas com uma 'key' única para evitar erro
-    data_consulta = st.date_input(
-        "Data da Consulta", 
-        value=datetime(ano, 1, 7),
-        min_value=datetime(1900, 1, 1),
-        max_value=datetime(2100, 12, 31),
-        key="data_consulta_ia"
-    )
-    
-    # Campo aberto para hora com placeholder
-    hora_input = st.text_input("Hora da Consulta", placeholder="12:00", key="hora_consulta_ia")
-    
-    btn_gerar = st.button("Gerar Prompt para Gemini")
-
-if btn_gerar:
-    # Validação simples da hora
-    hora_valida = "12:00"
-    if hora_input.strip() and re.match(r"^([0-9]|0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$", hora_input.strip()):
-        hora_valida = hora_input.strip()
-
-    h_str, m_str = hora_valida.split(":")
-    hora_decimal = int(h_str) + (int(m_str) / 60.0)
-    
-    # Cálculo astronômico para a data/hora selecionada
+    # --- CÁLCULO DE ALTA PRECISÃO ---
     jd_ia = swe.julday(data_consulta.year, data_consulta.month, data_consulta.day, hora_decimal)
     
     ativos_ia = []
@@ -355,20 +325,31 @@ if btn_gerar:
         if aspecto_nome != "Nenhum":
             status = "Retrógrado" if res[3] < 0 else "Direto"
             forca = "Forte" if menor_orbe <= 1.0 else "Médio" if menor_orbe <= 2.5 else "Fraco"
-            ativos_ia.append(f"{p['nome']} em {get_signo(long_transito)} ({status}) {int(pos_no_signo):02d}°{int((pos_no_signo%1)*60):02d}' fazendo {aspecto_nome} - {forca}")
+            
+            info = f"{p['nome']} em {get_signo(long_transito)} ({status}) {int(pos_no_signo):02d}°{int((pos_no_signo%1)*60):02d}' fazendo {aspecto_nome} - {forca}"
+            ativos_ia.append(info)
 
-    with col_ia2:
-        if ativos_ia:
-            prompt_final = f"""Você é um astrólogo profissional. Interprete o momento: {data_consulta.strftime('%d/%m/%Y')} às {hora_valida}.
+    if ativos_ia:
+        # --- MONTAGEM DO PROMPT ---
+        data_hora_str = f"{data_consulta.strftime('%d/%m/%Y')} às {hora_valida}"
+        
+        prompt_final = f"""Você é um astrólogo profissional. Interprete o momento: {data_hora_str}.
 Ponto Natal: {planeta_selecionado} a {grau_input}° de {signo_selecionado}.
 Trânsitos ativos para este ponto: {'; '.join(ativos_ia)}.
 Explique como esses trânsitos afetam esse ponto natal específico."""
 
-            st.text_area("Prompt Gerado:", value=prompt_final, height=200)
-            
-            query_codificada = urllib.parse.quote(prompt_final)
-            link_gemini = f"https://gemini.google.com/app?prompt={query_codificada}"
-            
-            st.markdown(f'<a href="{link_gemini}" target="_blank"><button style="width:100%; background-color:#4285F4; color:white; border:none; padding:12px; border-radius:8px; font-weight:bold; cursor:pointer;">🚀 Abrir Gemini</button></a>', unsafe_allow_html=True)
-        else:
-            st.info("Nenhum trânsito ativo para esta data/hora.")
+        st.write("### 📝 Seu Prompt está pronto!")
+        st.text_area("Texto do Prompt:", value=prompt_final, height=200)
+        
+        query_codificada = urllib.parse.quote(prompt_final)
+        link_gemini = f"https://gemini.google.com/app?prompt={query_codificada}"
+        
+        st.markdown(f"""
+            <a href="{link_gemini}" target="_blank" style="text-decoration: none;">
+                <div style="background-color: #4285F4; color: white; text-align: center; padding: 15px; border-radius: 8px; font-weight: bold; font-size: 1.1rem;">
+                    🚀 Abrir Gemini e Analisar ({hora_valida})
+                </div>
+            </a>
+        """, unsafe_allow_html=True)
+    else:
+        st.info(f"Não há aspectos significativos para {data_consulta.strftime('%d/%m/%Y')} às {hora_valida}.")
