@@ -263,7 +263,7 @@ col_ia1, col_ia2 = st.columns([1, 2])
 
 with col_ia1:
     data_consulta = st.date_input("Escolha a data para interpretar", value=datetime(ano, 1, 7))
-    btn_gerar = st.button("Gerar Análise")
+    btn_gerar = st.button("Gerar Prompt")
 
 if btn_gerar:
     dt_target = pd.Timestamp(data_consulta)
