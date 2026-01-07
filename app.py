@@ -255,15 +255,25 @@ with c3:
     with pd.ExcelWriter(out_m, engine='openpyxl') as w: df_mov_anual.to_excel(w, index=False)
     st.download_button("🔄 Baixar Movimento Anual (Excel)", out_m.getvalue(), f"movimento_planetas_{ano}.xlsx")
 
-# --- SEÇÃO DE CONSULTA IA COM CAMPO DE HORA ABERTO ---
+import urllib.parse
+import re
+from datetime import date
+
+# --- SEÇÃO DE CONSULTA IA COM CALENDÁRIO AMPLO E HORA ABERTA ---
 st.divider()
 st.subheader("🤖 Interpretação Astrológica")
 
 col_ia1, col_ia2 = st.columns([1, 2])
 
 with col_ia1:
-    # Seleção de Data
-    data_consulta = st.date_input("Escolha a data", value=datetime(ano, 1, 7))
+    # Seleção de Data com range de 1900 a 2100
+    data_consulta = st.date_input(
+        "Escolha a data", 
+        value=date(ano, 1, 7),
+        min_value=date(1900, 1, 1),
+        max_value=date(2100, 12, 31),
+        help="Selecione qualquer data entre 1900 e 2100"
+    )
     
     # Campo Aberto para Hora com Placeholder
     hora_input = st.text_input("Escolha a hora (ex: 14:30)", placeholder="12:00", help="Use o formato HH:MM")
@@ -272,10 +282,10 @@ with col_ia1:
 
 if btn_gerar:
     # --- TRATAMENTO E VALIDAÇÃO DA HORA ---
-    # Se o campo estiver vazio, usa 12:00. Se não, tenta validar o formato HH:MM
     hora_valida = "12:00"
     if hora_input.strip():
-        if re.match(r"^([01]?[0-9]|2[0-3]):[0-5][0-9]$", hora_input.strip()):
+        # Regex aceita H:MM ou HH:MM
+        if re.match(r"^([0-9]|0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$", hora_input.strip()):
             hora_valida = hora_input.strip()
         else:
             st.warning("Formato de hora inválido. Usando 12:00 por padrão.")
