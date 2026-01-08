@@ -11,6 +11,25 @@ import urllib.parse
 
 # --- CONFIGURAÇÃO DA PÁGINA ---
 st.set_page_config(page_title="Revolução Planetária", layout="wide")
+st.markdown("""
+    <style>
+        /* Aumenta as fontes dos campos de IA */
+        .stDateInput label p, .stTextInput label p {
+            font-size: 1.2rem !important;
+            font-weight: bold !important;
+        }
+        .stDateInput div div input, .stTextInput div div input {
+            font-size: 1.1rem !important;
+            height: 45px !important;
+        }
+        /* Remove o link de corrente/âncora dos títulos */
+        button[data-testid="stHeaderActionElements"], 
+        .aria-hidden, 
+        [data-testid="stMarkdown"] svg {
+            display: none !important;
+        }
+    </style>
+""", unsafe_allow_html=True)
 
 # Silencia avisos de downcasting
 pd.set_option('future.no_silent_downcasting', True)
