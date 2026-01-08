@@ -28,22 +28,21 @@ st.markdown("""
         [data-testid="stMarkdown"] svg {
             display: none !important;
         }
-/* Garante que o container do input não esconda os botões */
+/* 1. Define a largura total do componente para não sobrar espaço na coluna */
 [data-testid="stSidebar"] div[data-testid="stNumberInput"] {
-    min-width: 125px !important; /* Largura mínima para o Streamhil NÃO esconder os botões */
+    width: 125px !important; 
 }
 
-/* Ajusta a caixa de texto entre os botões */
-[data-testid="stSidebar"] div[data-testid="stNumberInput"] input {
-    width: 100% !important;
+/* 2. Remove o espaço vazio interno à direita e esquerda do número */
+[data-testid="stSidebar"] input {
+    text-align: center !important;
     padding-left: 0px !important;
     padding-right: 0px !important;
-    font-size: 1rem !important;
 }
 
-/* Remove margens extras que empurram os botões para fora */
+/* 3. Ajusta o tamanho da fonte e a altura para ficar proporcional */
 [data-testid="stSidebar"] div[data-base-ui="input"] {
-    gap: 0px !important;
+    height: 38px !important;
 }
 
     </style>
