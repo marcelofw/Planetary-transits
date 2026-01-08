@@ -112,7 +112,7 @@ st.markdown(f"""
     <div style='text-align: left;'>
         <h1 style='font-size: 2.5rem; margin-bottom: 0;'>🔭 Revolução Planetária {ano}</h1>
     </div>
-""", unsafe_allow_html=True)
+""")
 
 # --- PROCESSAMENTO ---
 @st.cache_data
@@ -190,7 +190,7 @@ for p in lista_planetas:
         fig.add_trace(go.Scatter(x=picos['date'], y=picos[p['nome']]+0.04, mode='markers+text', text=picos['date'].dt.strftime('%d/%m'),
                                  textposition="top center", marker=dict(symbol="triangle-down", color=p['cor'], size=8), showlegend=False, hoverinfo='skip'))
 
-fig.update_layout(title=dict(text=f'<b>Ponto Natal: {p_texto} a {grau_input}° de {s_texto}</b>', x=0.5, xanchor = 'center', font = dict(size = 20)),
+fig.update_layout(title=dict(text=f'<b>Ponto Natal: {p_texto} a {grau_input}° de {s_texto}</b>', x=0.5, xanchor = 'center', font = dict(size = 28)),
                   height=700,
                   xaxis=dict(rangeslider=dict(visible=True, thickness=0.08), type='date', tickformat='%d/%m\n%Y', hoverformat='%d/%m/%Y %H:%M'),
                   yaxis=dict(title='Intensidade', range=[0, 1.3], fixedrange=True), template='plotly_white', hovermode='x unified', dragmode='pan')
