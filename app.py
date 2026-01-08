@@ -28,22 +28,22 @@ st.markdown("""
         [data-testid="stMarkdown"] svg {
             display: none !important;
         }
-       /* Reduz o espaço interno do campo e força largura mínima para os botões */
+/* Garante que o container do input não esconda os botões */
 [data-testid="stSidebar"] div[data-testid="stNumberInput"] {
-    width: 110px !important; /* Largura mínima para caber 2 dígitos + botões */
+    min-width: 125px !important; /* Largura mínima para o Streamhil NÃO esconder os botões */
 }
 
-/* Remove o espaço vazio (padding) nas laterais do número */
-[data-testid="stSidebar"] input {
-    padding-left: 5px !important;
-    padding-right: 5px !important;
-    text-align: center !important;
+/* Ajusta a caixa de texto entre os botões */
+[data-testid="stSidebar"] div[data-testid="stNumberInput"] input {
+    width: 100% !important;
+    padding-left: 0px !important;
+    padding-right: 0px !important;
+    font-size: 1rem !important;
 }
 
-/* Garante que os botões de + e - fiquem visíveis e pequenos */
-[data-testid="stSidebar"] button[kind="secondary"] {
-    width: 22px !important;
-    min-width: 22px !important;
+/* Remove margens extras que empurram os botões para fora */
+[data-testid="stSidebar"] div[data-base-ui="input"] {
+    gap: 0px !important;
 }
 
     </style>
