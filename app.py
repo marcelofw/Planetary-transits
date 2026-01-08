@@ -111,7 +111,7 @@ s_texto = signo_selecionado if signo_selecionado != "Escolha um signo" else "Sig
 st.markdown(f"""
     <div style='text-align: left;'>
         <h1 style='font-size: 2.5rem; margin-bottom: 0;'>🔭 Revolução Planetária {ano}</h1>
-        <p style='font-size: 1.2rem; color: #555;'>Ponto Natal: <b>{p_texto} a {grau_input}° de {s_texto}</b></p>
+        <p style='font-size: 1.2rem; '>Ponto Natal: <b>{p_texto} a {grau_input}° de {s_texto}</b></p>
     </div>
 """, unsafe_allow_html=True)
 

@@ -156,7 +156,7 @@ def generate_degree_transit_chart():
                 })
 
     if eventos_aspectos:
-        pd.DataFrame(eventos_aspectos).to_excel(f"tabela_transitos_{ano}_grau_{grau_limpo}.xlsx", index=False)
+        pd.DataFrame(eventos_aspectos).to_excel(f"aspectos_{ano}_{planeta_natal_ui}_em_{signo_natal_ui}_grau_{grau_limpo}.xlsx", index=False)
 
     # ==========================================
     # 3.1 MOVIMENTO ANUAL
@@ -213,13 +213,13 @@ def generate_degree_transit_chart():
             ))
 
     fig.update_layout(
-        title=dict(text=f'Revolução Planetária {ano}: Grau {grau_alvo_natal}', x=0.5),
+        title=dict(text=f'<b>Revolução Planetária {ano}: {planeta_natal_ui} em {signo_natal_ui} {grau_alvo_natal}°</b>', x=0.5, font = dict(size = 20)),
         xaxis=dict(type='date', tickformat='%d/%m\n%Y', hoverformat='%d/%m/%Y %H:%M', rangeslider=dict(visible=True, thickness=0.08)),
         yaxis=dict(title='Intensidade', range=[0, 1.25], fixedrange=True),
         template='plotly_white', hovermode='x unified', dragmode='pan', margin=dict(t=100)
     )
 
-    fig.write_html(f"revolucao_{ano}_grau_{grau_limpo}.html", config={'scrollZoom': True})
+    fig.write_html(f"revolucao_planetaria_{ano}_{planeta_natal_ui}_em_{signo_natal_ui}_grau_{grau_limpo}.html", config={'scrollZoom': True})
     print(f"Sucesso! Gráfico gerado.")
 
 if __name__ == "__main__":
