@@ -309,7 +309,8 @@ for p in lista_planetas:
 fig.update_layout(title=dict(text=f'<b>Ponto Natal: {p_texto} a {grau_input}° de {s_texto}</b>', x=0.5, xanchor = 'center', font = dict(size = 28)),
                   height=700,
                   xaxis=dict(rangeslider=dict(visible=True, thickness=0.08), type='date', tickformat='%d/%m\n%Y', hoverformat='%d/%m/%Y %H:%M'),
-                  yaxis=dict(title='Intensidade', range=[0, 1.3], fixedrange=True), template='plotly_white', hovermode='x unified', dragmode='pan')
+                  yaxis=dict(title='Intensidade', range=[0, 1.3], fixedrange=True), template='plotly_white', hovermode='x unified', dragmode='pan', render_mode = 'webgl')
+fig.update_traces(line=dict(width=2), connectgaps = True)
 st.plotly_chart(fig, use_container_width=True, config={'scrollZoom': True})
 
 # Chamada da função da seção de IA
