@@ -28,6 +28,8 @@ st.markdown("""
         [data-testid="stMarkdown"] svg {
             display: none !important;
         }
+        [data-testid="stSidebar"] div[data-testid="stNumberInput"] {
+        width: 90px !important;
     </style>
 """, unsafe_allow_html=True)
 
