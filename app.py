@@ -30,6 +30,11 @@ st.markdown("""
         }
         [data-testid="stSidebar"] div[data-testid="stNumberInput"] {
         width: 90px !important;
+        }
+        [data-testid="stSidebar"] button[kind="secondary"] {
+        padding: 0px !important;
+        width: 25px !important;
+        }
     </style>
 """, unsafe_allow_html=True)
 
