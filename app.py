@@ -112,7 +112,7 @@ st.markdown(f"""
     <div style='text-align: left;'>
         <h1 style='font-size: 2.5rem; margin-bottom: 0;'>🔭 Revolução Planetária {ano}</h1>
     </div>
-""")
+""", unsafe_allow_html=True)
 
 # --- PROCESSAMENTO ---
 @st.cache_data
