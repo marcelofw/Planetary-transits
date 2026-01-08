@@ -15,7 +15,7 @@ st.markdown("""
     <style>
         /* Aumenta as fontes dos campos de IA */
         .stDateInput label p, .stTextInput label p {
-            font-size: 1.2rem !important;
+            font-size: 1.1rem !important;
             font-weight: bold !important;
         }
         .stDateInput div div input, .stTextInput div div input {
