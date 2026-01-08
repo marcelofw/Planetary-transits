@@ -194,6 +194,104 @@ df_mov_anual = get_annual_movements(ano)
 df, lista_planetas = get_planetary_data(ano, grau_decimal, incluir_lua, mes_selecionado, long_natal_absoluta_calc)
 grau_limpo_file = str(grau_input).replace('.', '_')
 
+@st.fragment
+def secao_previsao_ia(ano, planeta_selecionado, signo_selecionado, grau_input, long_natal_absoluta_calc):
+        # --- SEÇÃO DE CONSULTA IA CENTRALIZADA (ABAIXO DO GRÁFICO) ---
+    st.divider()
+    col_esq, col_central, col_dir = st.columns([1, 1.5, 1])
+
+    with col_central:
+        st.markdown("<h2 style='text-align: center;'>🤖 Previsão Astrológica</h2>", unsafe_allow_html=True)
+        
+        sub_col1, sub_col2 = st.columns(2)
+        
+        with sub_col1:
+            data_consulta = st.date_input(
+                "Escolha a data", 
+                value=date(ano, 1, 7),
+                min_value=date(1900, 1, 1),
+                max_value=date(2100, 12, 31),
+                key="ia_data_key" 
+            )
+        
+        with sub_col2:
+            hora_input = st.text_input("Escolha a hora (HH:MM)", placeholder="12:00", key="ia_hora_key")
+        
+        btn_gerar = st.button("Preparar Análise para o Gemini", use_container_width=True)
+
+    if btn_gerar:
+        # --- VALIDAÇÃO DE SELEÇÃO ---
+        if planeta_selecionado == "Escolha um planeta" or signo_selecionado == "Escolha um signo":
+            st.error("⚠️ Erro: Selecione o Planeta e o Signo na barra lateral antes de gerar a previsão.")
+        else:
+            hora_valida = "12:00"
+            if hora_input.strip():
+                if re.match(r"^([0-9]|0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$", hora_input.strip()):
+                    hora_valida = hora_input.strip()
+                else:
+                    st.warning("Formato de hora inválido. Usando 12:00 por padrão.")
+
+            h_str, m_str = hora_valida.split(":")
+            hora_decimal = int(h_str) + (int(m_str) / 60.0)
+            
+            jd_ia = swe.julday(data_consulta.year, data_consulta.month, data_consulta.day, hora_decimal)
+            
+            ativos_ia = []
+            planetas_ia = [
+                {"id": swe.SUN, "nome": "Sol"}, {"id": swe.MOON, "nome": "Lua"},
+                {"id": swe.MERCURY, "nome": "Mercúrio"}, {"id": swe.VENUS, "nome": "Vênus"},
+                {"id": swe.MARS, "nome": "Marte"}, {"id": swe.JUPITER, "nome": "Júpiter"},
+                {"id": swe.SATURN, "nome": "Saturno"}, {"id": swe.URANUS, "nome": "Urano"},
+                {"id": swe.NEPTUNE, "nome": "Netuno"}, {"id": swe.PLUTO, "nome": "Plutão"}
+            ]
+
+            for p in planetas_ia:
+                res, _ = swe.calc_ut(jd_ia, p["id"], swe.FLG_SWIEPH | swe.FLG_SPEED)
+                long_transito = res[0]
+                pos_no_signo = long_transito % 30
+                
+                diff = abs(long_transito - long_natal_absoluta_calc) % 360
+                if diff > 180: diff = 360 - diff
+                
+                aspecto_nome = "Nenhum"
+                menor_orbe = 999
+                
+                for angulo, (nome, simbolo) in ASPECTOS.items():
+                    orbe_atual = abs(diff - angulo)
+                    if orbe_atual <= 5.0:
+                        aspecto_nome = nome
+                        menor_orbe = orbe_atual
+                        break
+                
+                if aspecto_nome != "Nenhum":
+                    status = "Retrógrado" if res[3] < 0 else "Direto"
+                    forca = "Forte" if menor_orbe <= 1.0 else "Médio" if menor_orbe <= 2.5 else "Fraco"
+                    ativos_ia.append(f"{p['nome']} em {get_signo(long_transito)} ({status}) {int(pos_no_signo):02d}°{int((pos_no_signo%1)*60):02d}' fazendo {aspecto_nome} - {forca}")
+
+            with col_central:
+                if ativos_ia:
+                    data_hora_str = f"{data_consulta.strftime('%d/%m/%Y')} às {hora_valida}"
+                    prompt_final = f"""Você é um astrólogo profissional. Interprete o momento: {data_hora_str}.
+    Ponto Natal: {planeta_selecionado} a {grau_input}° de {signo_selecionado}.
+    Trânsitos ativos para este ponto: {'; '.join(ativos_ia)}.
+    Explique como esses trânsitos afetam esse ponto natal específico."""
+
+                    st.write("### 📝 Seu Prompt está pronto!")
+                    st.text_area("Texto do Prompt:", value=prompt_final, height=200)
+                    
+                    query_codificada = urllib.parse.quote(prompt_final)
+                    link_gemini = f"https://gemini.google.com/app?prompt={query_codificada}"
+                    st.markdown(f'''
+            <a href="{link_gemini}" target="_blank" style="text-decoration: none; color: white !important;">
+                <div style="background-color: #4285F4; color: white; text-align: center; padding: 15px; border-radius: 8px; font-weight: bold; font-size: 1.1rem;">
+                    🚀 Abrir Gemini e Analisar Agora
+                </div>
+            </a>
+        ''', unsafe_allow_html=True)
+                else:
+                    st.info("Não há aspectos significativos para este momento.")
+
+
 # --- GRÁFICO ---
 fig = go.Figure()
 for p in lista_planetas:
@@ -215,100 +313,8 @@ fig.update_layout(title=dict(text=f'<b>Ponto Natal: {p_texto} a {grau_input}° d
                   yaxis=dict(title='Intensidade', range=[0, 1.3], fixedrange=True), template='plotly_white', hovermode='x unified', dragmode='pan')
 st.plotly_chart(fig, use_container_width=True, config={'scrollZoom': True})
 
-# --- SEÇÃO DE CONSULTA IA CENTRALIZADA (ABAIXO DO GRÁFICO) ---
-st.divider()
-col_esq, col_central, col_dir = st.columns([1, 1.5, 1])
-
-with col_central:
-    st.markdown("<h2 style='text-align: center;'>🤖 Previsão Astrológica</h2>", unsafe_allow_html=True)
-    
-    sub_col1, sub_col2 = st.columns(2)
-    
-    with sub_col1:
-        data_consulta = st.date_input(
-            "Escolha a data", 
-            value=date(ano, 1, 7),
-            min_value=date(1900, 1, 1),
-            max_value=date(2100, 12, 31),
-            key="ia_data_key" 
-        )
-    
-    with sub_col2:
-        hora_input = st.text_input("Escolha a hora (HH:MM)", placeholder="12:00", key="ia_hora_key")
-    
-    btn_gerar = st.button("Preparar Análise para o Gemini", use_container_width=True)
-
-if btn_gerar:
-    # --- VALIDAÇÃO DE SELEÇÃO ---
-    if planeta_selecionado == "Escolha um planeta" or signo_selecionado == "Escolha um signo":
-        st.error("⚠️ Erro: Selecione o Planeta e o Signo na barra lateral antes de gerar a previsão.")
-    else:
-        hora_valida = "12:00"
-        if hora_input.strip():
-            if re.match(r"^([0-9]|0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$", hora_input.strip()):
-                hora_valida = hora_input.strip()
-            else:
-                st.warning("Formato de hora inválido. Usando 12:00 por padrão.")
-
-        h_str, m_str = hora_valida.split(":")
-        hora_decimal = int(h_str) + (int(m_str) / 60.0)
-        
-        jd_ia = swe.julday(data_consulta.year, data_consulta.month, data_consulta.day, hora_decimal)
-        
-        ativos_ia = []
-        planetas_ia = [
-            {"id": swe.SUN, "nome": "Sol"}, {"id": swe.MOON, "nome": "Lua"},
-            {"id": swe.MERCURY, "nome": "Mercúrio"}, {"id": swe.VENUS, "nome": "Vênus"},
-            {"id": swe.MARS, "nome": "Marte"}, {"id": swe.JUPITER, "nome": "Júpiter"},
-            {"id": swe.SATURN, "nome": "Saturno"}, {"id": swe.URANUS, "nome": "Urano"},
-            {"id": swe.NEPTUNE, "nome": "Netuno"}, {"id": swe.PLUTO, "nome": "Plutão"}
-        ]
-
-        for p in planetas_ia:
-            res, _ = swe.calc_ut(jd_ia, p["id"], swe.FLG_SWIEPH | swe.FLG_SPEED)
-            long_transito = res[0]
-            pos_no_signo = long_transito % 30
-            
-            diff = abs(long_transito - long_natal_absoluta_calc) % 360
-            if diff > 180: diff = 360 - diff
-            
-            aspecto_nome = "Nenhum"
-            menor_orbe = 999
-            
-            for angulo, (nome, simbolo) in ASPECTOS.items():
-                orbe_atual = abs(diff - angulo)
-                if orbe_atual <= 5.0:
-                    aspecto_nome = nome
-                    menor_orbe = orbe_atual
-                    break
-            
-            if aspecto_nome != "Nenhum":
-                status = "Retrógrado" if res[3] < 0 else "Direto"
-                forca = "Forte" if menor_orbe <= 1.0 else "Médio" if menor_orbe <= 2.5 else "Fraco"
-                ativos_ia.append(f"{p['nome']} em {get_signo(long_transito)} ({status}) {int(pos_no_signo):02d}°{int((pos_no_signo%1)*60):02d}' fazendo {aspecto_nome} - {forca}")
-
-        with col_central:
-            if ativos_ia:
-                data_hora_str = f"{data_consulta.strftime('%d/%m/%Y')} às {hora_valida}"
-                prompt_final = f"""Você é um astrólogo profissional. Interprete o momento: {data_hora_str}.
-Ponto Natal: {planeta_selecionado} a {grau_input}° de {signo_selecionado}.
-Trânsitos ativos para este ponto: {'; '.join(ativos_ia)}.
-Explique como esses trânsitos afetam esse ponto natal específico."""
-
-                st.write("### 📝 Seu Prompt está pronto!")
-                st.text_area("Texto do Prompt:", value=prompt_final, height=200)
-                
-                query_codificada = urllib.parse.quote(prompt_final)
-                link_gemini = f"https://gemini.google.com/app?prompt={query_codificada}"
-                st.markdown(f'''
-        <a href="{link_gemini}" target="_blank" style="text-decoration: none; color: white !important;">
-            <div style="background-color: #4285F4; color: white; text-align: center; padding: 15px; border-radius: 8px; font-weight: bold; font-size: 1.1rem;">
-                🚀 Abrir Gemini e Analisar Agora
-            </div>
-        </a>
-    ''', unsafe_allow_html=True)
-            else:
-                st.info("Não há aspectos significativos para este momento.")
+# Chamada da função da seção de IA
+secao_previsao_ia(ano, planeta_selecionado, signo_selecionado, grau_input, long_natal_absoluta_calc)
 
 # --- LÓGICA DA TABELA DE ASPECTOS ---
 eventos_aspectos = []
