@@ -296,21 +296,20 @@ fig = go.Figure()
 for p in lista_planetas:
     df_p = df.copy()
     df_p.loc[df_p[p['nome']] == 0, p['nome']] = None
-    fig.add_trace(go.Scattergl(x=df_p['date'], y=df_p[p['nome']], name=p['nome'], mode='lines', line=dict(color=p['cor'], width=2.5),
+    fig.add_trace(go.Scatter(x=df_p['date'], y=df_p[p['nome']], name=p['nome'], mode='lines', line=dict(color=p['cor'], width=2.5),
                              fill='tozeroy', fillcolor=hex_to_rgba(p['cor'], 0.15), customdata=df[f"{p['nome']}_info"],
                              hovertemplate="<b>%{customdata}</b><extra></extra>", connectgaps=False))
     
     serie = df[p['nome']].fillna(0)
     picos = df[(serie > 0.98) & (serie > serie.shift(1)) & (serie > serie.shift(-1))]
     if not picos.empty:
-        fig.add_trace(go.Scattergl(x=picos['date'], y=picos[p['nome']]+0.04, mode='markers+text', text=picos['date'].dt.strftime('%d/%m'),
+        fig.add_trace(go.Scatter(x=picos['date'], y=picos[p['nome']]+0.04, mode='markers+text', text=picos['date'].dt.strftime('%d/%m'),
                                  textposition="top center", marker=dict(symbol="triangle-down", color=p['cor'], size=8), showlegend=False, hoverinfo='skip'))
 
 fig.update_layout(title=dict(text=f'<b>Ponto Natal: {p_texto} a {grau_input}° de {s_texto}</b>', x=0.5, xanchor = 'center', font = dict(size = 28)),
                   height=700,
                   xaxis=dict(rangeslider=dict(visible=True, thickness=0.08), type='date', tickformat='%d/%m\n%Y', hoverformat='%d/%m/%Y %H:%M'),
                   yaxis=dict(title='Intensidade', range=[0, 1.3], fixedrange=True), template='plotly_white', hovermode='x unified', dragmode='pan')
-# fig.update_traces(line=dict(width=2), connectgaps = True)
 st.plotly_chart(fig, use_container_width=True, config={'scrollZoom': True})
 
 # Chamada da função da seção de IA
