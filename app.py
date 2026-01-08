@@ -28,23 +28,31 @@ st.markdown("""
         [data-testid="stMarkdown"] svg {
             display: none !important;
         }
-/* 1. Define a largura total do componente para não sobrar espaço na coluna */
-[data-testid="stSidebar"] div[data-testid="stNumberInput"] {
-    width: 125px !important; 
-}
-
-/* 2. Remove o espaço vazio interno à direita e esquerda do número */
-[data-testid="stSidebar"] input {
-    text-align: center !important;
-    padding-left: 0px !important;
+/* 1. Ajusta o contêiner interno para não sobrar espaço à direita */
+[data-testid="stSidebar"] div[data-base-ui="input"] > div {
     padding-right: 0px !important;
+    margin-right: 0px !important;
 }
 
-/* 3. Ajusta o tamanho da fonte e a altura para ficar proporcional */
-[data-testid="stSidebar"] div[data-base-ui="input"] {
-    height: 38px !important;
+/* 2. Reduz a largura da caixa de texto para o mínimo necessário (2 dígitos) */
+[data-testid="stSidebar"] input {
+    min-width: 40px !important;
+    width: 45px !important;
+    text-align: center !important;
+    padding: 0px !important;
 }
 
+/* 3. Define a largura total para que os botões fiquem "grudados" no número */
+[data-testid="stSidebar"] div[data-testid="stNumberInput"] {
+    width: 100px !important; /* Diminuímos aqui para forçar a proximidade */
+}
+
+/* 4. Força os botões a reaparecerem mesmo em largura pequena */
+[data-testid="stSidebar"] button[kind="secondary"] {
+    display: flex !important;
+    width: 28px !important;
+    min-width: 28px !important;
+}
     </style>
 """, unsafe_allow_html=True)
 
