@@ -101,7 +101,7 @@ def obter_simbolo_aspecto(long1, long2):
 # --- INTERFACE LATERAL ---
 st.sidebar.header("Configurações")
 ano = st.sidebar.number_input("Ano da Análise", min_value=1900, max_value=2100, value=2026)
-col_g, col_m = st.sidebar.columns(2)
+col_g, col_m = st.sidebar.columns([1, 1], gap = "small")
 with col_g:
     graus = st.number_input("Graus", 0, 29, value = 27, step = 1)
 with col_m:
