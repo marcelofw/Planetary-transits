@@ -26,6 +26,26 @@ st.markdown("""
         button[data-testid="stHeaderActionElements"], 
         .aria-hidden, 
         [data-testid="stMarkdown"] svg {
+            display: none !important;
+        }
+       /* Reduz o espaço interno do campo e força largura mínima para os botões */
+[data-testid="stSidebar"] div[data-testid="stNumberInput"] {
+    width: 110px !important; /* Largura mínima para caber 2 dígitos + botões */
+}
+
+/* Remove o espaço vazio (padding) nas laterais do número */
+[data-testid="stSidebar"] input {
+    padding-left: 5px !important;
+    padding-right: 5px !important;
+    text-align: center !important;
+}
+
+/* Garante que os botões de + e - fiquem visíveis e pequenos */
+[data-testid="stSidebar"] button[kind="secondary"] {
+    width: 22px !important;
+    min-width: 22px !important;
+}
+
     </style>
 """, unsafe_allow_html=True)
 
