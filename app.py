@@ -339,12 +339,12 @@ c1, c2, c3 = st.columns(3)
 with c1:
     buf = io.StringIO()
     fig.write_html(buf, config={'scrollZoom': True})
-    st.download_button("📥 Baixar Gráfico (HTML)", buf.getvalue(), f"revolucao_{ano}_grau_{grau_limpo_file}.html", "text/html")
+    st.download_button("📥 Baixar Gráfico Interativo (HTML)", buf.getvalue(), f"revolucao_planetaria_{ano}_{planeta_selecionado}_em_{signo_selecionado}_grau_{grau_limpo_file}.html", "text/html")
 with c2:
     if eventos_aspectos:
         out = io.BytesIO()
         with pd.ExcelWriter(out, engine='openpyxl') as w: pd.DataFrame(eventos_aspectos).to_excel(w, index=False)
-        st.download_button("📂 Baixar Tabela Aspectos (Excel)", out.getvalue(), f"tabela_transitos_{ano}_grau_{grau_limpo_file}.xlsx")
+        st.download_button("📂 Baixar Tabela Aspectos (Excel)", out.getvalue(), f"aspectos_{ano}_{planeta_selecionado}_em_{signo_selecionado}_grau_{grau_limpo_file}.xlsx")
     else:
         st.button("📂 Baixar Tabela Aspectos (Excel)", disabled=True)
 with c3:
