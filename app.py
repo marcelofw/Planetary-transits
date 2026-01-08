@@ -103,9 +103,9 @@ st.sidebar.header("Configurações")
 ano = st.sidebar.number_input("Ano da Análise", min_value=1900, max_value=2100, value=2026)
 col_g, col_m = st.sidebar.columns(2)
 with col_g:
-    graus = st.sidebar.number_input("Grau", 0, 29, value = 27, step = 1)
+    graus = st.number_input("Graus", 0, 29, value = 27, step = 1)
 with col_m:
-    minutos = st.sidebar.number_input("Min", 0, 59, value = 0, step = 1)
+    minutos = st.number_input("Minutos", 0, 59, value = 0, step = 1)
 # grau_input = st.sidebar.text_input("Grau Natal (0 a 30°)", value="27.0", help="Exemplo: 27.59 (27 graus e 59 minutos)")
 
 planeta_selecionado = st.sidebar.selectbox("Planeta", options=["Escolha um planeta"] + LISTA_PLANETAS_UI, index=1)
