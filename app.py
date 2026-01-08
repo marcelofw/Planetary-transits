@@ -101,12 +101,18 @@ def obter_simbolo_aspecto(long1, long2):
 # --- INTERFACE LATERAL ---
 st.sidebar.header("Configurações")
 ano = st.sidebar.number_input("Ano da Análise", min_value=1900, max_value=2100, value=2026)
-grau_input = st.sidebar.text_input("Grau Natal (0 a 30°)", value="27.0", help="Exemplo: 27.59 (27 graus e 59 minutos)")
+col_g, col_m = st.sidebar.columns(2)
+with col_g:
+    graus = st.sidebar.number_input("Grau", 0, 29, value = 27, step = 1)
+with col_m:
+    minutos = st.sidebar.number_input("Min", 0, 59, value = 0, step = 1)
+# grau_input = st.sidebar.text_input("Grau Natal (0 a 30°)", value="27.0", help="Exemplo: 27.59 (27 graus e 59 minutos)")
 
 planeta_selecionado = st.sidebar.selectbox("Planeta", options=["Escolha um planeta"] + LISTA_PLANETAS_UI, index=1)
 signo_selecionado = st.sidebar.selectbox("Signo do Zodíaco", options=["Escolha um signo"] + SIGNOS, index=6)
+btn_gerar_grafico = st.sidebar.button("🚀 Gerar Gráfico", use_container_width = True)
 
-grau_decimal = dms_to_dec(grau_input)
+grau_decimal = graus + (minutos/60)
 incluir_lua = st.sidebar.checkbox("Quero analisar a Lua", value=False)
 mes_selecionado = st.sidebar.slider("Mês da Lua", 1, 12, 1) if incluir_lua else None
 
@@ -192,7 +198,6 @@ def get_planetary_data(ano_ref, grau_ref_val, analisar_lua, mes_unico, long_nata
 
 df_mov_anual = get_annual_movements(ano)
 df, lista_planetas = get_planetary_data(ano, grau_decimal, incluir_lua, mes_selecionado, long_natal_absoluta_calc)
-grau_limpo_file = str(grau_input).replace('.', '_')
 
 @st.fragment
 def secao_previsao_ia(ano, planeta_selecionado, signo_selecionado, grau_input, long_natal_absoluta_calc):
@@ -272,7 +277,7 @@ def secao_previsao_ia(ano, planeta_selecionado, signo_selecionado, grau_input, l
                 if ativos_ia:
                     data_hora_str = f"{data_consulta.strftime('%d/%m/%Y')} às {hora_valida}"
                     prompt_final = f"""Você é um astrólogo profissional. Interprete o momento: {data_hora_str}.
-    Ponto Natal: {planeta_selecionado} a {grau_input}° de {signo_selecionado}.
+    Ponto Natal: {planeta_selecionado} a {graus}, {minutos}° de {signo_selecionado}.
     Trânsitos ativos para este ponto: {'; '.join(ativos_ia)}.
     Explique como esses trânsitos afetam esse ponto natal específico."""
 
@@ -306,14 +311,14 @@ for p in lista_planetas:
         fig.add_trace(go.Scatter(x=picos['date'], y=picos[p['nome']]+0.04, mode='markers+text', text=picos['date'].dt.strftime('%d/%m'),
                                  textposition="top center", marker=dict(symbol="triangle-down", color=p['cor'], size=8), showlegend=False, hoverinfo='skip'))
 
-fig.update_layout(title=dict(text=f'<b>Ponto Natal: {p_texto} a {grau_input}° de {s_texto}</b>', x=0.5, xanchor = 'center', font = dict(size = 28)),
+fig.update_layout(title=dict(text=f'<b>Ponto Natal: {p_texto} a {graus}, {minutos}° de {s_texto}</b>', x=0.5, xanchor = 'center', font = dict(size = 28)),
                   height=700,
                   xaxis=dict(rangeslider=dict(visible=True, thickness=0.08), type='date', tickformat='%d/%m\n%Y', hoverformat='%d/%m/%Y %H:%M'),
                   yaxis=dict(title='Intensidade', range=[0, 1.3], fixedrange=True), template='plotly_white', hovermode='x unified', dragmode='pan')
 st.plotly_chart(fig, use_container_width=True, config={'scrollZoom': True})
 
 # Chamada da função da seção de IA
-secao_previsao_ia(ano, planeta_selecionado, signo_selecionado, grau_input, long_natal_absoluta_calc)
+secao_previsao_ia(ano, planeta_selecionado, signo_selecionado, graus, minutos, long_natal_absoluta_calc)
 
 # --- LÓGICA DA TABELA DE ASPECTOS ---
 eventos_aspectos = []
@@ -363,12 +368,12 @@ c1, c2, c3 = st.columns(3)
 with c1:
     buf = io.StringIO()
     fig.write_html(buf, config={'scrollZoom': True})
-    st.download_button("📥 Baixar Gráfico Interativo (HTML)", buf.getvalue(), f"revolucao_planetaria_{ano}_{planeta_selecionado}_em_{signo_selecionado}_grau_{grau_limpo_file}.html", "text/html")
+    st.download_button("📥 Baixar Gráfico Interativo (HTML)", buf.getvalue(), f"revolucao_planetaria_{ano}_{planeta_selecionado}_em_{signo_selecionado}_grau_{graus}_{minutos}.html", "text/html")
 with c2:
     if eventos_aspectos:
         out = io.BytesIO()
         with pd.ExcelWriter(out, engine='openpyxl') as w: pd.DataFrame(eventos_aspectos).to_excel(w, index=False)
-        st.download_button("📂 Baixar Tabela Aspectos (Excel)", out.getvalue(), f"aspectos_{ano}_{planeta_selecionado}_em_{signo_selecionado}_grau_{grau_limpo_file}.xlsx")
+        st.download_button("📂 Baixar Tabela Aspectos (Excel)", out.getvalue(), f"aspectos_{ano}_{planeta_selecionado}_em_{signo_selecionado}_grau_{graus}_{minutos}.xlsx")
     else:
         st.button("📂 Baixar Tabela Aspectos (Excel)", disabled=True)
 with c3:
