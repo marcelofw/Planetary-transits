@@ -200,7 +200,7 @@ df_mov_anual = get_annual_movements(ano)
 df, lista_planetas = get_planetary_data(ano, grau_decimal, incluir_lua, mes_selecionado, long_natal_absoluta_calc)
 
 @st.fragment
-def secao_previsao_ia(ano, planeta_selecionado, signo_selecionado, grau_input, long_natal_absoluta_calc):
+def secao_previsao_ia(ano, planeta_selecionado, signo_selecionado, graus, minutos, long_natal_absoluta_calc):
         # --- SEÇÃO DE CONSULTA IA CENTRALIZADA (ABAIXO DO GRÁFICO) ---
     st.divider()
     col_esq, col_central, col_dir = st.columns([1, 1.5, 1])
