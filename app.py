@@ -291,7 +291,6 @@ def secao_previsao_ia(ano, planeta_selecionado, signo_selecionado, grau_input, l
                 else:
                     st.info("Não há aspectos significativos para este momento.")
 
-
 # --- GRÁFICO ---
 fig = go.Figure()
 for p in lista_planetas:
