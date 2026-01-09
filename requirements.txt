@@ -4,8 +4,3 @@ pandas
 plotly
 openpyxl
 numpy
-io
-re
-os
-base64
-math
