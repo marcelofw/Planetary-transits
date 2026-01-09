@@ -3,4 +3,9 @@ pyswisseph
 pandas
 plotly
 openpyxl
-google-generativeai
+numpy
+io
+re
+os
+base64
+math
