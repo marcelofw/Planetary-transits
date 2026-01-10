@@ -74,13 +74,12 @@ ponto_inicial = [
 ]
 st.sidebar.title("🪐 Configurações")
 ano_analise = st.sidebar.number_input("Ano da Revolução", 1900, 2100, 2026)
-st.sidebar.divider() # Adiciona uma linha sutil para separar
-st.sidebar.subheader("Dados Natais")
+st.sidebar.subheader("Dados Natais", help="Insira os graus no formato Graus.Minutos (Ex: 27.30 para 27°30'). Use ponto como separador decimal.")
 
 alvos_input = []
 for i, alvo in enumerate(ponto_inicial):
     # Anotação acima do par de campos (estilizado em negrito/pequeno)
-    st.sidebar.markdown(f"**{alvo['p']} Natal**")
+    st.sidebar.markdown(f"**{alvo['p']}**")
     
     # Colunas lado a lado
     col1, col2 = st.sidebar.columns([1.8, 1]) 
@@ -109,7 +108,7 @@ for i, alvo in enumerate(ponto_inicial):
 st.sidebar.divider()
 
 # --- PROCESSAMENTO ---
-if st.sidebar.button("Calcular Revolução", use_container_width=True):
+if st.sidebar.button("Gerar Gráficos", use_container_width=True):
     with st.spinner("Sincronizando efemérides..."):
         
         fig = make_subplots(
