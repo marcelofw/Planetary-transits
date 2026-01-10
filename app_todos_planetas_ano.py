@@ -108,7 +108,7 @@ for i, alvo in enumerate(ponto_inicial):
 st.sidebar.divider()
 
 # --- PROCESSAMENTO ---
-if st.sidebar.button("Gerar Gráficos", use_container_width=True):
+if st.sidebar.button("Gerar Gráficos", help="Pode levar um tempo para processar.", use_container_width=True):
     with st.spinner("Sincronizando efemérides..."):
         
         fig = make_subplots(
@@ -206,10 +206,11 @@ if st.sidebar.button("Gerar Gráficos", use_container_width=True):
             legend=dict(orientation="h", yanchor="top", y=0.97, yref="container", xanchor="center", x=0.5)
         )
 
-        fig.update_xaxes(type='date', tickformat='%d/%m\n%Y', hoverformat='%d/%m/%Y %H:%M', showticklabels=True, visible=True)
+        fig.update_xaxes(type='date', tickformat='%d/%m\n%Y', hoverformat='%d/%m/%Y %H:%M', showticklabels=True, visible=True,
+                         rangeslider=dict(visible=True))
         fig.update_yaxes(title='Intensidade', range=[0, 1.3], fixedrange=True)
         fig.update_annotations(patch=dict(font=dict(size=14), yshift=20))
 
         st.plotly_chart(fig, use_container_width=True, config={'scrollZoom': True})
 else:
-    st.info("Utilize o menu lateral para configurar os dados e clique em 'Calcular Revolução'.")
+    st.info("Utilize o menu lateral para configurar os dados e clique em 'Gerar Gráficos'.")
