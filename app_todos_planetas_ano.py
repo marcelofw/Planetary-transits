@@ -98,7 +98,7 @@ if st.sidebar.button("Calcular Revolução", use_container_width=True):
 
         jd_start = swe.julday(ano_analise, 1, 1)
         jd_end = swe.julday(ano_analise + 1, 1, 1)
-        steps = np.arange(jd_start, jd_end, 1)
+        steps = np.arange(jd_start, jd_end, 0.1)
         flags = swe.FLG_SWIEPH | swe.FLG_SPEED
 
         for idx_alvo, alvo in enumerate(alvos_input):
@@ -114,27 +114,19 @@ if st.sidebar.button("Calcular Revolução", use_container_width=True):
                 
                 for p in planetas_monitorados:
                     res, _ = swe.calc_ut(jd, p["id"], flags)
-                    long_abs, velocidade = res[0], res[3]
-                    status = "Retrógrado" if velocidade < 0 else "Direto"
-                    mov_abrev = " (R)" if velocidade < 0 else " (D)"
-                    
+                    long_abs, vel = res[0], res[3]
                     pos_no_signo = long_abs % 30
-                    grau = int(pos_no_signo)
-                    minutos = int((pos_no_signo % 1) * 60)
-
                     dist = abs(((pos_no_signo - grau_decimal + 15) % 30) - 15)
-                    val = np.exp(-0.5 * (dist / 1.7)**2)
                     
-                    intensidade_txt = "Forte" if dist <= 1.0 else "Médio" if dist <= 2.5 else "Fraco"
-                    simbolo = obter_simbolo_aspecto(long_abs, long_natal_absoluta)
-                    simbolo_html = f"<span style='font-size: 18px;'><b>{simbolo}</b></span>" if simbolo else ""
-                    
-                    row[p["nome"]] = val if dist <= 5.0 else None
-                    row[f"{p['nome']}_long"] = long_abs
-                    row[f"{p['nome']}_status"] = status
-                    row[f"{p['nome']}_info"] = f"{get_signo(long_abs)}{mov_abrev} {grau:02d}°{minutos:02d}' - {intensidade_txt} {simbolo_html}"
-            
-            all_data.append(row)
+                    if dist <= 5.0:
+                        val = np.exp(-0.5 * (dist / 1.7)**2)
+                        simb = obter_simbolo_aspecto(long_abs, long_natal_absoluta)
+                        status = "(R)" if vel < 0 else "(D)"
+                        row[p["nome"]] = val
+                        row[f"{p['nome']}_info"] = f"{p['nome']}: {get_signo(long_abs)} {int(pos_no_signo)}°{int((pos_no_signo%1)*60):02d}' {status} {simb}"
+                    else:
+                        row[p["nome"]] = None
+                all_data.append(row)
 
             df = pd.DataFrame(all_data).infer_objects(copy=False)
             
