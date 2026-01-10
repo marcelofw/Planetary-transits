@@ -219,7 +219,7 @@ def secao_previsao_ia(ano, planeta_selecionado, signo_selecionado, grau_input, l
     col_esq, col_central, col_dir = st.columns([1, 1.5, 1])
 
     with col_central:
-        st.markdown("<h2 style='text-align: center;'>🤖 Previsão Astrológica</h2>", unsafe_allow_html=True)
+        st.markdown("<h2 style='text-align: center;'>🤖 Consulta Astrológica</h2>", unsafe_allow_html=True)
         
         sub_col1, sub_col2 = st.columns(2)
         
