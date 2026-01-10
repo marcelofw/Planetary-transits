@@ -289,23 +289,12 @@ def secao_previsao_ia(ano, planeta_selecionado, signo_selecionado, grau_input, l
             with col_central:
                 if ativos_ia:
                     data_hora_str = f"{data_consulta.strftime('%d/%m/%Y')} às {hora_valida}"
-                    prompt_final = f"""Você é um astrólogo profissional. Interprete o momento: {data_hora_str}.
+                    prompt_final = f"""Data e hora: {data_hora_str}.
     Ponto Natal: {planeta_selecionado} a {grau_input}° de {signo_selecionado}.
     Trânsitos ativos para este ponto: {'; '.join(ativos_ia)}.
-    Explique como esses trânsitos afetam esse ponto natal específico."""
-
+    """
                     st.write("### 📝 Seu Prompt está pronto!")
-                    st.text_area("Texto do Prompt:", value=prompt_final, height=200)
-                    
-                    query_codificada = urllib.parse.quote(prompt_final)
-                    link_gemini = f"https://gemini.google.com/app?prompt={query_codificada}"
-                    st.markdown(f'''
-            <a href="{link_gemini}" target="_blank" style="text-decoration: none; color: white !important;">
-                <div style="background-color: #4285F4; color: white; text-align: center; padding: 15px; border-radius: 8px; font-weight: bold; font-size: 1.1rem;">
-                    🚀 Abrir Gemini e Analisar Agora
-                </div>
-            </a>
-        ''', unsafe_allow_html=True)
+                    st.text_area("Resulto dos trânsitos:", value=prompt_final, height=200)
                 else:
                     st.info("Não há aspectos significativos para este momento.")
 
