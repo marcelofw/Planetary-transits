@@ -117,6 +117,8 @@ if st.sidebar.button("Calcular Revolução", use_container_width=True):
                     
                     pos_no_signo = long_abs % 30
                     # Cálculo de distância considerando a volta do zodíaco (orb de 5 graus)
+                    graus_int = int(pos_no_signo)
+                    minutos_in = int((pos_no_signo - graus_int) * 60)
                     dist = abs(((pos_no_signo - grau_decimal + 15) % 30) - 15)
                     
                     if dist <= 5.0:
@@ -186,6 +188,6 @@ if st.sidebar.button("Calcular Revolução", use_container_width=True):
         fig.update_yaxes(title='Intensidade', range=[0, 1.3], fixedrange=True)
         fig.update_annotations(patch=dict(font=dict(size=14), yshift=20))
 
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, use_container_width=True, config={'scrollZoom': True})
 else:
     st.info("Utilize o menu lateral para configurar os dados e clique em 'Calcular Revolução'.")
