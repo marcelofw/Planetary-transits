@@ -207,7 +207,11 @@ if st.sidebar.button("Gerar Gráficos", help="Pode levar um tempo para processar
         )
 
         fig.update_xaxes(type='date', tickformat='%d/%m\n%Y', hoverformat='%d/%m/%Y %H:%M', showticklabels=True, visible=True,
-                         rangeslider=dict(visible=True))
+                         rangeselector=dict(
+        buttons=list([
+            dict(count=1, label="1m", step="month", stepmode="backward"),
+            dict(count=6, label="6m", step="month", stepmode="backward"),
+            dict(step="all", label="Ano")])))
         fig.update_yaxes(title='Intensidade', range=[0, 1.3], fixedrange=True)
         fig.update_annotations(patch=dict(font=dict(size=14), yshift=20))
 
