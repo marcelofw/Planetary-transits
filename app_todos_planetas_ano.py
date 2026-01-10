@@ -92,7 +92,7 @@ if st.sidebar.button("Calcular Revolução", use_container_width=True):
         fig = make_subplots(
             rows=len(alvos_input), cols=1,
             subplot_titles=[f"<b>{a['planeta']} Natal em {a['signo']} {a['grau']}°</b>" for a in alvos_input],
-            vertical_spacing=0.04,
+            vertical_spacing=0.025,
             shared_xaxes=True
         )
 
