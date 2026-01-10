@@ -54,9 +54,6 @@ def obter_simbolo_aspecto(long1, long2):
     return ""
 
 # --- INTERFACE LATERAL ---
-st.sidebar.title("🪐 Configurações")
-ano_analise = st.sidebar.number_input("Ano da Revolução", 1900, 2100, 2026)
-
 planetas_monitorados = [
     {"id": swe.SUN, "nome": "SOL", "cor": "#FFF12E"},
     {"id": swe.MERCURY, "nome": "MERCÚRIO", "cor": "#F3A384"},
@@ -68,8 +65,6 @@ planetas_monitorados = [
     {"id": swe.NEPTUNE, "nome": "NETUNO", "cor": "#1EFF00"},
     {"id": swe.PLUTO, "nome": "PLUTÃO", "cor": "#14F1F1"}
 ]
-
-st.sidebar.subheader("Dados Natais")
 ponto_inicial = [
     {"p": "Sol", "s": "Virgem", "g": "27.0"}, {"p": "Lua", "s": "Leão", "g": "6.2"},
     {"p": "Mercúrio", "s": "Libra", "g": "19.59"}, {"p": "Vênus", "s": "Libra", "g": "5.16"},
@@ -77,13 +72,41 @@ ponto_inicial = [
     {"p": "Saturno", "s": "Peixes", "g": "20.53"}, {"p": "Urano", "s": "Capricórnio", "g": "26.37"},
     {"p": "Netuno", "s": "Capricórnio", "g": "22.50"}, {"p": "Plutão", "s": "Escorpião", "g": "28.19"}
 ]
+st.sidebar.title("🪐 Configurações")
+ano_analise = st.sidebar.number_input("Ano da Revolução", 1900, 2100, 2026)
+st.sidebar.divider() # Adiciona uma linha sutil para separar
+st.sidebar.subheader("Dados Natais")
 
 alvos_input = []
 for i, alvo in enumerate(ponto_inicial):
-    with st.sidebar.expander(f"{alvo['p']} Natal"):
-        s = st.selectbox("Signo", SIGNOS, index=SIGNOS.index(alvo['s']), key=f"s{i}")
-        g = st.text_input("Grau", value=alvo['g'], key=f"g{i}")
-        alvos_input.append({"planeta": alvo['p'], "signo": s, "grau": g})
+    # Anotação acima do par de campos (estilizado em negrito/pequeno)
+    st.sidebar.markdown(f"**{alvo['p']} Natal**")
+    
+    # Colunas lado a lado
+    col1, col2 = st.sidebar.columns([1.8, 1]) 
+    
+    with col1:
+        s = st.selectbox(
+            "Signo", 
+            SIGNOS, 
+            index=SIGNOS.index(alvo['s']), 
+            key=f"s{i}", 
+            label_visibility="collapsed" # Esconde o label interno para não repetir o título
+        )
+    
+    with col2:
+        g = st.text_input(
+            "Grau", 
+            value=alvo['g'], 
+            key=f"g{i}", 
+            label_visibility="collapsed" # Esconde o label interno
+        )
+    
+    alvos_input.append({"planeta": alvo['p'], "signo": s, "grau": g})
+    # Espaço opcional entre os blocos de planetas
+    st.sidebar.markdown("<div style='margin-bottom: -10px;'></div>", unsafe_allow_html=True)
+
+st.sidebar.divider()
 
 # --- PROCESSAMENTO ---
 if st.sidebar.button("Calcular Revolução", use_container_width=True):
