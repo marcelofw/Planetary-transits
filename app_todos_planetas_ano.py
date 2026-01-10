@@ -178,7 +178,7 @@ if st.sidebar.button("Calcular Revolução", use_container_width=True):
         # Layout Final Dark
         fig.update_layout(
             height=520 * len(alvos_input), # Altura proporcional ao número de alvos
-            title=dict(text=f"<b>Revolução Planetária {ano_analise}</b>", x=0.5, y=0.98, yanchor="top", font = dict(size = 24)),
+            title=dict(text=f"<b>Revolução Planetária {ano_analise}</b>", x=0.5, y=0.98, yanchor="center", font = dict(size = 24)),
             template='plotly_dark',
             hovermode='x unified', dragmode='pan', margin=dict(t=240, b=50, l=50, r=50),
             legend=dict(orientation="h", yanchor="top", y=0.97, yref="container", xanchor="center", x=0.5)
