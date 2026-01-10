@@ -131,7 +131,7 @@ if st.sidebar.button("Calcular Revolução", use_container_width=True):
                         int_txt = "Forte" if dist <= 1.0 else "Médio" if dist <= 2.5 else "Fraco"
                         
                         row[p["nome"]] = val
-                        row[f"{p['nome']}_info"] = f"{get_signo(long_abs)} {int(pos_no_signo)}° {status} - {int_txt} {simb}"
+                        row[f"{p['nome']}_info"] = f"{get_signo(long_abs)} {status} {graus_int}°{minutos_in}' - {int_txt} {simb}"
                     else:
                         row[p["nome"]] = np.nan
                         row[f"{p['nome']}_info"] = ""
