@@ -73,7 +73,7 @@ ponto_inicial = [
     {"p": "Netuno", "s": "Capricórnio", "g": "22.50"}, {"p": "Plutão", "s": "Escorpião", "g": "28.19"}
 ]
 st.sidebar.title("🪐 Configurações")
-ano_analise = st.sidebar.number_input("Ano da Revolução", 1900, 2100, 2026)
+ano_analise = st.sidebar.number_input("Ano da Análise", 1900, 2100, 2026)
 st.sidebar.subheader("Dados Natais", help="Insira os graus no formato Graus.Minutos (Ex: 27.30 para 27°30'). Use ponto como separador decimal.")
 
 alvos_input = []
@@ -120,7 +120,7 @@ if st.sidebar.button("Gerar Gráficos", use_container_width=True):
 
         jd_start = swe.julday(ano_analise, 1, 1)
         jd_end = swe.julday(ano_analise + 1, 1, 1)
-        steps = np.arange(jd_start, jd_end, 0.1)
+        steps = np.arange(jd_start, jd_end, 0.05)
         flags = swe.FLG_SWIEPH | swe.FLG_SPEED
 
         for idx_alvo, alvo in enumerate(alvos_input):

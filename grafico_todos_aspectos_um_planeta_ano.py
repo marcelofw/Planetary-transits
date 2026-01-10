@@ -58,7 +58,7 @@ def generate_degree_transit_chart():
     ano = 2026
     grau_alvo_natal = "27.0"  
     planeta_natal_ui = "Sol"      
-    signo_natal_ui = "Capricórnio" 
+    signo_natal_ui = "Virgem" 
     
     grau_decimal = dms_to_dec(grau_alvo_natal)
     idx_signo_natal = SIGNOS.index(signo_natal_ui) if signo_natal_ui in SIGNOS else 0
