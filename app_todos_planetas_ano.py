@@ -98,7 +98,7 @@ if st.sidebar.button("Calcular Revolução", use_container_width=True):
 
         jd_start = swe.julday(ano_analise, 1, 1)
         jd_end = swe.julday(ano_analise + 1, 1, 1)
-        steps = np.arange(jd_start, jd_end, 0.1)
+        steps = np.arange(jd_start, jd_end, 1)
         flags = swe.FLG_SWIEPH | swe.FLG_SPEED
 
         for idx_alvo, alvo in enumerate(alvos_input):
