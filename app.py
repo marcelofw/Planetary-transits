@@ -289,10 +289,8 @@ def secao_previsao_ia(ano, planeta_selecionado, signo_selecionado, grau_input, l
             with col_central:
                 if ativos_ia:
                     data_hora_str = f"{data_consulta.strftime('%d/%m/%Y')} às {hora_valida}"
-                    prompt_final = f"""Data e hora: {data_hora_str}.\n
-                    Trânsitos ativos para {planeta_selecionado} a {grau_input}° de {signo_selecionado}: \n{'; \n'.join(ativos_ia)}.
-    """
-                    st.write("### 📝 Seu resultado está pronto!")
+                    prompt_final = f"""Data e hora: {data_hora_str}.\n Trânsitos ativos para {planeta_selecionado} a {grau_input}° de {signo_selecionado}: \n{'; \n'.join(ativos_ia)}."""
+                    st.write("### 📝 Sua consulta está pronta!")
                     st.text_area("Resultado dos trânsitos:", value=prompt_final, height=200)
                 else:
                     st.info("Não há aspectos significativos para este momento.")
