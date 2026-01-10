@@ -196,20 +196,13 @@ if st.sidebar.button("Gerar Gráficos", help="Pode levar um tempo para processar
                         legendgroup=p['nome'], showlegend=False, hoverinfo='skip'
                     ), row=idx_alvo+1, col=1)
 
-            # --- DENTRO DO SEU LOOP PRINCIPAL ---
-            for idx_alvo, alvo in enumerate(alvos_input):
-                # ... (seu código de cálculo e fig.add_trace permanece aqui) ...
-
-                # Atualiza o título do eixo Y especificamente para este planeta
-                fig.update_yaxes(
-                    title_text=f"Intensidade de {alvo['planeta']}", 
-                    row=idx_alvo + 1, 
-                    col=1,
-                    # Mantém suas configurações de estilo
-                    range=[0, 1.3], 
-                    fixedrange=True,
-                    gridcolor="#334155"
-                )
+            fig.update_yaxes(
+                title_text=f"Intensidade de {alvo['planeta']}", 
+                row=idx_alvo + 1, 
+                col=1,
+                range=[0, 1.3], 
+                fixedrange=True
+            )
 
         # Layout Final Dark
         fig.update_layout(
@@ -221,7 +214,7 @@ if st.sidebar.button("Gerar Gráficos", help="Pode levar um tempo para processar
         )
 
         fig.update_xaxes(type='date', tickformat='%d/%m\n%Y', hoverformat='%d/%m/%Y %H:%M', showticklabels=True, visible=True)
-        fig.update_yaxes(title='Intensidade', range=[0, 1.3], fixedrange=True)
+        #fig.update_yaxes(title='Intensidade', range=[0, 1.3], fixedrange=True)
         fig.update_annotations(patch=dict(font=dict(size=14), yshift=20))
 
         st.plotly_chart(fig, use_container_width=True, config={'scrollZoom': True})
