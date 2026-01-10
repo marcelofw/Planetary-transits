@@ -92,7 +92,7 @@ if st.sidebar.button("Calcular Revolução", use_container_width=True):
             rows=len(alvos_input), cols=1,
             subplot_titles=[f"<b>{a['planeta']} Natal em {a['signo']} {a['grau']}°</b>" for a in alvos_input],
             vertical_spacing=0.025,
-            shared_xaxes=True
+            shared_xaxes=False
         )
 
         jd_start = swe.julday(ano_analise, 1, 1)
