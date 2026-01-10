@@ -162,7 +162,6 @@ if st.sidebar.button("Gerar Gráficos", help="Pode levar um tempo para processar
 
             df = pd.DataFrame(all_data).infer_objects(copy=False)
             
-        
             for p in planetas_monitorados:
                 if f"{p['nome']}_info" not in df.columns: df[f"{p['nome']}_info"] = ""
 
@@ -197,6 +196,21 @@ if st.sidebar.button("Gerar Gráficos", help="Pode levar um tempo para processar
                         legendgroup=p['nome'], showlegend=False, hoverinfo='skip'
                     ), row=idx_alvo+1, col=1)
 
+            # --- DENTRO DO SEU LOOP PRINCIPAL ---
+            for idx_alvo, alvo in enumerate(alvos_input):
+                # ... (seu código de cálculo e fig.add_trace permanece aqui) ...
+
+                # Atualiza o título do eixo Y especificamente para este planeta
+                fig.update_yaxes(
+                    title_text=f"Intensidade de {alvo['planeta']}", 
+                    row=idx_alvo + 1, 
+                    col=1,
+                    # Mantém suas configurações de estilo
+                    range=[0, 1.3], 
+                    fixedrange=True,
+                    gridcolor="#334155"
+                )
+
         # Layout Final Dark
         fig.update_layout(
             height=520 * len(alvos_input), # Altura proporcional ao número de alvos
@@ -206,12 +220,7 @@ if st.sidebar.button("Gerar Gráficos", help="Pode levar um tempo para processar
             legend=dict(orientation="h", yanchor="top", y=0.97, yref="container", xanchor="center", x=0.5)
         )
 
-        fig.update_xaxes(type='date', tickformat='%d/%m\n%Y', hoverformat='%d/%m/%Y %H:%M', showticklabels=True, visible=True,
-                         rangeselector=dict(
-        buttons=list([
-            dict(count=1, label="1m", step="month", stepmode="backward"),
-            dict(count=6, label="6m", step="month", stepmode="backward"),
-            dict(step="all", label="Ano")])))
+        fig.update_xaxes(type='date', tickformat='%d/%m\n%Y', hoverformat='%d/%m/%Y %H:%M', showticklabels=True, visible=True)
         fig.update_yaxes(title='Intensidade', range=[0, 1.3], fixedrange=True)
         fig.update_annotations(patch=dict(font=dict(size=14), yshift=20))
 
