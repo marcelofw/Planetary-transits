@@ -5,6 +5,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import numpy as np
 from datetime import datetime
+swe.set_ephe_path('')
 
 # Configuração da Página
 st.set_page_config(page_title="Revolução Planetária", layout="wide")
