@@ -235,7 +235,7 @@ def secao_previsao_ia(ano, planeta_selecionado, signo_selecionado, grau_input, l
         with sub_col2:
             hora_input = st.text_input("Escolha a hora (HH:MM)", placeholder="12:00", key="ia_hora_key")
         
-        btn_gerar = st.button("Preparar Análise para o Gemini", use_container_width=True)
+        btn_gerar = st.button("Obter informação sobre os trânsitos", use_container_width=True)
 
     if btn_gerar:
         # --- VALIDAÇÃO DE SELEÇÃO ---
@@ -291,10 +291,10 @@ def secao_previsao_ia(ano, planeta_selecionado, signo_selecionado, grau_input, l
                     data_hora_str = f"{data_consulta.strftime('%d/%m/%Y')} às {hora_valida}"
                     prompt_final = f"""Data e hora: {data_hora_str}.
     Ponto Natal: {planeta_selecionado} a {grau_input}° de {signo_selecionado}.
-    Trânsitos ativos para este ponto: {'; '.join(ativos_ia)}.
+    Trânsitos ativos para este ponto: {'; \n'.join(ativos_ia)}.
     """
-                    st.write("### 📝 Seu Prompt está pronto!")
-                    st.text_area("Resulto dos trânsitos:", value=prompt_final, height=200)
+                    st.write("### 📝 Seu resultado está pronto!")
+                    st.text_area("Resultado dos trânsitos:", value=prompt_final, height=200)
                 else:
                     st.info("Não há aspectos significativos para este momento.")
 
