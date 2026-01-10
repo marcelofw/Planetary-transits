@@ -109,23 +109,31 @@ if st.sidebar.button("Calcular Revolução", use_container_width=True):
             all_data = []
             for jd in steps:
                 y, m, d, h = swe.revjul(jd)
-                dt = datetime(y, m, d, int(h), int((h%1)*60))
-                row = {'date': dt}
+                row = {'date': datetime(y, m, d, int(h), int((h%1)*60))}
                 
                 for p in planetas_monitorados:
                     res, _ = swe.calc_ut(jd, p["id"], flags)
                     long_abs, vel = res[0], res[3]
+                    
                     pos_no_signo = long_abs % 30
+                    # Cálculo de distância considerando a volta do zodíaco (orb de 5 graus)
                     dist = abs(((pos_no_signo - grau_decimal + 15) % 30) - 15)
                     
                     if dist <= 5.0:
+                        # Cálculo da Força (Exponencial)
                         val = np.exp(-0.5 * (dist / 1.7)**2)
-                        simb = obter_simbolo_aspecto(long_abs, long_natal_absoluta)
+                        
+                        # Info Detalhada
                         status = "(R)" if vel < 0 else "(D)"
+                        simb = obter_simbolo_aspecto(long_abs, long_natal_absoluta)
+                        int_txt = "Forte" if dist <= 1.0 else "Médio" if dist <= 2.5 else "Fraco"
+                        
                         row[p["nome"]] = val
-                        row[f"{p['nome']}_info"] = f"{p['nome']}: {get_signo(long_abs)} {int(pos_no_signo)}°{int((pos_no_signo%1)*60):02d}' {status} {simb}"
+                        row[f"{p['nome']}_info"] = f"{get_signo(long_abs)} {int(pos_no_signo)}° {status} - {int_txt} {simb}"
                     else:
-                        row[p["nome"]] = None
+                        row[p["nome"]] = np.nan
+                        row[f"{p['nome']}_info"] = ""
+                
                 all_data.append(row)
 
             df = pd.DataFrame(all_data).infer_objects(copy=False)
