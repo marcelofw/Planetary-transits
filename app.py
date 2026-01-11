@@ -240,7 +240,7 @@ def secao_previsao_ia(ano, planeta_selecionado, signo_selecionado, grau_input, l
         with sub_col1:
             data_consulta = st.date_input(
                 "Escolha a data", 
-                value=date(ano, hoje.month, hoje.day),
+                value=date(hoje.year, hoje.month, hoje.day),
                 min_value=date(1900, 1, 1),
                 max_value=date(2100, 12, 31),
                 key="ia_data_key" 
