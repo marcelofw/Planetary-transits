@@ -7,6 +7,11 @@ import numpy as np
 from datetime import datetime
 import io
 
+if 'fig_gerada' not in st.session_state:
+    st.session_state.fig_gerada = None
+if 'file_name' not in st.session_state:
+    st.session_state.file_name = ""
+
 # Configuração da Página
 st.set_page_config(page_title="Revolução Planetária", layout="wide")
 
@@ -248,15 +253,20 @@ if st.sidebar.button("Gerar Gráficos", help="Pode levar um tempo para processar
         fig.update_annotations(patch=dict(font=dict(size=14), yshift=20))
 
         st.plotly_chart(fig, use_container_width=True, config={'scrollZoom': True})
+        st.session_state.fig_gerada = fig
+        st.session_state.file_name = file_name_grafico
 
-        buf = io.StringIO()
-        fig.write_html(buf, config={'scrollZoom':True}, include_plotlyjs=True)
-        st.sidebar.download_button(
-            label="📥 Baixar Gráfico Interativo (HTML)",
-            data=buf.getvalue(),
-            file_name=file_name_grafico,
-            mime="text/html",
-            use_container_width=True
-        )
+if st.session_state.fig_gerada is not None:
+    st.plotly_chart(st.session_state.fig_gerada, use_container_width=True, config={'scrollZoom': True})
+    buf = io.StringIO()
+    st.session_state.fig_gerada.write_html(buf, config={'scrollZoom': True}, include_plotlyjs=True)
+
+    st.sidebar.download_button(
+        label="📥 Baixar Gráfico Interativo (HTML)",
+        data=buf.getvalue(),
+        file_name=st.session_state.file_name,
+        mime="text/html",
+        use_container_width=True
+    )   
 else:
     st.info("Utilize o menu lateral para configurar os dados e clique em 'Gerar Gráficos'.")
