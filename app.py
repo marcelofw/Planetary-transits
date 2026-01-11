@@ -60,6 +60,9 @@ SIMBOLOS_PLANETAS = {
     "URANO": "♅", "NETUNO": "♆", "PLUTÃO": "♇"
 }
 
+MESES = {1:'Janeiro', 2:'Fevereiro', 3:'Março', 4:'Abril', 5:'Maio', 6:'Junho', 7:'Julho',
+         8:'Agosto', 9:'Setembro', 10:'Outubro', 11:'Novembro', 12:'Dezembro'}
+
 def converter_svg_para_base64(caminho_arquivo):
     """Converte um arquivo SVG local em uma string Base64 para exibição universal."""
     if not os.path.exists(caminho_arquivo):
@@ -211,6 +214,14 @@ def get_planetary_data(ano_ref, grau_ref_val, analisar_lua, mes_unico, long_nata
 df_mov_anual = get_annual_movements(ano)
 df, lista_planetas = get_planetary_data(ano, grau_decimal, incluir_lua, mes_selecionado, long_natal_absoluta_calc)
 grau_limpo_file = str(grau_input).replace('.', '_')
+
+if incluir_lua:
+    mes_nome = MESES.get(mes_selecionado, "periodo")
+    file_name_grafico = f"revolucao_planetaria_{mes_nome}_{ano}_{planeta_selecionado}_em_{signo_selecionado}_grau_{grau_limpo_file}.html"
+    file_name_tabela = f"aspectos_{mes_nome}_{ano}_{planeta_selecionado}_em_{signo_selecionado}_grau_{grau_limpo_file}.xlsx"
+else:
+    file_name = f"revolucao_planetaria_{ano}_{planeta_selecionado}_em_{signo_selecionado}_grau_{grau_limpo_file}.html"
+    file_name_tabela = f"aspectos_{ano}_{planeta_selecionado}_em_{signo_selecionado}_grau_{grau_limpo_file}.xlsx"
 
 @st.fragment
 def secao_previsao_ia(ano, planeta_selecionado, signo_selecionado, grau_input, long_natal_absoluta_calc):
@@ -367,12 +378,12 @@ c1, c2, c3 = st.columns(3)
 with c1:
     buf = io.StringIO()
     fig.write_html(buf, config={'scrollZoom': True}, include_plotlyjs=True)
-    st.download_button("📥 Baixar Gráfico Interativo (HTML)", data=buf.getvalue(), file_name=f"revolucao_planetaria_{ano}_{planeta_selecionado}_em_{signo_selecionado}_grau_{grau_limpo_file}.html", mime="text/html")
+    st.download_button("📥 Baixar Gráfico Interativo (HTML)", data=buf.getvalue(), file_name=file_name_grafico, mime="text/html")
 with c2:
     if eventos_aspectos:
         out = io.BytesIO()
         with pd.ExcelWriter(out, engine='openpyxl') as w: pd.DataFrame(eventos_aspectos).to_excel(w, index=False)
-        st.download_button("📂 Baixar Tabela Aspectos (Excel)", out.getvalue(), f"aspectos_{ano}_{planeta_selecionado}_em_{signo_selecionado}_grau_{grau_limpo_file}.xlsx")
+        st.download_button("📂 Baixar Tabela Aspectos (Excel)", out.getvalue(), file_name=file_name_tabela)
     else:
         st.button("📂 Baixar Tabela Aspectos (Excel)", disabled=True)
 with c3:
