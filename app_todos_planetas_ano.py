@@ -252,7 +252,6 @@ if st.sidebar.button("Gerar Gráficos", help="Pode levar um tempo para processar
         #fig.update_yaxes(title='Intensidade', range=[0, 1.3], fixedrange=True)
         fig.update_annotations(patch=dict(font=dict(size=14), yshift=20))
 
-        st.plotly_chart(fig, use_container_width=True, config={'scrollZoom': True})
         st.session_state.fig_gerada = fig
         st.session_state.file_name = file_name_grafico
 
