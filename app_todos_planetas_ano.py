@@ -109,9 +109,9 @@ for i, alvo in enumerate(ponto_inicial):
     alvos_input.append({"planeta": alvo['p'], "signo": s, "grau": g})
     # Espaço opcional entre os blocos de planetas
     st.sidebar.markdown("<div style='margin-bottom: -10px;'></div>", unsafe_allow_html=True)
-    incluir_lua = st.sidebar.checkbox("Quero analisar a Lua", key="chk_analisar_lua")
-    mes_selecionado = st.sidebar.slider("Mês da Lua", 1, 12, 1) if incluir_lua else None
 
+incluir_lua = st.sidebar.checkbox("Quero analisar a Lua", key="chk_analisar_lua")
+mes_selecionado = st.sidebar.slider("Mês da Lua", 1, 12, 1) if incluir_lua else None
 st.sidebar.divider()
 
 # --- PROCESSAMENTO ---
