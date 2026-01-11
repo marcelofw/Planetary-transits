@@ -403,7 +403,6 @@ if eventos_aspectos:
 else:
     st.button("📂 Baixar Tabela Aspectos (Excel)", disabled=True)
 
-
 out_m = io.BytesIO()
 with pd.ExcelWriter(out_m, engine='openpyxl') as w: df_mov_anual.to_excel(w, index=False)
-st.download_button("🔄 Baixar Movimento Anual (Excel)", out_m.getvalue(), f"movimento_planetas_{ano}.xlsx")
+st.sidebar.download_button("🔄 Baixar Movimento Anual (Excel)", out_m.getvalue(), f"movimento_planetas_{ano}.xlsx")
