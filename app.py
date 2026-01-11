@@ -3,7 +3,7 @@ import swisseph as swe
 import pandas as pd
 import plotly.graph_objects as go
 import numpy as np
-from datetime import datetime
+from datetime import datetime, timedelta
 from datetime import date
 import io
 import re
@@ -227,7 +227,7 @@ else:
 def secao_previsao_ia(ano, planeta_selecionado, signo_selecionado, grau_input, long_natal_absoluta_calc):
         # --- SEÇÃO DE CONSULTA IA CENTRALIZADA (ABAIXO DO GRÁFICO) ---
     hoje = datetime.now()
-    hora_agora = datetime.now().strftime("%H:%M")
+    hora_agora = (datetime.now() - timedelta(hours=3)).strftime("%H:%M")
 
     st.divider()
     col_esq, col_central, col_dir = st.columns([1, 1.5, 1])
