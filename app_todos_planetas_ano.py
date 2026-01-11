@@ -22,6 +22,12 @@ ASPECTOS = {
     90: ("Quadratura", "□"), 120: ("Trígono", "△"), 150: ("Quincúncio", "⚻"), 180: ("Oposição", "☍")
 }
 
+MESES = {
+    1: "janeiro", 2: "fevereiro", 3: "marco", 4: "abril",
+    5: "maio", 6: "junho", 7: "julho", 8: "agosto",
+    9: "setembro", 10: "outubro", 11: "novembro", 12: "dezembro"
+}
+
 # --- FUNÇÕES AUXILIARES ---
 def get_signo(longitude):
     return SIGNOS[int(longitude / 30) % 12]
@@ -103,6 +109,8 @@ for i, alvo in enumerate(ponto_inicial):
     alvos_input.append({"planeta": alvo['p'], "signo": s, "grau": g})
     # Espaço opcional entre os blocos de planetas
     st.sidebar.markdown("<div style='margin-bottom: -10px;'></div>", unsafe_allow_html=True)
+    incluir_lua = st.sidebar.checkbox("Quero analisar a Lua")
+    mes_selecionado = st.sidebar.slider("Mês da Lua", 1, 12, 1) if incluir_lua else None
 
 st.sidebar.divider()
 
@@ -117,9 +125,10 @@ if st.sidebar.button("Gerar Gráficos", help="Pode levar um tempo para processar
             shared_xaxes=True
         )
 
-        jd_start = swe.julday(ano_analise, 1, 1)
-        jd_end = swe.julday(ano_analise + 1, 1, 1)
-        steps = np.arange(jd_start, jd_end, 0.05)
+        if incluir_lua: planetas_monitorados.insert(1, {"id": swe.MOON, "nome": "LUA", "cor": "#A6A6A6"})
+        jd_start = swe.julday(ano_analise, mes_selecionado if mes_selecionado else 1, 1)
+        jd_end = swe.julday(ano_analise + (1 if not mes_selecionado else 0), (mes_selecionado + 1 if mes_selecionado and mes_selecionado < 12 else 1) if mes_selecionado else 1, 1)
+        steps = np.arange(jd_start, jd_end, 0.005 if incluir_lua and mes_selecionado else 0.05)
         flags = swe.FLG_SWIEPH | swe.FLG_SPEED
 
         for idx_alvo, alvo in enumerate(alvos_input):
@@ -203,6 +212,17 @@ if st.sidebar.button("Gerar Gráficos", help="Pode levar um tempo para processar
                 fixedrange=True
             )
 
+            alvo_principal = alvos_input[0]
+            p_nome = alvo_principal['planeta'].lower()
+            s_nome = alvo_principal['signo'].lower()
+            g_limpo = str(alvo_principal['grau']).replace('.','_')
+
+            if incluir_lua:
+                nome_mes = MESES.get(mes_selecionado).lower()
+                file_name_grafico = f"revolucao_planetaria_{nome_mes}_{ano_analise}_todos_planetas_natais.html"
+            else:
+                file_name_grafico = f"revolucao_planetaria_{ano_analise}_todos_planetas_natais.html"
+
         fig.update_layout(
             height=520 * len(alvos_input), # Altura proporcional ao número de alvos
             title=dict(text=f"<b>Revolução Planetária {ano_analise}</b>", x=0.5, y=0.98, xanchor = "center", yanchor="top", font = dict(size = 24)),
@@ -222,7 +242,7 @@ if st.sidebar.button("Gerar Gráficos", help="Pode levar um tempo para processar
         st.sidebar.download_button(
             label="📥 Baixar Gráfico Interativo (HTML)",
             data=buf.getvalue(),
-            file_name=f"revolucao_planetaria_graficos_empilhados_{ano_analise}.html",
+            file_name=file_name_grafico,
             mime="text/html",
             use_container_width=True
         )
