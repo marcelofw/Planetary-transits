@@ -373,20 +373,37 @@ with col_m2:
     st.dataframe(df_mov_anual, use_container_width=True, hide_index=True, height=(len(df_mov_anual) + 1) * 35 + 3)
 
 # --- DOWNLOADS ---
+# st.divider()
+# c1, c2, c3 = st.columns(3)
+# with c1:
+#     buf = io.StringIO()
+#     fig.write_html(buf, config={'scrollZoom': True}, include_plotlyjs=True)
+#     st.download_button("📥 Baixar Gráfico Interativo (HTML)", data=buf.getvalue(), file_name=file_name_grafico, mime="text/html")
+# with c2:
+#     if eventos_aspectos:
+#         out = io.BytesIO()
+#         with pd.ExcelWriter(out, engine='openpyxl') as w: pd.DataFrame(eventos_aspectos).to_excel(w, index=False)
+#         st.download_button("📂 Baixar Tabela Aspectos (Excel)", out.getvalue(), file_name=file_name_tabela)
+#     else:
+#         st.button("📂 Baixar Tabela Aspectos (Excel)", disabled=True)
+# with c3:
+#     out_m = io.BytesIO()
+#     with pd.ExcelWriter(out_m, engine='openpyxl') as w: df_mov_anual.to_excel(w, index=False)
+#     st.download_button("🔄 Baixar Movimento Anual (Excel)", out_m.getvalue(), f"movimento_planetas_{ano}.xlsx")
+
 st.divider()
-c1, c2, c3 = st.columns(3)
-with c1:
-    buf = io.StringIO()
-    fig.write_html(buf, config={'scrollZoom': True}, include_plotlyjs=True)
-    st.download_button("📥 Baixar Gráfico Interativo (HTML)", data=buf.getvalue(), file_name=file_name_grafico, mime="text/html")
-with c2:
-    if eventos_aspectos:
-        out = io.BytesIO()
-        with pd.ExcelWriter(out, engine='openpyxl') as w: pd.DataFrame(eventos_aspectos).to_excel(w, index=False)
-        st.download_button("📂 Baixar Tabela Aspectos (Excel)", out.getvalue(), file_name=file_name_tabela)
-    else:
-        st.button("📂 Baixar Tabela Aspectos (Excel)", disabled=True)
-with c3:
-    out_m = io.BytesIO()
-    with pd.ExcelWriter(out_m, engine='openpyxl') as w: df_mov_anual.to_excel(w, index=False)
-    st.download_button("🔄 Baixar Movimento Anual (Excel)", out_m.getvalue(), f"movimento_planetas_{ano}.xlsx")
+buf = io.StringIO()
+fig.write_html(buf, config={'scrollZoom': True}, include_plotlyjs=True)
+st.sidebar.download_button("📥 Baixar Gráfico Interativo (HTML)", data=buf.getvalue(), file_name=file_name_grafico, mime="text/html")
+
+if eventos_aspectos:
+    out = io.BytesIO()
+    with pd.ExcelWriter(out, engine='openpyxl') as w: pd.DataFrame(eventos_aspectos).to_excel(w, index=False)
+    st.sidebar.download_button("📂 Baixar Tabela Aspectos (Excel)", out.getvalue(), file_name=file_name_tabela)
+else:
+    st.button("📂 Baixar Tabela Aspectos (Excel)", disabled=True)
+
+
+out_m = io.BytesIO()
+with pd.ExcelWriter(out_m, engine='openpyxl') as w: df_mov_anual.to_excel(w, index=False)
+st.download_button("🔄 Baixar Movimento Anual (Excel)", out_m.getvalue(), f"movimento_planetas_{ano}.xlsx")
