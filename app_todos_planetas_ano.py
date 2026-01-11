@@ -58,6 +58,56 @@ def obter_simbolo_aspecto(long1, long2):
         if abs(diff - angulo) <= 5: return simbolo
     return ""
 
+@st.cache_data(show_spinner=False)
+def calcular_dados_efemerides(ano, mes, usar_lua, alvos, monitorados):
+        jd_start = swe.julday(ano, mes if mes else 1, 1)
+        jd_end = swe.julday(ano + (1 if not mes else 0), (mes + 1 if mes and mes < 12 else 1) if mes else 1, 1)
+        steps = np.arange(jd_start, jd_end, 0.005 if usar_lua and mes else 0.05)
+        flags = swe.FLG_SWIEPH | swe.FLG_SPEED
+
+        dict_dfs = {}
+
+        for alvo in alvos:
+            grau_decimal = dms_to_dec(alvo["grau"])
+            idx_signo_natal = SIGNOS.index(alvo["signo"])
+            long_natal_absoluta = (idx_signo_natal * 30) + grau_decimal
+            
+            alvo_data = []
+            for jd in steps:
+                y, m, d, h = swe.revjul(jd)
+                row = {'date': datetime(y, m, d, int(h), int((h%1)*60))}
+                
+                for p in monitorados:
+                    res, _ = swe.calc_ut(jd, p["id"], flags)
+                    long_abs, vel = res[0], res[3]
+                    
+                    pos_no_signo = long_abs % 30
+                    # Cálculo de distância considerando a volta do zodíaco (orb de 5 graus)
+                    graus_int = int(pos_no_signo)
+                    minutos_int = int((pos_no_signo - graus_int) * 60)
+                    dist = abs(((pos_no_signo - grau_decimal + 15) % 30) - 15)
+                    
+                    if dist <= 5.0:
+                        # Cálculo da Força (Exponencial)
+                        val = np.exp(-0.5 * (dist / 1.7)**2)
+                        
+                        # Info Detalhada
+                        status = "(R)" if vel < 0 else "(D)"
+                        simb = obter_simbolo_aspecto(long_abs, long_natal_absoluta)
+                        int_txt = "Forte" if dist <= 1.0 else "Médio" if dist <= 2.5 else "Fraco"
+                        
+                        row[p["nome"]] = val
+                        row[f"{p['nome']}_info"] = f"{get_signo(long_abs)} {status} {graus_int:02d}°{minutos_int:02d}' - {int_txt} {simb}"
+                    else:
+                        row[p["nome"]] = np.nan
+                        row[f"{p['nome']}_info"] = ""
+                
+                alvo_data.append(row)
+
+            dict_dfs[alvo["planeta"]] = pd.DataFrame(alvo_data)
+
+        return dict_dfs
+
 # --- INTERFACE LATERAL ---
 planetas_monitorados = [
     {"id": swe.SUN, "nome": "SOL", "cor": "#FFF12E"},
@@ -118,95 +168,57 @@ st.sidebar.divider()
 if st.sidebar.button("Gerar Gráficos", help="Pode levar um tempo para processar.", use_container_width=True):
     with st.spinner("Sincronizando efemérides..."):
         
+        lista_p = planetas_monitorados.copy()
+        if incluir_lua:
+            lista_p.insert(1, {"id": swe.MOON, "nome": "LUA", "cor": "#A6A6A6"})
+
+        resultados = calcular_dados_efemerides(ano_analise, mes_selecionado, incluir_lua, alvos_input, lista_p)
+
         fig = make_subplots(
             rows=len(alvos_input), cols=1,
             subplot_titles=[f"<b>{a['planeta']} Natal em {a['signo']} {a['grau']}°</b>" for a in alvos_input],
             vertical_spacing=0.025,
             shared_xaxes=True
         )
+        
+        for idx, alvo in enumerate(alvos_input):
+            df = resultados[alvo["planeta"]]
 
-        if incluir_lua: planetas_monitorados.insert(1, {"id": swe.MOON, "nome": "LUA", "cor": "#A6A6A6"})
-        jd_start = swe.julday(ano_analise, mes_selecionado if mes_selecionado else 1, 1)
-        jd_end = swe.julday(ano_analise + (1 if not mes_selecionado else 0), (mes_selecionado + 1 if mes_selecionado and mes_selecionado < 12 else 1) if mes_selecionado else 1, 1)
-        steps = np.arange(jd_start, jd_end, 0.005 if incluir_lua and mes_selecionado else 0.05)
-        flags = swe.FLG_SWIEPH | swe.FLG_SPEED
-
-        for idx_alvo, alvo in enumerate(alvos_input):
-            grau_decimal = dms_to_dec(alvo["grau"])
-            idx_signo_natal = SIGNOS.index(alvo["signo"])
-            long_natal_absoluta = (idx_signo_natal * 30) + grau_decimal
-            
-            all_data = []
-            for jd in steps:
-                y, m, d, h = swe.revjul(jd)
-                row = {'date': datetime(y, m, d, int(h), int((h%1)*60))}
-                
-                for p in planetas_monitorados:
-                    res, _ = swe.calc_ut(jd, p["id"], flags)
-                    long_abs, vel = res[0], res[3]
-                    
-                    pos_no_signo = long_abs % 30
-                    # Cálculo de distância considerando a volta do zodíaco (orb de 5 graus)
-                    graus_int = int(pos_no_signo)
-                    minutos_int = int((pos_no_signo - graus_int) * 60)
-                    dist = abs(((pos_no_signo - grau_decimal + 15) % 30) - 15)
-                    
-                    if dist <= 5.0:
-                        # Cálculo da Força (Exponencial)
-                        val = np.exp(-0.5 * (dist / 1.7)**2)
-                        
-                        # Info Detalhada
-                        status = "(R)" if vel < 0 else "(D)"
-                        simb = obter_simbolo_aspecto(long_abs, long_natal_absoluta)
-                        int_txt = "Forte" if dist <= 1.0 else "Médio" if dist <= 2.5 else "Fraco"
-                        
-                        row[p["nome"]] = val
-                        row[f"{p['nome']}_info"] = f"{get_signo(long_abs)} {status} {graus_int:02d}°{minutos_int:02d}' - {int_txt} {simb}"
-                    else:
-                        row[p["nome"]] = np.nan
-                        row[f"{p['nome']}_info"] = ""
-                
-                all_data.append(row)
-
-            df = pd.DataFrame(all_data).infer_objects(copy=False)
-            
-            for p in planetas_monitorados:
-                if f"{p['nome']}_info" not in df.columns: df[f"{p['nome']}_info"] = ""
-
-            for p in planetas_monitorados:
-            # Gráfico de Área (Intensidade)
-                fig.add_trace(go.Scatter(
-                    x=df['date'], y=df[p['nome']],
-                    mode='lines', name=p['nome'],
-                    legendgroup=p['nome'],
-                    showlegend=(idx_alvo == 0), # Mostra legenda apenas no primeiro subplot
-                    line=dict(color=p['cor'], width=2.5),
-                    fill='tozeroy',
-                    fillcolor=hex_to_rgba(p['cor'], 0.15),
-                    customdata=df[f"{p['nome']}_info"],
-                    hovertemplate="<b>%{customdata}</b><extra></extra>",
-                    connectgaps=False
-                ), row=idx_alvo+1, col=1)
-
-                # Marcadores de Picos
-                serie_p = df[p['nome']].fillna(0)
-                peak_mask = (serie_p > 0.98) & (serie_p > serie_p.shift(1)) & (serie_p > serie_p.shift(-1))
-                picos = df[peak_mask]
-            
-                if not picos.empty:
+            for p in lista_p:
+                if p['nome'] in df.columns:
+                    # Gráfico de Área (Intensidade)
                     fig.add_trace(go.Scatter(
-                        x=picos['date'], y=picos[p['nome']] + 0.04,
-                        mode='markers+text',
-                        text=picos['date'].dt.strftime('%d/%m'),
-                        textposition="top center",
-                        # textfont=dict(family="Arial", size=10, color="white"),
-                        marker=dict(symbol="triangle-down", color=p['cor'], size=8),
-                        legendgroup=p['nome'], showlegend=False, hoverinfo='skip'
-                    ), row=idx_alvo+1, col=1)
+                        x=df['date'], y=df[p['nome']],
+                        mode='lines', name=p['nome'],
+                        legendgroup=p['nome'],
+                        showlegend=(idx == 0), # Mostra legenda apenas no primeiro subplot
+                        line=dict(color=p['cor'], width=2.5),
+                        fill='tozeroy',
+                        fillcolor=hex_to_rgba(p['cor'], 0.15),
+                        customdata=df[f"{p['nome']}_info"],
+                        hovertemplate="<b>%{customdata}</b><extra></extra>",
+                        connectgaps=False
+                    ), row=idx+1, col=1)
+
+                    # Marcadores de Picos
+                    serie_p = df[p['nome']].fillna(0)
+                    peak_mask = (serie_p > 0.98) & (serie_p > serie_p.shift(1)) & (serie_p > serie_p.shift(-1))
+                    picos = df[peak_mask]
+                
+                    if not picos.empty:
+                        fig.add_trace(go.Scatter(
+                            x=picos['date'], y=picos[p['nome']] + 0.04,
+                            mode='markers+text',
+                            text=picos['date'].dt.strftime('%d/%m'),
+                            textposition="top center",
+                            # textfont=dict(family="Arial", size=10, color="white"),
+                            marker=dict(symbol="triangle-down", color=p['cor'], size=8),
+                            legendgroup=p['nome'], showlegend=False, hoverinfo='skip'
+                        ), row=idx+1, col=1)
 
             fig.update_yaxes(
                 title_text=f"Intensidade de {alvo['planeta']}", 
-                row=idx_alvo + 1, 
+                row=idx + 1, 
                 col=1,
                 range=[0, 1.3], 
                 fixedrange=True
@@ -223,28 +235,28 @@ if st.sidebar.button("Gerar Gráficos", help="Pode levar um tempo para processar
             else:
                 file_name_grafico = f"revolucao_planetaria_{ano_analise}_todos_planetas_natais.html"
 
-        fig.update_layout(
-            height=520 * len(alvos_input), # Altura proporcional ao número de alvos
-            title=dict(text=f"<b>Revolução Planetária {ano_analise}</b>", x=0.5, y=0.98, xanchor = "center", yanchor="top", font = dict(size = 24)),
-            template='plotly_white',
-            hovermode='x unified', dragmode='pan', margin=dict(t=240, b=50, l=50, r=50),
-            legend=dict(orientation="h", yanchor="top", y=0.97, yref="container", xanchor="center", x=0.5)
-        )
+            fig.update_layout(
+                height=520 * len(alvos_input), # Altura proporcional ao número de alvos
+                title=dict(text=f"<b>Revolução Planetária {ano_analise}</b>", x=0.5, y=0.98, xanchor = "center", yanchor="top", font = dict(size = 24)),
+                template='plotly_white',
+                hovermode='x unified', dragmode='pan', margin=dict(t=240, b=50, l=50, r=50),
+                legend=dict(orientation="h", yanchor="top", y=0.97, yref="container", xanchor="center", x=0.5)
+            )
 
-        fig.update_xaxes(type='date', tickformat='%d/%m\n%Y', hoverformat='%d/%m/%Y %H:%M', showticklabels=True, visible=True)
-        #fig.update_yaxes(title='Intensidade', range=[0, 1.3], fixedrange=True)
-        fig.update_annotations(patch=dict(font=dict(size=14), yshift=20))
+            fig.update_xaxes(type='date', tickformat='%d/%m\n%Y', hoverformat='%d/%m/%Y %H:%M', showticklabels=True, visible=True)
+            #fig.update_yaxes(title='Intensidade', range=[0, 1.3], fixedrange=True)
+            fig.update_annotations(patch=dict(font=dict(size=14), yshift=20))
 
-        st.plotly_chart(fig, use_container_width=True, config={'scrollZoom': True})
+            st.plotly_chart(fig, use_container_width=True, config={'scrollZoom': True})
 
-        buf = io.StringIO()
-        fig.write_html(buf, config={'scrollZoom':True}, include_plotlyjs=True)
-        st.sidebar.download_button(
-            label="📥 Baixar Gráfico Interativo (HTML)",
-            data=buf.getvalue(),
-            file_name=file_name_grafico,
-            mime="text/html",
-            use_container_width=True
-        )
+            buf = io.StringIO()
+            fig.write_html(buf, config={'scrollZoom':True}, include_plotlyjs=True)
+            st.sidebar.download_button(
+                label="📥 Baixar Gráfico Interativo (HTML)",
+                data=buf.getvalue(),
+                file_name=file_name_grafico,
+                mime="text/html",
+                use_container_width=True
+            )
 else:
     st.info("Utilize o menu lateral para configurar os dados e clique em 'Gerar Gráficos'.")
