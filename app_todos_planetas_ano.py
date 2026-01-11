@@ -190,7 +190,7 @@ if st.sidebar.button("Gerar Gráficos", help="Pode levar um tempo para processar
                         mode='markers+text',
                         text=picos['date'].dt.strftime('%d/%m'),
                         textposition="top center",
-                        textfont=dict(family="Arial", size=10, color="white"),
+                        # textfont=dict(family="Arial", size=10, color="white"),
                         marker=dict(symbol="triangle-down", color=p['cor'], size=8),
                         legendgroup=p['nome'], showlegend=False, hoverinfo='skip'
                     ), row=idx_alvo+1, col=1)
