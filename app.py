@@ -324,7 +324,7 @@ for p in lista_planetas:
         fig.add_trace(go.Scatter(x=picos['date'], y=picos[p['nome']]+0.04, mode='markers+text', text=picos['date'].dt.strftime('%d/%m'),
                                  textposition="top center", marker=dict(symbol="triangle-down", color=p['cor'], size=8), showlegend=False, hoverinfo='skip'))
 
-fig.update_layout(title=dict(text=f'<b>{p_texto} Natal a {grau_input}° de {s_texto}</b>', x=0.5, xanchor = 'center', font = dict(size = 28)),
+fig.update_layout(title=dict(text=f'<b>Janela de Aspectação {p_texto} Natal a {grau_input}° de {s_texto}</b>', x=0.5, xanchor = 'center', font = dict(size = 28)),
                   height=700,
                   xaxis=dict(rangeslider=dict(visible=True, thickness=0.08), type='date', tickformat='%d/%m\n%Y', hoverformat='%d/%m/%Y %H:%M'),
                   yaxis=dict(title='Intensidade', range=[0, 1.3], fixedrange=True), template='plotly_white', hovermode='x unified', dragmode='pan')
