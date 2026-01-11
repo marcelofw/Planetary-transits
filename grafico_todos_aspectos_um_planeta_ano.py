@@ -219,7 +219,7 @@ def generate_degree_transit_chart():
         template='plotly_white', hovermode='x unified', dragmode='pan', margin=dict(t=100)
     )
 
-    fig.write_html(f"revolucao_planetaria_{ano}_{planeta_natal_ui}_em_{signo_natal_ui}_grau_{grau_limpo}.html", config={'scrollZoom': True})
+    fig.write_html(f"revolucao_planetaria_{ano}_{planeta_natal_ui}_em_{signo_natal_ui}_grau_{grau_limpo}.html", config={'scrollZoom': True}, include_plotlyjs=True)
     print(f"Sucesso! Gráfico gerado.")
 
 if __name__ == "__main__":

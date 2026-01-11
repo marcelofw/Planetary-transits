@@ -180,7 +180,7 @@ def generate_stacked_transit_charts():
     fig.update_annotations(patch=dict(font=dict(size=14), yshift=20))
 
     nome_arquivo = f"revolucoes_empilhadas_{ano}.html"
-    fig.write_html(nome_arquivo, config={'scrollZoom': True})
+    fig.write_html(nome_arquivo, config={'scrollZoom': True}, include_plotlyjs=True)
     print(f"Sucesso! {len(alvos_natais)} gráficos empilhados gerados em {nome_arquivo}")
 
 if __name__ == "__main__":

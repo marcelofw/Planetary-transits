@@ -120,7 +120,7 @@ def obter_simbolo_aspecto(long1, long2):
     return ""
 
 # --- INTERFACE LATERAL ---
-st.sidebar.header("Configurações")
+st.sidebar.header("🪐 Configurações")
 ano = st.sidebar.number_input("Ano da Análise", min_value=1900, max_value=2100, value=2026)
 grau_input = st.sidebar.text_input("Grau Natal (0 a 30°)", value="27.0", help="Exemplo: 27.59 (27 graus e 59 minutos)")
 
