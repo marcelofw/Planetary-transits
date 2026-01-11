@@ -148,7 +148,7 @@ if st.sidebar.button("Gerar Gráficos", help="Pode levar um tempo para processar
                     pos_no_signo = long_abs % 30
                     # Cálculo de distância considerando a volta do zodíaco (orb de 5 graus)
                     graus_int = int(pos_no_signo)
-                    minutos_in = int((pos_no_signo - graus_int) * 60)
+                    minutos_int = int((pos_no_signo - graus_int) * 60)
                     dist = abs(((pos_no_signo - grau_decimal + 15) % 30) - 15)
                     
                     if dist <= 5.0:
@@ -161,7 +161,7 @@ if st.sidebar.button("Gerar Gráficos", help="Pode levar um tempo para processar
                         int_txt = "Forte" if dist <= 1.0 else "Médio" if dist <= 2.5 else "Fraco"
                         
                         row[p["nome"]] = val
-                        row[f"{p['nome']}_info"] = f"{get_signo(long_abs)} {status} {graus_int}°{minutos_in}' - {int_txt} {simb}"
+                        row[f"{p['nome']}_info"] = f"{get_signo(long_abs)} {status} {graus_int:02d}°{minutos_int:02d}' - {int_txt} {simb}"
                     else:
                         row[p["nome"]] = np.nan
                         row[f"{p['nome']}_info"] = ""
