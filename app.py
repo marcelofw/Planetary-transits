@@ -226,6 +226,9 @@ else:
 @st.fragment
 def secao_previsao_ia(ano, planeta_selecionado, signo_selecionado, grau_input, long_natal_absoluta_calc):
         # --- SEÇÃO DE CONSULTA IA CENTRALIZADA (ABAIXO DO GRÁFICO) ---
+    hoje = datetime.now()
+    hora_agora = datetime.now().strftime("%H:%M")
+
     st.divider()
     col_esq, col_central, col_dir = st.columns([1, 1.5, 1])
 
@@ -237,14 +240,14 @@ def secao_previsao_ia(ano, planeta_selecionado, signo_selecionado, grau_input, l
         with sub_col1:
             data_consulta = st.date_input(
                 "Escolha a data", 
-                value=date(ano, 1, 7),
+                value=date(ano, hoje.month, hoje.day),
                 min_value=date(1900, 1, 1),
                 max_value=date(2100, 12, 31),
                 key="ia_data_key" 
             )
         
         with sub_col2:
-            hora_input = st.text_input("Escolha a hora (HH:MM)", placeholder="12:00", key="ia_hora_key")
+            hora_input = st.text_input("Escolha a hora (HH:MM)", placeholder=hora_agora, key="ia_hora_key")
         
         btn_gerar = st.button("Obter informação sobre os trânsitos", use_container_width=True)
 
