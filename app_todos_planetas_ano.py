@@ -5,8 +5,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import numpy as np
 from datetime import datetime
-
-
+import io
 
 # Configuração da Página
 st.set_page_config(page_title="Revolução Planetária", layout="wide")
@@ -218,5 +217,15 @@ if st.sidebar.button("Gerar Gráficos", help="Pode levar um tempo para processar
         fig.update_annotations(patch=dict(font=dict(size=14), yshift=20))
 
         st.plotly_chart(fig, use_container_width=True, config={'scrollZoom': True})
+
+        buf = io.StringIO()
+        fig.write_html(buf, config={'scrollZoom':True}, include_plotlyjs=True)
+        st.sidebar.download_button(
+            label="📥 Baixar Gráficos Interativos (Offline)",
+            data=buf.getvalue(),
+            file_name=f"revolucao_planetaria_graficos_empilhados_{ano_analise}.html",
+            mime="text/html",
+            use_container_width=True
+        )
 else:
     st.info("Utilize o menu lateral para configurar os dados e clique em 'Gerar Gráficos'.")
