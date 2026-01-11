@@ -224,39 +224,39 @@ if st.sidebar.button("Gerar Gráficos", help="Pode levar um tempo para processar
                 fixedrange=True
             )
 
-            alvo_principal = alvos_input[0]
-            p_nome = alvo_principal['planeta'].lower()
-            s_nome = alvo_principal['signo'].lower()
-            g_limpo = str(alvo_principal['grau']).replace('.','_')
+        # alvo_principal = alvos_input[0]
+        # p_nome = alvo_principal['planeta'].lower()
+        # s_nome = alvo_principal['signo'].lower()
+        # g_limpo = str(alvo_principal['grau']).replace('.','_')
 
-            if incluir_lua:
-                nome_mes = MESES.get(mes_selecionado).lower()
-                file_name_grafico = f"revolucao_planetaria_{nome_mes}_{ano_analise}_todos_planetas_natais.html"
-            else:
-                file_name_grafico = f"revolucao_planetaria_{ano_analise}_todos_planetas_natais.html"
+        if incluir_lua:
+            nome_mes = MESES.get(mes_selecionado).lower()
+            file_name_grafico = f"revolucao_planetaria_{nome_mes}_{ano_analise}_todos_planetas_natais.html"
+        else:
+            file_name_grafico = f"revolucao_planetaria_{ano_analise}_todos_planetas_natais.html"
 
-            fig.update_layout(
-                height=520 * len(alvos_input), # Altura proporcional ao número de alvos
-                title=dict(text=f"<b>Revolução Planetária {ano_analise}</b>", x=0.5, y=0.98, xanchor = "center", yanchor="top", font = dict(size = 24)),
-                template='plotly_white',
-                hovermode='x unified', dragmode='pan', margin=dict(t=240, b=50, l=50, r=50),
-                legend=dict(orientation="h", yanchor="top", y=0.97, yref="container", xanchor="center", x=0.5)
-            )
+        fig.update_layout(
+            height=520 * len(alvos_input), # Altura proporcional ao número de alvos
+            title=dict(text=f"<b>Revolução Planetária {ano_analise}</b>", x=0.5, y=0.98, xanchor = "center", yanchor="top", font = dict(size = 24)),
+            template='plotly_white',
+            hovermode='x unified', dragmode='pan', margin=dict(t=240, b=50, l=50, r=50),
+            legend=dict(orientation="h", yanchor="top", y=0.97, yref="container", xanchor="center", x=0.5)
+        )
 
-            fig.update_xaxes(type='date', tickformat='%d/%m\n%Y', hoverformat='%d/%m/%Y %H:%M', showticklabels=True, visible=True)
-            #fig.update_yaxes(title='Intensidade', range=[0, 1.3], fixedrange=True)
-            fig.update_annotations(patch=dict(font=dict(size=14), yshift=20))
+        fig.update_xaxes(type='date', tickformat='%d/%m\n%Y', hoverformat='%d/%m/%Y %H:%M', showticklabels=True, visible=True)
+        #fig.update_yaxes(title='Intensidade', range=[0, 1.3], fixedrange=True)
+        fig.update_annotations(patch=dict(font=dict(size=14), yshift=20))
 
-            st.plotly_chart(fig, use_container_width=True, config={'scrollZoom': True})
+        st.plotly_chart(fig, use_container_width=True, config={'scrollZoom': True})
 
-            buf = io.StringIO()
-            fig.write_html(buf, config={'scrollZoom':True}, include_plotlyjs=True)
-            st.sidebar.download_button(
-                label="📥 Baixar Gráfico Interativo (HTML)",
-                data=buf.getvalue(),
-                file_name=file_name_grafico,
-                mime="text/html",
-                use_container_width=True
-            )
+        buf = io.StringIO()
+        fig.write_html(buf, config={'scrollZoom':True}, include_plotlyjs=True)
+        st.sidebar.download_button(
+            label="📥 Baixar Gráfico Interativo (HTML)",
+            data=buf.getvalue(),
+            file_name=file_name_grafico,
+            mime="text/html",
+            use_container_width=True
+        )
 else:
     st.info("Utilize o menu lateral para configurar os dados e clique em 'Gerar Gráficos'.")
