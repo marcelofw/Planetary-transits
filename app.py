@@ -366,8 +366,8 @@ st.divider()
 c1, c2, c3 = st.columns(3)
 with c1:
     buf = io.StringIO()
-    fig.write_html(buf, config={'scrollZoom': True})
-    st.download_button("📥 Baixar Gráfico Interativo (HTML)", buf.getvalue(), f"revolucao_planetaria_{ano}_{planeta_selecionado}_em_{signo_selecionado}_grau_{grau_limpo_file}.html", "text/html")
+    fig.write_html(buf, config={'scrollZoom': True}, include_plotlyjs=True)
+    st.download_button("📥 Baixar Gráfico Interativo (HTML)", data=buf.getvalue(), file_name=f"revolucao_planetaria_{ano}_{planeta_selecionado}_em_{signo_selecionado}_grau_{grau_limpo_file}.html", mime="text/html")
 with c2:
     if eventos_aspectos:
         out = io.BytesIO()
