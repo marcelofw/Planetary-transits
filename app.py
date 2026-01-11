@@ -220,7 +220,7 @@ if incluir_lua:
     file_name_grafico = f"revolucao_planetaria_{mes_nome}_{ano}_{planeta_selecionado}_em_{signo_selecionado}_grau_{grau_limpo_file}.html"
     file_name_tabela = f"aspectos_{mes_nome}_{ano}_{planeta_selecionado}_em_{signo_selecionado}_grau_{grau_limpo_file}.xlsx"
 else:
-    file_name = f"revolucao_planetaria_{ano}_{planeta_selecionado}_em_{signo_selecionado}_grau_{grau_limpo_file}.html"
+    file_name_grafico = f"revolucao_planetaria_{ano}_{planeta_selecionado}_em_{signo_selecionado}_grau_{grau_limpo_file}.html"
     file_name_tabela = f"aspectos_{ano}_{planeta_selecionado}_em_{signo_selecionado}_grau_{grau_limpo_file}.xlsx"
 
 @st.fragment
