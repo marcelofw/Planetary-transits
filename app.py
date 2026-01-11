@@ -247,7 +247,7 @@ def secao_previsao_ia(ano, planeta_selecionado, signo_selecionado, grau_input, l
             )
         
         with sub_col2:
-            hora_input = st.text_input("Escolha a hora (HH:MM)", placeholder=hora_agora, key="ia_hora_key")
+            hora_input = st.text_input("Escolha a hora (HH:MM)", placeholder='12:00', key="ia_hora_key")
         
         btn_gerar = st.button("Obter informação sobre os trânsitos", use_container_width=True)
 
