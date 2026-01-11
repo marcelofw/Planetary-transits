@@ -216,7 +216,7 @@ df, lista_planetas = get_planetary_data(ano, grau_decimal, incluir_lua, mes_sele
 grau_limpo_file = str(grau_input).replace('.', '_')
 
 if incluir_lua:
-    mes_nome = MESES.get(mes_selecionado, "periodo")
+    mes_nome = MESES.get(mes_selecionado, "periodo").lower()
     file_name_grafico = f"revolucao_planetaria_{mes_nome}_{ano}_{planeta_selecionado}_em_{signo_selecionado}_grau_{grau_limpo_file}.html"
     file_name_tabela = f"aspectos_{mes_nome}_{ano}_{planeta_selecionado}_em_{signo_selecionado}_grau_{grau_limpo_file}.xlsx"
 else:
