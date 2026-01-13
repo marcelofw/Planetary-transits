@@ -59,6 +59,13 @@ SIMBOLOS_SIGNOS_UNICODE = [
     "♎", "♏", "♐", "♑", "♒", "♓"
 ]
 
+CORES_SIGNOS = {
+    "♈": "red", "♌": "red", "♐": "red",          
+    "♉": "brown", "♑": "brown", "♍": "brown",    
+    "♋": "#0533FF", "♏": "#0533FF", "♓": "#0533FF",     
+    "♊": "#FFD700", "♎": "#FFD700", "♒": "#FFD700" 
+}
+
 ASPECTOS = {
     0: ("Conjunção", "☌"), 
     60: ("Sêxtil", "✶"), 
@@ -207,13 +214,16 @@ def criar_mandala_astrologica(dt):
     
     for i, signo in enumerate(SIGNOS):
         centro_polar = i * 30 + 15
+        simbolo = SIMBOLOS_SIGNOS_UNICODE[i]
+        cor_do_signo = CORES_SIGNOS.get(simbolo, "black")
+
         fig.add_trace(go.Barpolar(r=[2], theta=[centro_polar], width=[30], base=8, 
                                   marker_color="white", marker_line_color="black", marker_line_width=1, showlegend=False, hoverinfo='skip'))
 
         # Símbolos dos signos
         fig.add_trace(go.Scatterpolar(
-            r=[9.0], theta=[i * 30 + 15], mode='text', text=[SIMBOLOS_SIGNOS_UNICODE[i]],
-            textfont=dict(size=50, color="#555", family="DejaVu Sans"), showlegend=False, hoverinfo='none'))
+            r=[9.0], theta=[i * 30 + 15], mode='text', text=[simbolo],
+            textfont=dict(size=50, color=cor_do_signo, family="DejaVu Sans"), showlegend=False, hoverinfo='none'))
 
     fig.add_trace(go.Scatterpolar(r=[10] * 361, theta=list(range(361)), mode='lines', 
                                   line=dict(color="black", width=2), showlegend=False, hoverinfo='skip'))
