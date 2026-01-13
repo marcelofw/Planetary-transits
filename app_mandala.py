@@ -81,8 +81,12 @@ def criar_mandala_astrologica(ano, mes, dia, hora_decimal):
             if diff < 10:
                 posicoes[next_idx]['long_visual'] = (posicoes[i]['long_visual'] + 10) % 360
 
-    # --- 1. LINHAS DE ASPECTO ---
-    CORES_ASPECTOS = {"☌": "#2ecc71", "☍": "#e74c3c", "□": "#e74c3c", "△": "#3498db", "✶": "#3498db"}
+    fig.add_trace(go.Scatterpolar(r=[raio_interno] * 361, theta=list(range(361)), fill='toself', 
+        fillcolor="rgba(245, 245, 245, 0.2)", line=dict(color="black", width=1.5), showlegend=False, hoverinfo='skip'))
+
+    
+    # --- 4. LINHAS DE ASPECTO COM SÍMBOLOS ---
+    CORES_ASPECTOS = {"☌": "green", "☍": "red", "□": "red", "△": "blue", "✶": "blue", "⚼": "orange", "∠": "orange"}
     for i in range(len(posicoes)):
         for j in range(i + 1, len(posicoes)):
             p1, p2 = posicoes[i], posicoes[j]
@@ -90,19 +94,30 @@ def criar_mandala_astrologica(ano, mes, dia, hora_decimal):
             
             if simbolo_asp:
                 cor_asp = CORES_ASPECTOS.get(simbolo_asp, "gray")
+                fig.add_trace(go.Scatterpolar(r=[raio_interno, raio_interno], theta=[p1['long'], p2['long']],
+                    mode='lines', line=dict(color=cor_asp, width=1.3), opacity=0.3, showlegend=False, hoverinfo='skip'))
+                
+                a1, a2 = np.radians(p1['long']), np.radians(p2['long'])
+                x = (np.cos(a1) + np.cos(a2)) / 2
+                y = (np.sin(a1) + np.sin(a2)) / 2
+                mid_theta = np.degrees(np.arctan2(y, x))
+                dist_ang = abs(p1['long'] - p2['long'])
+                if dist_ang > 180: dist_ang = 360 - dist_ang
+                mid_r = raio_interno * np.cos(np.radians(dist_ang / 2))
+                
                 fig.add_trace(go.Scatterpolar(
-                    r=[raio_interno, raio_interno], 
-                    theta=[p1['long'], p2['long']],
-                    mode='lines', 
-                    line=dict(color=cor_asp, width=1.5), 
-                    opacity=0.3, 
-                    showlegend=False,
-                    hoverinfo='skip'
+                    r=[mid_r], theta=[mid_theta],
+                    mode='text', text=[simbolo_asp],
+                    textfont=dict(size=16, color=cor_asp, family="Arial Black"),
+                    showlegend=False, hoverinfo='skip'
                 ))
 
     # --- 2. ANEL DOS SIGNOS E RÉGUA ---
     for i, signo in enumerate(SIGNOS):
-        # Fatias de fundo
+        centro_polar = i * 30 + 15
+        fig.add_trace(go.Barpolar(r=[2], theta=[centro_polar], width=[30], base=8, 
+                                  marker_color="white", marker_line_color="black", marker_line_width=1, showlegend=False, hoverinfo='skip'))
+
         fig.add_trace(go.Barpolar(
             r=[2], theta=[i * 30 + 15], width=[30], base=8, 
             marker_color="white", marker_line_color="#333", marker_line_width=1,
@@ -194,5 +209,3 @@ with col2:
         })
     
     st.table(pd.DataFrame(dados))
-
-st.info(f"Cálculo para {data_escolhida.strftime('%d/%m/%Y')} {hora_escolhida.strftime('%H:%M')}")
