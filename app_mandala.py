@@ -9,12 +9,16 @@ import math
 # --- CONFIGURAÇÃO DA PÁGINA ---
 st.set_page_config(page_title="Mandala Astrológica Viva", layout="wide")
 st.markdown("""
+    <link href="https://fonts.cdnfonts.com/css/quivira" rel="stylesheet">
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=DejaVu+Sans&display=swap');
-    
-    /* Garante que o Plotly tente usar a fonte injetada */
+    /* Estilização global para melhorar a legibilidade */
     .main {
-        font-family: 'DejaVu Sans', sans-serif;
+        background-color: #000000;
+    }
+    /* Classe específica para os símbolos se precisarmos */
+    .astrosym {
+        font-family: 'Quivira', sans-serif;
+        font-weight: normal;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -179,8 +183,8 @@ def criar_mandala_astrologica(ano, mes, dia, hora_decimal):
             fig.add_trace(go.Scatterpolar(
                 r=[7.3], theta=[p["long_visual"]], 
                 mode='text', 
-                text=[f"<b>{p['sym']}</b>"], # Adicionado Negrito via tag HTML
-                textfont=dict(size=24, color=p["cor"], family="'DejaVu Sans', 'Segoe UI Symbol', 'Apple Symbols', sans-serif"), 
+                text=[f"<span style='font-family:Quivira; font-size:40px;'>{p['sym']}</span>"], # Adicionado Negrito via tag HTML
+                textfont=dict(color=p["cor"]), 
                 showlegend=False, hovertemplate=hover_template
             ))
         
