@@ -112,7 +112,7 @@ def criar_mandala_astrologica(dt):
     # Lógica anti-sobreposição (ajuste visual dos símbolos)
     posicoes.sort(key=lambda x: x['long'])
     
-    distancia_minima = 40
+    distancia_minima = 15
     for _ in range(5):
         for i in range(len(posicoes)):
             proximo = (i + 1) % len(posicoes)
@@ -189,11 +189,11 @@ def criar_mandala_astrologica(dt):
         
         # Anotações Graus
         fig.add_trace(go.Scatterpolar(r=[6.2], theta=[p["long_visual"]], mode='text', text=[f"{p['grau_int']}°"], 
-                                    textfont=dict(size=16, color="black", family="Trebuchet MS"), 
+                                    textfont=dict(size=8, color="black", family="Trebuchet MS"), 
                                     showlegend=False, hovertemplate=hover_template))
         # Anotações Minutos
         fig.add_trace(go.Scatterpolar(r=[5.3], theta=[p["long_visual"]], mode='text', text=[f"{p['min_int']}'"], 
-                                    textfont=dict(size=14, color="black", family="Trebuchet MS"), 
+                                    textfont=dict(size=8, color="black", family="Trebuchet MS"), 
                                     showlegend=False, hovertemplate=hover_template))
         # Marcadores internos
         fig.add_trace(go.Scatterpolar(r=[raio_interno], theta=[p["long"]], mode='markers', 
@@ -203,11 +203,12 @@ def criar_mandala_astrologica(dt):
         fig.add_trace(go.Scatterpolar(r=[8.0], theta=[p["long"]], mode='markers', 
                                     marker=dict(size=8, color=p["cor"], line=dict(color='black', width=0)), 
                                     showlegend=False, hovertemplate=hover_template))
+       # Planetas
         fig.add_trace(go.Scatterpolar(
             r=[7.3], theta=[p["long_visual"]], 
             mode='text', 
             text=[f"{p['sym']}"], # Adicionado Negrito via tag HTML
-            textfont=dict(size=25, color=p["cor"], family="'DejaVu Sans', 'Segoe UI Symbol', 'Apple Symbols', sans-serif"), 
+            textfont=dict(size=14, color=p["cor"], family="'DejaVu Sans', 'Segoe UI Symbol', 'Apple Symbols', sans-serif"), 
             showlegend=False, hovertemplate=hover_template
         ))
     
