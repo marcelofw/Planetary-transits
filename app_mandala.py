@@ -124,7 +124,7 @@ def criar_mandala_astrologica(dt):
         grupos.append(grupo_atual)
 
     # 3. Distribuir cada grupo individualmente
-    dist_min = 5  # Espaço fixo entre textos (ajuste conforme o tamanho da fonte)
+    dist_min = 6  # Espaço fixo entre textos (ajuste conforme o tamanho da fonte)
     
     for grupo in grupos:
         n = len(grupo)
