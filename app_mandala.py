@@ -269,12 +269,12 @@ def criar_mandala_astrologica(dt):
 
 # --- INTERFACE STREAMLIT ---
 st.sidebar.title("🪐 Configurações")
-dt_exibicao = st.session_state.data_ref
-data_br = dt_exibicao - timedelta(hours=3)
 
 # Inputs manuais (Sincronizados com o session_state)
-d_input = st.sidebar.date_input("Data", value=st.session_state.data_ref, min_value=date(1900, 1, 1), max_value=date(2100, 12, 31))
-t_input = st.sidebar.time_input("Hora", value=st.session_state.data_ref)
+d_input = st.sidebar.date_input("Data", value=st.session_state.data_ref - timedelta(hours=3), min_value=date(1900, 1, 1), max_value=date(2100, 12, 31))
+t_input = st.sidebar.time_input("Hora", value=st.session_state.data_ref - timedelta(hours=3))
+dt_digitada_local = datetime.combine(d_input, t_input)
+st.session_state.data_ref = dt_digitada_local + timedelta(hours=3)
 
 col_r, col_a = st.sidebar.columns(2)
 col_r.button("⬅️ -1 Hora", on_click=ajustar_tempo_horas, args=[-1])
@@ -297,10 +297,7 @@ st.session_state.data_ref = datetime.combine(d_input, t_input)
 
 # --- 6. CONTEÚDO PRINCIPAL ---
 st.title("🔭 Mandala Astrológica Interativa")
-# fuso_br = timezone(timedelta(hours=-3))
-# if 'data_ref' not in st.session_state:
-#     st.session_state.data_ref = datetime.now(timezone.utc).astimezone(fuso_br)
-st.subheader(f"{data_br.strftime('%d/%m/%Y %H:%M')}")
+st.subheader(f"{dt_digitada_local.strftime('%d/%m/%Y %H:%M')}")
 
 col1, col2 = st.columns([1.5, 1])
 
