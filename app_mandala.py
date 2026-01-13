@@ -111,19 +111,21 @@ def criar_mandala_astrologica(dt):
 
     # Lógica anti-sobreposição (ajuste visual dos símbolos)
     posicoes.sort(key=lambda x: x['long'])
-    niveis = []
-    for i, p in enumerate(posicoes):
-        nivel = 0
-        # Verifica se o planeta atual está muito perto dos anteriores já processados
-        for j in range(max(0, i-3), i): # Olha os últimos 3 planetas
-            dist = (p['long'] - posicoes[j]['long']) % 360
-            if dist < 12: # Se estiver a menos de 12 graus de um vizinho
-                nivel = (niveis[j] + 1) % 3 # Pula para o próximo nível (0, 1 ou 2)
-        niveis.append(nivel)
+    for _ in range(30):
+        for i in range(len(posicoes)):
+            j = (i + 1) % len(posicoes)
+            # Calcula a distância entre o planeta atual e o próximo
+            diff = (posicoes[j]['long_visual'] - posicoes[i]['long_visual']) % 360
+            
+            # Se estiverem a menos de 15 graus de distância, empurra o próximo
+            distancia_minima = 15 
+            if diff < distancia_minima:
+                posicoes[j]['long_visual'] = (posicoes[i]['long_visual'] + distancia_minima) % 360
 
     fig.add_trace(go.Scatterpolar(r=[raio_interno] * 361, theta=list(range(361)), fill='toself', 
         fillcolor="rgba(245, 245, 245, 0.2)", line=dict(color="black", width=1.5), showlegend=False, hoverinfo='skip'))
 
+    
     # --- 4. LINHAS DE ASPECTO COM SÍMBOLOS ---
     CORES_ASPECTOS = {"☌": "green", "☍": "red", "□": "red", "△": "blue", "✶": "blue", "⚼": "orange", "∠": "orange"}
     for i in range(len(posicoes)):
@@ -151,7 +153,25 @@ def criar_mandala_astrologica(dt):
                     showlegend=False, hoverinfo='skip'
                 ))
 
-    # --- 2. ANEL DOS SIGNOS E RÉGUA ---    
+    # --- 2. ANEL DOS SIGNOS E RÉGUA ---
+    for i in range(12):
+        # Fatias de Signos
+        fig.add_trace(go.Barpolar(
+            r=[2], theta=[i*30+15], width=[30], base=8, 
+            marker_color="white", marker_line_color="black", opacity=0.1, 
+            showlegend=False, hoverinfo='skip'))
+        
+        # RÉGUA: Adiciona 30 pontos por signo
+        graus_signo = list(range(i * 30, (i + 1) * 30))
+        # Criamos traços curtos para cada grau
+        for g in graus_signo:
+            # Traço maior para 0, 10, 20 (decanatos), menor para os outros
+            tamanho_regua = 8.6 if g % 10 == 0 else 8.3
+            fig.add_trace(go.Scatterpolar(
+                r=[8.0, tamanho_regua], theta=[g, g],
+                mode='lines', line=dict(color="black", width=1),
+                showlegend=False, hoverinfo='skip'))
+    
     for i, signo in enumerate(SIGNOS):
         centro_polar = i * 30 + 15
         fig.add_trace(go.Barpolar(r=[2], theta=[centro_polar], width=[30], base=8, 
@@ -171,25 +191,10 @@ def criar_mandala_astrologica(dt):
                                   line=dict(color="black", width=2), showlegend=False, hoverinfo='skip'))
 
     # --- 3. PLANETAS E GRAUS ---
-    niveis_ocupados = [] 
+
     for p in posicoes:
-        nivel = 0
-        # Se houver algum planeta já desenhado a menos de 10 graus, sobe o nível
-        for p_pasto, n_passado in niveis_ocupados:
-            if abs(p['long'] - p_pasto) < 10:
-                nivel = max(nivel, n_passado + 1)
-        
-        niveis_ocupados.append((p['long'], nivel))
-        
-        # Define o raio: Nível 0 é o mais externo (perto da régua)
-        r_simbolo = 7.4 - (nivel * 0.8)
-        r_texto = r_simbolo - 0.5
-        
         hover_template = f"{p['nome']}<br>{p['signo']}<br>{p['grau_int']}º{p['min_int']}'<extra></extra>"
         
-        fig.add_trace(go.Scatterpolar(
-                                    r=[r_simbolo], theta=[p["long"]], mode='text', text=[p["sym"]],
-                                    textfont=dict(size=25, color=p["cor"]), showlegend=False, hovertemplate=hover_template))
         fig.add_trace(go.Scatterpolar(r=[6.2], theta=[p["long_visual"]], mode='text', text=[f"{p['grau_int']}°"], 
                                     textfont=dict(size=20, color="black", family="Trebuchet MS"), 
                                     showlegend=False, hovertemplate=hover_template))
