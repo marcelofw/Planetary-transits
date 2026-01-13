@@ -182,10 +182,10 @@ def criar_mandala_astrologica(dt):
         hover_template = f"{p['nome']}<br>{p['signo']}<br>{p['grau_int']}º{p['min_int']}'<extra></extra>"
         
         fig.add_trace(go.Scatterpolar(r=[6.2], theta=[p["long_visual"]], mode='text', text=[f"{p['grau_int']}°"], 
-                                    textfont=dict(size=14, color="black", family="Trebuchet MS"), 
+                                    textfont=dict(size=20, color="black", family="Trebuchet MS"), 
                                     showlegend=False, hovertemplate=hover_template))
         fig.add_trace(go.Scatterpolar(r=[5.3], theta=[p["long_visual"]], mode='text', text=[f"{p['min_int']}'"], 
-                                    textfont=dict(size=12, color="black", family="Trebuchet MS"), 
+                                    textfont=dict(size=18, color="black", family="Trebuchet MS"), 
                                     showlegend=False, hovertemplate=hover_template))
         fig.add_trace(go.Scatterpolar(r=[raio_interno], theta=[p["long"]], mode='markers', 
                                     marker=dict(size=8, color=p["cor"], line=dict(color='black', width=0)), 
