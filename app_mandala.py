@@ -15,7 +15,7 @@ if 'data_ref' not in st.session_state:
 def on_button_click(delta_type, value):
     if delta_type == 'minutes':
         nova_data = st.session_state.data_ref + relativedelta(minutes=value)
-    if delta_type == 'hours':
+    elif delta_type == 'hours':
         nova_data = st.session_state.data_ref + timedelta(hours=value)
     elif delta_type == 'days':
         nova_data = st.session_state.data_ref + timedelta(days=value)
