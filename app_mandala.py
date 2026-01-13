@@ -126,17 +126,25 @@ def criar_mandala_astrologica(dt):
                 grupo_atual = [posicoes[i]]
         grupos.append(grupo_atual)
 
+        if len(grupos) > 1:
+            dist_ponta = (grupos[0][0]['long'] - grupos[-1][-1]['long']) % 360
+            if dist_ponta < dist_min:
+                # Une o primeiro e o último grupo em um só
+                grupo_unido = grupos.pop() + grupos.pop(0)
+                grupos.append(grupo_unido)
+
     # 3. Distribuir cada grupo individualmente
     dist_min = 7  # Espaço fixo entre textos (ajuste conforme o tamanho da fonte)
     
     for grupo in grupos:
         n = len(grupo)
         if n > 1:
-            # Calcula o centro real do grupo
-            centro_real = sum(p['long'] for p in grupo) / n
-            # Calcula a largura total que o grupo precisa ocupar
+            # Para grupos circulares, o cálculo do centro precisa ser angular
+            sum_sin = sum(np.sin(np.radians(p['long'])) for p in grupo)
+            sum_cos = sum(np.cos(np.radians(p['long'])) for p in grupo)
+            centro_real = np.degrees(np.arctan2(sum_sin, sum_cos)) % 360
+            
             largura_total = (n - 1) * dist_min
-            # Ponto inicial para o primeiro planeta do grupo
             inicio = centro_real - (largura_total / 2)
             
             for j, p in enumerate(grupo):
