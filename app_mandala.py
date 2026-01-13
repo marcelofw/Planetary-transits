@@ -311,7 +311,10 @@ st.sidebar.title("🪐 Configurações")
 d_input = st.sidebar.date_input("Data", value=st.session_state.data_ref.date(), key="data_widget", min_value = date(1900, 1, 1), max_value = date(2100, 12, 31))
 t_input = st.sidebar.time_input("Hora", value=st.session_state.data_ref.time(), key="hora_widget", help="Entre com horário de Brasília.")
 
-st.session_state.data_ref = datetime.combine(d_input, t_input)
+data_vinda_do_widget = datetime.combine(d_input, t_input)
+if data_vinda_do_widget != st.session_state.data_ref:
+    st.session_state.data_ref = data_vinda_do_widget
+
 data_para_o_calculo_ut = st.session_state.data_ref + timedelta(hours=3)
 
 col_r, col_a = st.sidebar.columns(2)
