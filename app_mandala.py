@@ -4,6 +4,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import numpy as np
 from datetime import datetime
+from dateutil.relativedelta import relativedelta
 import math
 
 if 'data_ref' not in st.session_state:
@@ -16,10 +17,10 @@ def ajustar_tempo_dias(dias):
     st.session_state.data_ref += pd.Timedelta(days=dias)
 
 def ajustar_tempo_meses(meses):
-    st.session_state.data_ref += pd.Timedelta(month=meses)
+    st.session_state.data_ref += relativedelta(months=meses)
 
 def ajustar_tempo_anos(anos):
-    st.session_state.data_ref += pd.Timedelta(year=anos)
+    st.session_state.data_ref += relativedelta(years=anos)
 
 # --- CONFIGURAÇÃO DA PÁGINA ---
 st.set_page_config(page_title="Mandala Astrológica Viva", layout="wide")
