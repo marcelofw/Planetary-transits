@@ -153,27 +153,18 @@ def criar_mandala_astrologica(ano, mes, dia, hora_decimal, pasta_icones):
                 ))
 
     # --- 5. SIGNOS E RÉGUA ---
-    # for i, nome_arq in enumerate(ARQUIVOS_SVG):
-    #     centro_polar = i * 30 + 15
-    #     fig.add_trace(go.Barpolar(r=[2], theta=[centro_polar], width=[30], base=8, 
-    #                               marker_color="white", marker_line_color="black", marker_line_width=1, showlegend=False, hoverinfo='skip'))
+    for i, nome_arq in enumerate(ARQUIVOS_SVG):
+        centro_polar = i * 30 + 15
+        fig.add_trace(go.Barpolar(r=[2], theta=[centro_polar], width=[30], base=8, 
+                                  marker_color="white", marker_line_color="black", marker_line_width=1, showlegend=False, hoverinfo='skip'))
         
-    #     img_data = converter_svg_para_base64(os.path.join(pasta_icones, nome_arq))
-    #     if img_data:
-    #         rad = np.radians(180 + centro_polar)
-    #         raio_pos = 0.46
-    #         fig.add_layout_image(dict(
-    #             source=img_data, xref="paper", yref="paper",
-    #             x=0.5 + (raio_pos * np.cos(rad)), y=0.5 + (raio_pos * np.sin(rad)),
-    #             sizex=0.05, sizey=0.05, xanchor="center", yanchor="middle", layer="above"
-    #         ))
-    #     for g in range(30):
-    #         raio_p = 8.6 if g % 10 == 0 else 8.3
-    #         fig.add_trace(go.Scatterpolar(r=[8.0, raio_p], theta=[i*30+g, i*30+g], mode='lines', 
-    #                                       line=dict(color="black", width=1), showlegend=False, hoverinfo='skip'))
+        for g in range(30):
+            raio_p = 8.6 if g % 10 == 0 else 8.3
+            fig.add_trace(go.Scatterpolar(r=[8.0, raio_p], theta=[i*30+g, i*30+g], mode='lines', 
+                                          line=dict(color="black", width=1), showlegend=False, hoverinfo='skip'))
 
-    # fig.add_trace(go.Scatterpolar(r=[10] * 361, theta=list(range(361)), mode='lines', 
-    #                               line=dict(color="black", width=2), showlegend=False, hoverinfo='skip'))
+    fig.add_trace(go.Scatterpolar(r=[10] * 361, theta=list(range(361)), mode='lines', 
+                                  line=dict(color="black", width=2), showlegend=False, hoverinfo='skip'))
 
     # --- 6. PLANETAS E TEXTOS (CORREÇÃO DE TRAÇADO AQUI) ---
     for p in posicoes:
@@ -213,3 +204,6 @@ def criar_mandala_astrologica(ano, mes, dia, hora_decimal, pasta_icones):
         showlegend=False, margin=dict(t=50, b=50, l=50, r=50), dragmode=False
     )
     return fig
+
+if __name__ == "__main__":
+    fig_m = criar_mandala_astrologica(2026, 1, 1, 12.0)
