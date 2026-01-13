@@ -298,7 +298,7 @@ st.title("🔭 Mandala Astrológica Interativa")
 fuso_br = timezone(timedelta(hours=-3))
 if 'data_ref' not in st.session_state:
     st.session_state.data_ref = datetime.now(timezone.utc).astimezone(fuso_br)
-data_exibicao = st.session_state_ref.astimezone(timezone(timedelta(hours=-3)))
+data_exibicao = st.session_state.data_ref.astimezone(timezone(timedelta(hours=-3)))
 st.subheader(f"{data_exibicao.strftime('%d/%m/%Y %H:%M')}")
 
 
