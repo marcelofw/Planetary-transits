@@ -203,8 +203,7 @@ def criar_mandala_astrologica(dt):
                 rotation=180, # Áries à esquerda
                 showgrid=False, 
                 gridcolor="rgba(0,0,0,0.1)",
-                showticklabels=False,
-                range=[0, 360]
+                showticklabels=False
             )
         ),
         hoverlabel=dict(bgcolor="black", font_size=14, font_family="Arial"),
