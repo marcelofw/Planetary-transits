@@ -114,12 +114,14 @@ def criar_mandala_astrologica(dt):
 
     # Lógica anti-sobreposição (ajuste visual dos símbolos)
     posicoes.sort(key=lambda x: x['long'])
+    dist_min = 15
+
     grupos = []
     if posicoes:
         grupo_atual = [posicoes[0]]
         for i in range(1, len(posicoes)):
             # Se a distância para o anterior for menor que 15 graus, pertence ao grupo
-            if (posicoes[i]['long'] - posicoes[i-1]['long']) % 360 < 15:
+            if (posicoes[i]['long'] - posicoes[i-1]['long']) % 360 < dist_min:
                 grupo_atual.append(posicoes[i])
             else:
                 grupos.append(grupo_atual)
@@ -134,7 +136,7 @@ def criar_mandala_astrologica(dt):
                 grupos.append(grupo_unido)
 
     # 3. Distribuir cada grupo individualmente
-    dist_min = 7  # Espaço fixo entre textos (ajuste conforme o tamanho da fonte)
+    # dist_min = 7  # Espaço fixo entre textos (ajuste conforme o tamanho da fonte)
     
     for grupo in grupos:
         n = len(grupo)
