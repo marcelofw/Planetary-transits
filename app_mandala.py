@@ -7,14 +7,10 @@ from datetime import datetime
 import math
 
 if 'data_ref' not in st.session_state:
-    # Define a data/hora inicial apenas na primeira vez que o app abre
     st.session_state.data_ref = datetime.now()
 
-def avançar_hora():
-    st.session_state.data_ref += pd.Timedelta(hours=1)
-
-def retroceder_hora():
-    st.session_state.data_ref -= pd.Timedelta(hours=1)
+def ajustar_tempo(horas):
+    st.session_state.data_ref += pd.Timedelta(hours=horas)
 
 # --- CONFIGURAÇÃO DA PÁGINA ---
 st.set_page_config(page_title="Mandala Astrológica Viva", layout="wide")
@@ -221,59 +217,36 @@ def criar_mandala_astrologica(ano, mes, dia, hora_decimal):
 
 # --- INTERFACE STREAMLIT ---
 st.sidebar.title("🪐 Configurações")
-col_retro, col_avanca = st.sidebar.columns(2)
-col_retro.button("⬅️ -1h", on_click=retroceder_hora)
-col_avanca.button("+1h ➡️", on_click=avançar_hora)
+col_r, col_a = st.sidebar.columns(2)
+col_r.button("⬅️ -1h", on_click=ajustar_tempo, args=[-1])
+col_a.button("+1h ➡️", on_click=ajustar_tempo, args=[1])
 
-data_escolhida = st.sidebar.date_input("Data", st.session_state.data_ref)
-hora_escolhida = st.sidebar.time_input("Hora", st.session_state.data_ref)
-
-st.session_state.data_ref = datetime.combine(data_escolhida, hora_escolhida)
-
-# Conversão de hora para decimal
-hora_decimal = hora_escolhida.hour + (hora_escolhida.minute / 60.0) + (hora_escolhida.second / 3600.0)
-
-st.title(f"🔭 Mandala Astrológica Interativa")
-st.subheader(f"{data_escolhida.strftime('%d/%m/%Y')} às {hora_escolhida.strftime('%H:%M')}")
-
-c1, c2 = st.sidebar.columns(2)
-if c1.button("⬅️ -1 Hora"):
-    st.session_state.data_ref -= pd.Timedelta(hours=1)
-if c2.button("+1 Hora ➡️"):
-    st.session_state.data_ref += pd.Timedelta(hours=1)
-
-# Calendário e Relógio
 d = st.sidebar.date_input("Data", value=st.session_state.data_ref)
 t = st.sidebar.time_input("Hora", value=st.session_state.data_ref)
 
-# Unifica para cálculos
+# Sincroniza estado
 st.session_state.data_ref = datetime.combine(d, t)
-hora_decimal = t.hour + (t.minute / 60.0) + (t.second / 3600)
+
+st.title("🔭 Mandala Astrológica Interativa")
+st.subheader(f"{st.session_state.data_ref.strftime('%d/%m/%Y %H:%M:%S')}")
 
 col1, col2 = st.columns([1.5, 1])
 
 with col1:
-    fig_mandala = criar_mandala_astrologica(data_escolhida.year, data_escolhida.month, data_escolhida.day, hora_decimal)
-    st.plotly_chart(fig_mandala, use_container_width=False)
+    fig = criar_mandala_astrologica(st.session_state.data_ref)
+    st.plotly_chart(fig, use_container_width=False)
 
 with col2:
-    st.write("### Posições Detalhadas")
-    jd = swe.julday(data_escolhida.year, data_escolhida.month, data_escolhida.day, hora_decimal)
-    ids = {"Sol": 0, "Lua": 1, "Mercúrio": 2, "Vênus": 3, "Marte": 4, "Júpiter": 5, "Saturno": 6, "Urano": 7, "Netuno": 8, "Plutão": 9}
-    
+    st.write("### Posições")
+    jd = swe.julday(d.year, d.month, d.day, t.hour + t.minute/60 + t.second/3600)
     dados = []
+    ids = {"Sol": 0, "Lua": 1, "Mercúrio": 2, "Vênus": 3, "Marte": 4, "Júpiter": 5, "Saturno": 6, "Urano": 7, "Netuno": 8, "Plutão": 9}
     for nome, pid in ids.items():
         res, _ = swe.calc_ut(jd, pid, swe.FLG_SWIEPH)
-        long_abs = res[0]
-        grau_s = long_abs % 30
-        min_i = int(round((grau_s % 1) * 60))
-        grau_i = int(grau_s)
-        if min_i == 60: min_i = 0; grau_i += 1
-        
+        long = res[0]
         dados.append({
             "Planeta": nome,
-            "Signo": SIGNOS[int(long_abs / 30)],
-            "Posição": f"{grau_i:02d}°{min_i:02d}'"
+            "Signo": SIGNOS[int(long / 30)],
+            "Posição": f"{int(long % 30):02d}°{int((long % 1) * 60):02d}'"
         })
-    
     st.table(pd.DataFrame(dados))
