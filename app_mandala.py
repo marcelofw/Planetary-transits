@@ -10,8 +10,12 @@ import math
 st.set_page_config(page_title="Mandala Astrológica Viva", layout="wide")
 st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=EB+Garamond:wght@500&display=swap');
-    /* Aplica a fonte apenas aos elementos de texto do Plotly se necessário */
+    @import url('https://fonts.googleapis.com/css2?family=DejaVu+Sans&display=swap');
+    
+    /* Garante que o Plotly tente usar a fonte injetada */
+    .main {
+        font-family: 'DejaVu Sans', sans-serif;
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -176,7 +180,7 @@ def criar_mandala_astrologica(ano, mes, dia, hora_decimal):
                 r=[7.3], theta=[p["long_visual"]], 
                 mode='text', 
                 text=[f"<b>{p['sym']}</b>"], # Adicionado Negrito via tag HTML
-                textfont=dict(size=24, color=p["cor"], family="Segoe UI Symbol, Symbola, Quivira, Apple Symbols, serif"), 
+                textfont=dict(size=24, color=p["cor"], family="'DejaVu Sans', 'Segoe UI Symbol', 'Apple Symbols', sans-serif"), 
                 showlegend=False, hovertemplate=hover_template
             ))
         
