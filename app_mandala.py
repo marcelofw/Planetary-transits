@@ -10,7 +10,7 @@ from datetime import datetime, timedelta, timezone, date
 
 
 if 'data_ref' not in st.session_state:
-    st.session_state.data_ref = datetime.now()
+    st.session_state.data_ref = datetime.now() - timedelta(hours=3)
 
 def ajustar_tempo_horas(horas):
     st.session_state.data_ref += pd.Timedelta(hours=horas)
@@ -272,7 +272,7 @@ st.sidebar.title("🪐 Configurações")
 
 # Inputs manuais (Sincronizados com o session_state)
 d_input = st.sidebar.date_input("Data", value=st.session_state.data_ref, min_value=date(1900, 1, 1), max_value=date(2100, 12, 31))
-t_input = st.sidebar.time_input("Hora", value=st.session_state.data_ref, help="Entre com o horário de Brasília.")
+t_input = st.sidebar.time_input("Hora", value=st.session_state.data_ref - timedelta(hours=3), help="Entre com o horário de Brasília.")
 st.session_state.data_ref = datetime.combine(d_input, t_input)
 data_para_o_motor = st.session_state.data_ref + timedelta(hours=3)
 
