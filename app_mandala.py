@@ -128,6 +128,9 @@ def criar_mandala_astrologica(ano, mes, dia, hora_decimal):
             r=[9.2], theta=[i * 30 + 15], mode='text', text=[SIGNOS[i][:3]],
             textfont=dict(size=12, color="#555", family="Arial Black"), showlegend=False))
 
+    fig.add_trace(go.Scatterpolar(r=[10] * 361, theta=list(range(361)), mode='lines', 
+                                  line=dict(color="black", width=2), showlegend=False, hoverinfo='skip'))
+
     # --- 3. PLANETAS E GRAUS ---
     for p in posicoes:
         hover_template = f"<b>{p['nome']}</b><br>{p['signo']} {p['grau_int']}°{p['min_int']}'<extra></extra>"
