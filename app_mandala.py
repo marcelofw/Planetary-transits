@@ -111,18 +111,25 @@ def criar_mandala_astrologica(dt):
 
     # Lógica anti-sobreposição (ajuste visual dos símbolos)
     posicoes.sort(key=lambda x: x['long'])
+    for p in posicoes:
+        p['long_visual'] = p['long']
     
     distancia_minima = 18
-    for _ in range(50):
+    k_retorno = 0.1
+
+    for _ in range(100):
         for i in range(len(posicoes)):
             j = (i + 1) % len(posicoes)
             
             diff = (posicoes[j]['long_visual'] - posicoes[i]['long_visual']) % 360
             
             if diff < distancia_minima:
-                sobreposicao = distancia_minima - diff
-                posicoes[i]['long_visual'] = (posicoes[i]['long_visual'] - sobreposicao/2) % 360
-                posicoes[j]['long_visual'] = (posicoes[j]['long_visual'] - sobreposicao/2) % 360
+                push = (distancia_minima - diff) * 0.5
+                posicoes[i]['long_visual'] = (posicoes[i]['long_visual'] - push) % 360
+                posicoes[j]['long_visual'] = (posicoes[j]['long_visual'] - push) % 360
+    
+            erro = (posicoes[i]['long'] - posicoes[i]['long_visual'] + 180) % 360 - 180
+            posicoes[i]['long_visual'] = (posicoes[i]['long_visual'] + erro * k_retorno) % 360
     
     fig.add_trace(go.Scatterpolar(r=[raio_interno] * 361, theta=list(range(361)), fill='toself', 
         fillcolor="rgba(245, 245, 245, 0.2)", line=dict(color="black", width=1.5), showlegend=False, hoverinfo='skip'))
