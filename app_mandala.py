@@ -113,7 +113,7 @@ def criar_mandala_astrologica(dt):
     posicoes.sort(key=lambda x: x['long'])
     
     distancia_minima = 16
-    for _ in range(25):
+    for _ in range(15):
         for i in range(len(posicoes)):
             j = (i + 1) % len(posicoes)
             
