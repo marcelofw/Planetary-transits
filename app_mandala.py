@@ -12,20 +12,21 @@ if 'data_ref' not in st.session_state:
     agora_ut = datetime.now()
     st.session_state.data_ref = agora_ut - timedelta(hours=3)
 
-def ajustar_tempo_horas(horas):
-    st.session_state.data_ref += pd.Timedelta(hours=horas)
+def on_button_click(delta_type, value):
+    if delta_type == 'hours':
+        nova_data = st.session_state.data_ref + timedelta(hours=value)
+    elif delta_type == 'days':
+        nova_data = st.session_state.data_ref + timedelta(days=value)
+    elif delta_type == 'weeks':
+        nova_data = st.session_state.data_ref + relativedelta(weeks=value)
+    elif delta_type == 'months':
+        nova_data = st.session_state.data_ref + relativedelta(months=value)
+    elif delta_type == 'years':
+        nova_data = st.session_state.data_ref + relativedelta(years=value)
 
-def ajustar_tempo_dias(dias):
-    st.session_state.data_ref += pd.Timedelta(days=dias)
-
-def ajustar_tempo_semanas(semanas):
-    st.session_state.data_ref += relativedelta(weeks=semanas)
-
-def ajustar_tempo_meses(meses):
-    st.session_state.data_ref += relativedelta(months=meses)
-
-def ajustar_tempo_anos(anos):
-    st.session_state.data_ref += relativedelta(years=anos)
+    st.session_state.data_ref = nova_data
+    st.session_state.data_widget = nova_data.date()
+    st.session_state.hora_widget = nova_data.time()
 
 # --- CONFIGURAÇÃO DA PÁGINA ---
 st.set_page_config(page_title="Mandala Astrológica Viva", layout="wide")
@@ -222,11 +223,11 @@ def criar_mandala_astrologica(dt):
         hover_template = f"{p['nome']}<br>{p['signo']}<br>{p['grau_int']}º{p['min_int']}'<extra></extra>"
         
         # Anotações Graus
-        fig.add_trace(go.Scatterpolar(r=[6.5], theta=[p["long_visual"]], mode='text', text=[f"{p['grau_int']}°"], 
+        fig.add_trace(go.Scatterpolar(r=[6.5], theta=[p["long_visual"]], mode='text', text=[f"{p['grau_int']:02d}°"], 
                                     textfont=dict(size=25, color="black", family="Trebuchet MS"), 
                                     showlegend=False, hovertemplate=hover_template))
         # Anotações Minutos
-        fig.add_trace(go.Scatterpolar(r=[5.7], theta=[p["long_visual"]], mode='text', text=[f"{p['min_int']}'"], 
+        fig.add_trace(go.Scatterpolar(r=[5.7], theta=[p["long_visual"]], mode='text', text=[f"{p['min_int']:02d}'"], 
                                     textfont=dict(size=21, color="black", family="Trebuchet MS"), 
                                     showlegend=False, hovertemplate=hover_template))
         # Marcadores internos
@@ -271,26 +272,28 @@ def criar_mandala_astrologica(dt):
 st.sidebar.title("🪐 Configurações")
 
 # Inputs manuais (Sincronizados com o session_state)
-d_input = st.sidebar.date_input("Data", value=st.session_state.data_ref, key="data_widget", min_value=date(1900, 1, 1), max_value=date(2100, 12, 31))
-t_input = st.sidebar.time_input("Hora", value=st.session_state.data_ref, key="hora_widget", help="Entre com o horário de Brasília.")
+d_input = st.sidebar.date_input("Data", value=st.session_state.data_ref.date(), key="data_widget")
+t_input = st.sidebar.time_input("Hora", value=st.session_state.data_ref.time(), key="hora_widget")
+
 st.session_state.data_ref = datetime.combine(d_input, t_input)
 data_para_o_calculo_ut = st.session_state.data_ref + timedelta(hours=3)
 
 col_r, col_a = st.sidebar.columns(2)
-col_r.button("⬅️ -1 Hora", on_click=ajustar_tempo_horas, args=[-1])
-col_a.button("+1 Hora ➡️", on_click=ajustar_tempo_horas, args=[1])
 
-col_r.button("⬅️ -1 Dia", on_click=ajustar_tempo_dias, args=[-1])
-col_a.button("+1 Dia ➡️", on_click=ajustar_tempo_dias, args=[1])
+col_r.button("⬅️ -1 Hora", on_click=on_button_click, args=['hours', -1])
+col_a.button("+1 Hora ➡️", on_click=on_button_click, args=['hours', 1])
 
-col_r.button("⬅️ -1 Semana", on_click=ajustar_tempo_semanas, args=[-1])
-col_a.button("+1 Semana ➡️", on_click=ajustar_tempo_semanas, args=[1])
+col_r.button("⬅️ -1 Dia", on_click=on_button_click, args=['days', -1])
+col_a.button("+1 Dia ➡️", on_click=on_button_click, args=['days', 1])
 
-col_r.button("⬅️ -1 Mês", on_click=ajustar_tempo_meses, args=[-1])
-col_a.button("+1 Mês ➡️", on_click=ajustar_tempo_meses, args=[1])
+col_r.button("⬅️ -1 Semana", on_click=on_button_click, args=['weeks', -1])
+col_a.button("+1 Semana ➡️", on_click=on_button_click, args=['weeks', 1])
 
-col_r.button("⬅️ -1 Ano", on_click=ajustar_tempo_anos, args=[-1])
-col_a.button("+1 Ano ➡️", on_click=ajustar_tempo_anos, args=[1])
+col_r.button("⬅️ -1 Mês", on_click=on_button_click, args=['months', -1])
+col_a.button("+1 Mês ➡️", on_click=on_button_click, args=['months', 1])
+
+col_r.button("⬅️ -1 Ano", on_click=on_button_click, args=['years', -1])
+col_a.button("+1 Ano ➡️", on_click=on_button_click, args=['years', 1])
 
 # Atualização do estado com base no que foi digitado
 st.session_state.data_ref = datetime.combine(d_input, t_input)
