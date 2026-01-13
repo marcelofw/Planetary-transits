@@ -9,8 +9,17 @@ import math
 if 'data_ref' not in st.session_state:
     st.session_state.data_ref = datetime.now()
 
-def ajustar_tempo(horas):
+def ajustar_tempo_horas(horas):
     st.session_state.data_ref += pd.Timedelta(hours=horas)
+
+def ajustar_tempo_dias(dias):
+    st.session_state.data_ref += pd.Timedelta(days=dias)
+
+def ajustar_tempo_meses(meses):
+    st.session_state.data_ref += pd.Timedelta(months=meses)
+
+def ajustar_tempo_anos(anos):
+    st.session_state.data_ref += pd.Timedelta(years=anos)
 
 # --- CONFIGURAÇÃO DA PÁGINA ---
 st.set_page_config(page_title="Mandala Astrológica Viva", layout="wide")
@@ -232,8 +241,17 @@ d_input = st.sidebar.date_input("Data", value=st.session_state.data_ref)
 t_input = st.sidebar.time_input("Hora", value=st.session_state.data_ref)
 
 col_r, col_a = st.sidebar.columns(2)
-col_r.button("⬅️ -1 Hora", on_click=ajustar_tempo, args=[-1])
-col_a.button("+1 Hora ➡️", on_click=ajustar_tempo, args=[1])
+col_r.button("⬅️ -1 Hora", on_click=ajustar_tempo_horas, args=[-1])
+col_a.button("+1 Hora ➡️", on_click=ajustar_tempo_horas, args=[1])
+
+col_r.button("⬅️ -1 Dia", on_click=ajustar_tempo_dias, args=[-1])
+col_a.button("+1 Dia ➡️", on_click=ajustar_tempo_dias, args=[1])
+
+col_r.button("⬅️ -1 Mês", on_click=ajustar_tempo_meses, args=[-1])
+col_a.button("+1 Mês ➡️", on_click=ajustar_tempo_meses, args=[1])
+
+col_r.button("⬅️ -1 Ano", on_click=ajustar_tempo_anos, args=[-1])
+col_a.button("+1 Ano ➡️", on_click=ajustar_tempo_anos, args=[1])
 
 # Atualização do estado com base no que foi digitado
 st.session_state.data_ref = datetime.combine(d_input, t_input)
