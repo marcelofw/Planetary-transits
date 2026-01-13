@@ -6,6 +6,16 @@ import numpy as np
 from datetime import datetime
 import math
 
+if 'data_ref' not in st.session_state:
+    # Define a data/hora inicial apenas na primeira vez que o app abre
+    st.session_state.data_ref = datetime.now()
+
+def avançar_hora():
+    st.session_state.data_ref += pd.Timedelta(hours=1)
+
+def retroceder_hora():
+    st.session_state.data_ref -= pd.Timedelta(hours=1)
+
 # --- CONFIGURAÇÃO DA PÁGINA ---
 st.set_page_config(page_title="Mandala Astrológica Viva", layout="wide")
 st.markdown("""
@@ -211,14 +221,34 @@ def criar_mandala_astrologica(ano, mes, dia, hora_decimal):
 
 # --- INTERFACE STREAMLIT ---
 st.sidebar.title("🪐 Configurações")
-data_escolhida = st.sidebar.date_input("Data de Referência", datetime.now())
-hora_escolhida = st.sidebar.time_input("Hora de Referência", datetime.now())
+col_retro, col_avanca = st.sidebar.columns(2)
+col_retro.button("⬅️ -1h", on_click=retroceder_hora)
+col_avanca.button("+1h ➡️", on_click=avançar_hora)
+
+data_escolhida = st.sidebar.date_input("Data", st.session_state.data_ref)
+hora_escolhida = st.sidebar.time_input("Hora", st.session_state.data_ref)
+
+st.session_state.data_ref = datetime.combine(data_escolhida, hora_escolhida)
 
 # Conversão de hora para decimal
-hora_decimal = hora_escolhida.hour + (hora_escolhida.minute / 60.0)
+hora_decimal = hora_escolhida.hour + (hora_escolhida.minute / 60.0) + (hora_escolhida.second / 3600.0)
 
 st.title(f"🔭 Mandala Astrológica Interativa")
 st.subheader(f"{data_escolhida.strftime('%d/%m/%Y')} às {hora_escolhida.strftime('%H:%M')}")
+
+c1, c2 = st.sidebar.columns(2)
+if c1.button("⬅️ -1 Hora"):
+    st.session_state.data_ref -= pd.Timedelta(hours=1)
+if c2.button("+1 Hora ➡️"):
+    st.session_state.data_ref += pd.Timedelta(hours=1)
+
+# Calendário e Relógio
+d = st.sidebar.date_input("Data", value=st.session_state.data_ref)
+t = st.sidebar.time_input("Hora", value=st.session_state.data_ref)
+
+# Unifica para cálculos
+st.session_state.data_ref = datetime.combine(d, t)
+hora_decimal = t.hour + (t.minute / 60.0) + (t.second / 3600)
 
 col1, col2 = st.columns([1.5, 1])
 
