@@ -117,7 +117,7 @@ def criar_mandala_astrologica(ano, mes, dia, hora_decimal):
         # Fatias de Signos
         fig.add_trace(go.Barpolar(
             r=[2], theta=[i*30+15], width=[30], base=8, 
-            marker_color="white", marker_line_color="#444", opacity=0.1, 
+            marker_color="white", marker_line_color='black', opacity=0.1, 
             showlegend=False, hoverinfo='skip'))
         
         # RÉGUA: Adiciona 30 pontos por signo
