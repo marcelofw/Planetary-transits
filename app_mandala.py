@@ -345,37 +345,37 @@ with col1:
         config={'displayModeBar':False, 'responsive':False, 'frameMargins': 0}
         )
 
-with col2:
-    st.write("### Posições Planetárias")
-    # Cálculos para a tabela
-    dt = data_para_o_calculo_ut
-    jd_tab = swe.julday(dt.year, dt.month, dt.day, dt.hour + dt.minute/60 + dt.second/3600)
+# with col2:
+    # st.write("### Posições Planetárias")
+    # # Cálculos para a tabela
+    # dt = data_para_o_calculo_ut
+    # jd_tab = swe.julday(dt.year, dt.month, dt.day, dt.hour + dt.minute/60 + dt.second/3600)
     
-    dados_tabela = []
-    planetas_ids = [
-        ("Sol", 0), ("Lua", 1), ("Mercúrio", 2), ("Vênus", 3), ("Marte", 4), 
-        ("Júpiter", 5), ("Saturno", 6), ("Urano", 7), ("Netuno", 8), ("Plutão", 9)
-    ]
+    # dados_tabela = []
+    # planetas_ids = [
+    #     ("Sol", 0), ("Lua", 1), ("Mercúrio", 2), ("Vênus", 3), ("Marte", 4), 
+    #     ("Júpiter", 5), ("Saturno", 6), ("Urano", 7), ("Netuno", 8), ("Plutão", 9)
+    # ]
     
-    for nome, pid in planetas_ids:
-        res, _ = swe.calc_ut(jd_tab, pid, swe.FLG_SWIEPH)
-        long_abs = res[0]
-        pos_graus = int(long_abs % 30)
-        pos_minutos = int(round((long_abs % 1) * 60))
-        indice_signo = int(long_abs / 30)
+    # for nome, pid in planetas_ids:
+    #     res, _ = swe.calc_ut(jd_tab, pid, swe.FLG_SWIEPH)
+    #     long_abs = res[0]
+    #     pos_graus = int(long_abs % 30)
+    #     pos_minutos = int(round((long_abs % 1) * 60))
+    #     indice_signo = int(long_abs / 30)
         
-        if pos_minutos == 60:
-            pos_graus += 1
-            post_minutos = 0
+    #     if pos_minutos == 60:
+    #         pos_graus += 1
+    #         post_minutos = 0
 
-            if pos_graus == 30:
-                pos_graus = 0
-                indice_signo = (indice_signo + 1) % 12
+    #         if pos_graus == 30:
+    #             pos_graus = 0
+    #             indice_signo = (indice_signo + 1) % 12
 
-        dados_tabela.append({
-            "Planeta": nome,
-            "Signo": SIGNOS[indice_signo],
-            "Posição": f"{pos_graus:02d}°{pos_minutos:02d}'"
-        })
+    #     dados_tabela.append({
+    #         "Planeta": nome,
+    #         "Signo": SIGNOS[indice_signo],
+    #         "Posição": f"{pos_graus:02d}°{pos_minutos:02d}'"
+    #     })
     
-    st.dataframe(pd.DataFrame(dados_tabela), hide_index=True, use_container_width=True)
+    # st.dataframe(pd.DataFrame(dados_tabela), hide_index=True, use_container_width=True)
