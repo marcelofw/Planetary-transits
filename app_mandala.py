@@ -204,7 +204,7 @@ def criar_mandala_astrologica(dt):
 
     # --- LAYOUT FINAL ---
     fig.update_layout(
-            width=700, height=700, autosize=False, uirevision="constant",
+            width=850, height=850, autosize=False, uirevision="constant",
             polar=dict(
                 radialaxis=dict(visible=False, range=[0, 10]),
                 angularaxis=dict(
