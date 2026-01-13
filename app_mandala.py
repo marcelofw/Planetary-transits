@@ -313,7 +313,7 @@ with col1:
 with col2:
     st.write("### Posições Planetárias")
     # Cálculos para a tabela
-    dt = st.session_state.data_ref
+    dt = data_para_o_calculo_ut
     jd_tab = swe.julday(dt.year, dt.month, dt.day, dt.hour + dt.minute/60 + dt.second/3600)
     
     dados_tabela = []
