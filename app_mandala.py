@@ -111,12 +111,16 @@ def criar_mandala_astrologica(dt):
 
     # Lógica anti-sobreposição (ajuste visual dos símbolos)
     posicoes.sort(key=lambda x: x['long'])
-    for _ in range(5):
+    for _ in range(10):
         for i in range(len(posicoes)):
-            next_idx = (i + 1) % len(posicoes)
-            diff = (posicoes[next_idx]['long_visual'] - posicoes[i]['long_visual']) % 360
-            if diff < 10:
-                posicoes[next_idx]['long_visual'] = (posicoes[i]['long_visual'] + 10) % 360
+            j = (i + 1) % len(posicoes)
+            # Calcula a distância entre o planeta atual e o próximo
+            diff = (posicoes[j]['long_visual'] - posicoes[i]['long_visual']) % 360
+            
+            # Se estiverem a menos de 10 graus de distância, empurra o próximo
+            distancia_minima = 10 
+            if diff < distancia_minima:
+                posicoes[j]['long_visual'] = (posicoes[i]['long_visual'] + distancia_minima) % 360
 
     fig.add_trace(go.Scatterpolar(r=[raio_interno] * 361, theta=list(range(361)), fill='toself', 
         fillcolor="rgba(245, 245, 245, 0.2)", line=dict(color="black", width=1.5), showlegend=False, hoverinfo='skip'))
@@ -207,9 +211,17 @@ def criar_mandala_astrologica(dt):
             textfont=dict(size=25, color=p["cor"], family="'DejaVu Sans', 'Segoe UI Symbol', 'Apple Symbols', sans-serif"), 
             showlegend=False, hovertemplate=hover_template
         ))
-    
+
+        # LINHA DE CONEXÃO (Opcional: liga o símbolo visual ao ponto real)
+        # Ajuda o usuário a ver onde o planeta realmente está se ele foi "empurrado"
+        fig.add_trace(go.Scatterpolar(
+            r=[7.4, 8.0], theta=[p["long_visual"], p["long"]],
+            mode='lines', line=dict(color=p["cor"], width=0.5),
+            showlegend=False, hoverinfo='skip'
+        ))
+
         fig.add_trace(go.Scatterpolar(r=[8.0], theta=[p["long"]], mode='markers', 
-                                    marker=dict(size=10, color=p["cor"], line=dict(color='black', width=0)), 
+                                    marker=dict(size=8, color=p["cor"], line=dict(color='black', width=0)), 
                                     showlegend=False, hovertemplate=hover_template))
 
     # --- LAYOUT FINAL ---
@@ -244,8 +256,8 @@ col_r, col_a = st.sidebar.columns(2)
 col_r.button("⬅️ -1 Hora", on_click=ajustar_tempo_horas, args=[-1])
 col_a.button("+1 Hora ➡️", on_click=ajustar_tempo_horas, args=[1])
 
-col_r.button("⬅️  -1 Dia", on_click=ajustar_tempo_dias, args=[-1])
-col_a.button("+1 Dia  ➡️", on_click=ajustar_tempo_dias, args=[1])
+col_r.button("⬅️ -1 Dia ", on_click=ajustar_tempo_dias, args=[-1])
+col_a.button("+1 Dia ➡️", on_click=ajustar_tempo_dias, args=[1])
 
 col_r.button("⬅️ -1 Mês", on_click=ajustar_tempo_meses, args=[-1])
 col_a.button("+1 Mês ➡️", on_click=ajustar_tempo_meses, args=[1])
