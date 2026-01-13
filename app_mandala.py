@@ -195,7 +195,7 @@ def criar_mandala_astrologica(dt):
 
     # --- LAYOUT FINAL ---
     fig.update_layout(
-        width=700, height=700,
+        width=700, height=700, uirevision="constant",
         polar=dict(
             radialaxis=dict(visible=False, range=[0, 10]),
             angularaxis=dict(
@@ -203,14 +203,16 @@ def criar_mandala_astrologica(dt):
                 rotation=180, # Áries à esquerda
                 showgrid=False, 
                 gridcolor="rgba(0,0,0,0.1)",
-                showticklabels=False
+                showticklabels=False,
+                range=[0, 360]
             )
         ),
         hoverlabel=dict(bgcolor="black", font_size=14, font_family="Arial"),
         showlegend=False,
         margin=dict(t=50, b=50, l=50, r=50),
         paper_bgcolor="black",
-        dragmode=False
+        dragmode=False,
+        modebar=dict(remove=["zoom2d", "pan2d", "select2d", "lasso2d", "zoomIn2d", "zoomOut2d", "autoScale2d", "resetScale2d"])
     )
     return fig
 
