@@ -11,7 +11,7 @@ from datetime import datetime, timedelta, timezone, date
 
 if 'data_ref' not in st.session_state:
     hora_atual_br = datetime.now() - timedelta(hours=3)
-    st.session_state.data_ref = hora_atual_br
+    st.session_state.data_ref = datetime.now()
 
 def ajustar_tempo_horas(horas):
     st.session_state.data_ref += pd.Timedelta(hours=horas)
