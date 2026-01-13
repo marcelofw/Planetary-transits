@@ -152,7 +152,7 @@ def criar_mandala_astrologica(ano, mes, dia, hora_decimal):
                 r=[7.3], theta=[p["long_visual"]], 
                 mode='text', 
                 text=[f"<b>{p['sym']}</b>"], # Adicionado Negrito via tag HTML
-                textfont=dict(size=45, color=p["cor"], family="Arial Black"), 
+                textfont=dict(size=14, color=p["cor"], family="Arial"), 
                 showlegend=False, hovertemplate=hover_template
             ))
         
