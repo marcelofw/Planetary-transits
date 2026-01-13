@@ -54,6 +54,11 @@ st.markdown("""
 SIGNOS = ["Áries", "Touro", "Gêmeos", "Câncer", "Leão", "Virgem", 
           "Libra", "Escorpião", "Sagitário", "Capricórnio", "Aquário", "Peixes"]
 
+SIMBOLOS_SIGNOS_UNICODE = [
+    "♈", "♉", "♊", "♋", "♌", "♍", 
+    "♎", "♏", "♐", "♑", "♒", "♓"
+]
+
 ASPECTOS = {
     0: ("Conjunção", "☌"), 
     60: ("Sêxtil", "✶"), 
@@ -212,8 +217,8 @@ def criar_mandala_astrologica(dt):
         
         # Nomes dos Signos
         fig.add_trace(go.Scatterpolar(
-            r=[9.2], theta=[i * 30 + 15], mode='text', text=[SIGNOS[i][:3]],
-            textfont=dict(size=12, color="#555", family="Arial Black"), showlegend=False, hoverinfo='none'))
+            r=[9.2], theta=[i * 30 + 15], mode='text', text=[SIMBOLOS_SIGNOS_UNICODE],
+            textfont=dict(size=22, color="#555", family="DejaVu Sans, Arial Black"), showlegend=False, hoverinfo='none'))
 
     fig.add_trace(go.Scatterpolar(r=[10] * 361, theta=list(range(361)), mode='lines', 
                                   line=dict(color="black", width=2), showlegend=False, hoverinfo='skip'))
