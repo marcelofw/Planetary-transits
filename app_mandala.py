@@ -22,8 +22,15 @@ st.markdown("""
     .main {
         font-family: 'DejaVu Sans', sans-serif;
     }
-    /* Remove a animação de fade-in do Streamlit ao atualizar elementos */
+    /* Trava o tamanho do container do gráfico */
     .stPlotlyChart {
+        width: 700px !important;
+        height: 700px !important;
+        margin: auto;
+    }
+    /* Remove a animação de fade (piscada branca) */
+    .stElement {
+        animation: none !important;
         transition: none !important;
     }
     </style>
@@ -200,20 +207,21 @@ def criar_mandala_astrologica(dt):
     # --- LAYOUT FINAL ---
     fig.update_layout(
         polar=dict(
-            # width=700, height=700, autosize=False, uirevision="constant",
-            domain=dict(x=[0.1, 0.9], y=[0.1, 0.9]),
+            width=700, height=700, autosize=False, uirevision="constant",
             radialaxis=dict(visible=False, range=[0, 10]),
             angularaxis=dict(
                 direction="counterclockwise", 
                 rotation=180, # Áries à esquerda
                 showgrid=False, 
                 gridcolor="rgba(0,0,0,0.1)",
-                showticklabels=False
+                showticklabels=False,
+                categoryorder="array",
+                categoryarray=list(range(360))
             )
         ),
         hoverlabel=dict(bgcolor="black", font_size=14, font_family="Arial"),
         showlegend=False,
-        margin=dict(t=50, b=50, l=50, r=50, pad=0),
+        margin=dict(t=0, b=0, l=0, r=0, pad=0),
         paper_bgcolor="black",
         #plot_bgcolor="black,"
         dragmode=False,
@@ -244,11 +252,15 @@ col1, col2 = st.columns([1.5, 1])
 
 with col1:
     # Passamos a data atualizada para a função
+    if "chart_placeholder" not in st.session_state:
+        st.session_state.chart_placeholder = st.empty()
+    
     fig_mandala = criar_mandala_astrologica(st.session_state.data_ref)
-    st.plotly_chart(fig_mandala, 
-                    use_container_width=False, 
-                    key="mandala_astrologica_fixa",
-                    config={'displayModeBar':False, 'staticPlot':False, 'responsive':False}
+    st.session_state.chart_placeholder.plotly_chart(
+                    fig_mandala, 
+                    use_container_width=False,
+                    config={'displayModeBar':False, 'staticPlot':False, 'responsive':False},
+                    key=f"mandala_{st.session_state.data_ref.hour}"
                     )
 
 with col2:
