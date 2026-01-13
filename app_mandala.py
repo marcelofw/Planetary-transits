@@ -318,8 +318,8 @@ if data_vinda_do_widget != st.session_state.data_ref:
 data_para_o_calculo_ut = st.session_state.data_ref + timedelta(hours=3)
 
 col_r, col_a = st.sidebar.columns(2)
-col_r.button("⬅️ -1 Minuto", on_click=on_button_click, args=['minutes', -1])
-col_a.button("+1 Minuto ➡️", on_click=on_button_click, args=['minutes', 1])
+col_r.button("⬅️ -1 Minuto", on_click=on_button_click, args=['minutes', -15])
+col_a.button("+1 Minuto ➡️", on_click=on_button_click, args=['minutes', 15])
 
 col_r.button("⬅️ -1 Hora", on_click=on_button_click, args=['hours', -1])
 col_a.button("+1 Hora ➡️", on_click=on_button_click, args=['hours', 1])
