@@ -16,6 +16,9 @@ def ajustar_tempo_horas(horas):
 def ajustar_tempo_dias(dias):
     st.session_state.data_ref += pd.Timedelta(days=dias)
 
+def ajustar_tempo_semanas(semanas):
+    st.session_state.data_ref += relativedelta(weeks=semanas)
+
 def ajustar_tempo_meses(meses):
     st.session_state.data_ref += relativedelta(months=meses)
 
@@ -265,6 +268,9 @@ col_a.button("+1 Hora ➡️", on_click=ajustar_tempo_horas, args=[1])
 
 col_r.button("⬅️ -1 Dia", on_click=ajustar_tempo_dias, args=[-1])
 col_a.button("+1 Dia ➡️", on_click=ajustar_tempo_dias, args=[1])
+
+col_r.button("⬅️ -1 Semana", on_click=ajustar_tempo_semanas, args=[-1])
+col_a.button("+1 Semana ➡️", on_click=ajustar_tempo_semanas, args=[1])
 
 col_r.button("⬅️ -1 Mês", on_click=ajustar_tempo_meses, args=[-1])
 col_a.button("+1 Mês ➡️", on_click=ajustar_tempo_meses, args=[1])
