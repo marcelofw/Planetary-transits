@@ -329,18 +329,18 @@ with col2:
         pos_minutos = int(round((long_abs % 1) * 60))
         indice_signo = int(long_abs / 30)
         
-    if pos_minutos == 60:
-        pos_graus += 1
-        post_miuntos = 0
+        if pos_minutos == 60:
+            pos_graus += 1
+            post_minutos = 0
 
-        if pos_graus == 30:
-            pos_graus = 0
-            indice_signo = (indice_signo + 1) % 12
+            if pos_graus == 30:
+                pos_graus = 0
+                indice_signo = (indice_signo + 1) % 12
 
-    dados_tabela.append({
-        "Planeta": nome,
-        "Signo": SIGNOS[indice_signo],
-        "Posição": f"{pos_graus:02d}°{pos_minutos:02d}'"
-    })
+        dados_tabela.append({
+            "Planeta": nome,
+            "Signo": SIGNOS[indice_signo],
+            "Posição": f"{pos_graus:02d}°{pos_minutos:02d}'"
+        })
     
     st.table(pd.DataFrame(dados_tabela))
