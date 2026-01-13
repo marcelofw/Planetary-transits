@@ -173,7 +173,7 @@ def criar_mandala_astrologica(ano, mes, dia, hora_decimal):
                 showticklabels=False
             )
         ),
-        hoverlabel=dict(bgcolor="black", font_size=60, font_family="Arial"),
+        hoverlabel=dict(bgcolor="black", font_size=14, font_family="Arial"),
         showlegend=False,
         margin=dict(t=50, b=50, l=50, r=50),
         paper_bgcolor="black",
