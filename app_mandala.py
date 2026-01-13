@@ -52,8 +52,10 @@ def obter_simbolo_aspecto(long1, long2):
             return simbolo
     return ""
 
-def criar_mandala_astrologica(ano, mes, dia, hora_decimal):
+def criar_mandala_astrologica(dt):
     # Cálculo do Julian Day (Apenas argumentos posicionais para evitar TypeError)
+    ano, mes, dia = dt.year, dt.month, dt.day
+    hora_decimal = dt.hour + (dt.minute / 60.0) + (dt.second / 3600.0)
     jd = swe.julday(ano, mes, dia, hora_decimal)
     
     planetas_cfg = [
@@ -166,34 +168,31 @@ def criar_mandala_astrologica(ano, mes, dia, hora_decimal):
                                   line=dict(color="black", width=2), showlegend=False, hoverinfo='skip'))
 
     # --- 3. PLANETAS E GRAUS ---
+
     for p in posicoes:
-        hover_template = f"<b>{p['nome']}</b><br>{p['signo']} {p['grau_int']}°{p['min_int']}'<extra></extra>"
+        hover_template = f"{p['nome']}<br>{p['signo']}<br>{p['grau_int']}º{p['min_int']}'<extra></extra>"
         
-        # Símbolo do Planeta (Centralizado no long_visual)
-        for p in posicoes:
-            hover_template = f"{p['nome']}<br>{p['signo']}<br>{p['grau_int']}º{p['min_int']}'<extra></extra>"
-            
-            fig.add_trace(go.Scatterpolar(r=[6.2], theta=[p["long_visual"]], mode='text', text=[f"{p['grau_int']}°"], 
-                                        textfont=dict(size=14, color="black", family="Trebuchet MS"), 
-                                        showlegend=False, hovertemplate=hover_template))
-            fig.add_trace(go.Scatterpolar(r=[5.3], theta=[p["long_visual"]], mode='text', text=[f"{p['min_int']}'"], 
-                                        textfont=dict(size=12, color="black", family="Trebuchet MS"), 
-                                        showlegend=False, hovertemplate=hover_template))
-            fig.add_trace(go.Scatterpolar(r=[raio_interno], theta=[p["long"]], mode='markers', 
-                                        marker=dict(size=8, color=p["cor"], line=dict(color='black', width=0)), 
-                                        showlegend=False, hovertemplate=hover_template))
-            fig.add_trace(go.Scatterpolar(
-                r=[7.3], theta=[p["long_visual"]], 
-                mode='text', 
-                text=[f"{p['sym']}"], # Adicionado Negrito via tag HTML
-                textfont=dict(size=25, color=p["cor"], family="'DejaVu Sans', 'Segoe UI Symbol', 'Apple Symbols', sans-serif"), 
-                showlegend=False, hovertemplate=hover_template
-            ))
-        
-            fig.add_trace(go.Scatterpolar(r=[8.0], theta=[p["long"]], mode='markers', 
-                                        marker=dict(size=10, color=p["cor"], line=dict(color='black', width=0)), 
-                                        showlegend=False, hovertemplate=hover_template))
+        fig.add_trace(go.Scatterpolar(r=[6.2], theta=[p["long_visual"]], mode='text', text=[f"{p['grau_int']}°"], 
+                                    textfont=dict(size=14, color="black", family="Trebuchet MS"), 
+                                    showlegend=False, hovertemplate=hover_template))
+        fig.add_trace(go.Scatterpolar(r=[5.3], theta=[p["long_visual"]], mode='text', text=[f"{p['min_int']}'"], 
+                                    textfont=dict(size=12, color="black", family="Trebuchet MS"), 
+                                    showlegend=False, hovertemplate=hover_template))
+        fig.add_trace(go.Scatterpolar(r=[raio_interno], theta=[p["long"]], mode='markers', 
+                                    marker=dict(size=8, color=p["cor"], line=dict(color='black', width=0)), 
+                                    showlegend=False, hovertemplate=hover_template))
+        fig.add_trace(go.Scatterpolar(
+            r=[7.3], theta=[p["long_visual"]], 
+            mode='text', 
+            text=[f"{p['sym']}"], # Adicionado Negrito via tag HTML
+            textfont=dict(size=25, color=p["cor"], family="'DejaVu Sans', 'Segoe UI Symbol', 'Apple Symbols', sans-serif"), 
+            showlegend=False, hovertemplate=hover_template
+        ))
     
+        fig.add_trace(go.Scatterpolar(r=[8.0], theta=[p["long"]], mode='markers', 
+                                    marker=dict(size=10, color=p["cor"], line=dict(color='black', width=0)), 
+                                    showlegend=False, hovertemplate=hover_template))
+
     # --- LAYOUT FINAL ---
     fig.update_layout(
         width=700, height=700,
