@@ -125,7 +125,7 @@ def criar_mandala_astrologica(ano, mes, dia, hora_decimal):
         # Criamos traços curtos para cada grau
         for g in graus_signo:
             # Traço maior para 0, 10, 20 (decanatos), menor para os outros
-            tamanho_regua = 8.6 if g % 10 == 0 else 8.2
+            tamanho_regua = 8.6 if g % 10 == 0 else 8.3
             fig.add_trace(go.Scatterpolar(
                 r=[8.0, tamanho_regua], theta=[g, g],
                 mode='lines', line=dict(color="black", width=1),
