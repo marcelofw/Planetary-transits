@@ -139,7 +139,7 @@ def criar_mandala_astrologica(ano, mes, dia, hora_decimal):
 
     # --- LAYOUT FINAL ---
     fig.update_layout(
-        width=850, height=850,
+        width=500, height=500,
         polar=dict(
             radialaxis=dict(visible=False, range=[0, 10]),
             angularaxis=dict(
@@ -151,7 +151,7 @@ def criar_mandala_astrologica(ano, mes, dia, hora_decimal):
             )
         ),
         margin=dict(t=50, b=50, l=50, r=50),
-        paper_bgcolor="white",
+        paper_bgcolor="black",
         dragmode=False
     )
     return fig
