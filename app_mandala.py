@@ -346,4 +346,4 @@ with col2:
             "Posição": f"{pos_graus:02d}°{pos_minutos:02d}'"
         })
     
-    st.table(pd.DataFrame(dados_tabela))
+    st.dataframe(pd.DataFrame(dados_tabela), hide_index=True, use_container_width=True)
