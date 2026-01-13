@@ -224,10 +224,10 @@ def criar_mandala_astrologica(dt):
                                     showlegend=False, hovertemplate=hover_template))
        # Planetas
         fig.add_trace(go.Scatterpolar(
-            r=[7.6], theta=[p["long_visual"]], 
+            r=[7.2], theta=[p["long_visual"]], 
             mode='text', 
             text=[f"{p['sym']}"], # Adicionado Negrito via tag HTML
-            textfont=dict(size=27, color=p["cor"], family="'DejaVu Sans', 'Segoe UI Symbol', 'Apple Symbols', sans-serif"), 
+            textfont=dict(size=32, color=p["cor"], family="'DejaVu Sans', 'Segoe UI Symbol', 'Apple Symbols', sans-serif"), 
             showlegend=False, hovertemplate=hover_template
         ))
     
