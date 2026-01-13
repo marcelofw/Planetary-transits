@@ -6,7 +6,7 @@ import numpy as np
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 import math
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone, date
 
 
 if 'data_ref' not in st.session_state:
@@ -273,7 +273,7 @@ dt_exibicao = st.session_state.data_ref
 data_br = dt_exibicao - timedelta(hours=3)
 
 # Inputs manuais (Sincronizados com o session_state)
-d_input = st.sidebar.date_input("Data", value=data_br, min_value=(1900, 1, 1), max_value=(2100, 12, 31))
+d_input = st.sidebar.date_input("Data", value=data_br, min_value=date(1900, 1, 1), max_value=date(2100, 12, 31))
 t_input = st.sidebar.time_input("Hora", value=data_br)
 
 col_r, col_a = st.sidebar.columns(2)
@@ -300,7 +300,7 @@ st.title("🔭 Mandala Astrológica Interativa")
 # fuso_br = timezone(timedelta(hours=-3))
 # if 'data_ref' not in st.session_state:
 #     st.session_state.data_ref = datetime.now(timezone.utc).astimezone(fuso_br)
-st.subheader(f"{data_corrigida.strftime('%d/%m/%Y %H:%M')}")
+st.subheader(f"{data_br.strftime('%d/%m/%Y %H:%M')}")
 
 col1, col2 = st.columns([1.5, 1])
 
