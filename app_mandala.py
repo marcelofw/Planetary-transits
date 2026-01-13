@@ -272,7 +272,7 @@ def criar_mandala_astrologica(dt):
 st.sidebar.title("🪐 Configurações")
 
 # Inputs manuais (Sincronizados com o session_state)
-d_input = st.sidebar.date_input("Data", value=st.session_state.data_ref.date(), key="data_widget")
+d_input = st.sidebar.date_input("Data", value=st.session_state.data_ref.date(), key="data_widget", min_value = date(1900, 1, 1), max_value = date(2100, 12, 31))
 t_input = st.sidebar.time_input("Hora", value=st.session_state.data_ref.time(), key="hora_widget")
 
 st.session_state.data_ref = datetime.combine(d_input, t_input)
