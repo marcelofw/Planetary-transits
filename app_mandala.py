@@ -121,7 +121,6 @@ def criar_mandala_astrologica(dt):
     fig.add_trace(go.Scatterpolar(r=[raio_interno] * 361, theta=list(range(361)), fill='toself', 
         fillcolor="rgba(245, 245, 245, 0.2)", line=dict(color="black", width=1.5), showlegend=False, hoverinfo='skip'))
 
-    
     # --- 4. LINHAS DE ASPECTO COM SÍMBOLOS ---
     CORES_ASPECTOS = {"☌": "green", "☍": "red", "□": "red", "△": "blue", "✶": "blue", "⚼": "orange", "∠": "orange"}
     for i in range(len(posicoes)):
@@ -150,13 +149,7 @@ def criar_mandala_astrologica(dt):
                 ))
 
     # --- 2. ANEL DOS SIGNOS E RÉGUA ---
-    for i in range(12):
-        # # Fatias de Signos
-        # fig.add_trace(go.Barpolar(
-        #     r=[2], theta=[i*30+15], width=[30], base=8, 
-        #     marker_color="white", marker_line_color="black", opacity=0.1, 
-        #     showlegend=False, hoverinfo='skip'))
-        
+    for i in range(12):        
         # RÉGUA: Adiciona 30 pontos por signo
         graus_signo = list(range(i * 30, (i + 1) * 30))
         # Criamos traços curtos para cada grau
@@ -187,7 +180,6 @@ def criar_mandala_astrologica(dt):
                                   line=dict(color="black", width=2), showlegend=False, hoverinfo='skip'))
 
     # --- 3. PLANETAS E GRAUS ---
-
     for p in posicoes:
         hover_template = f"{p['nome']}<br>{p['signo']}<br>{p['grau_int']}º{p['min_int']}'<extra></extra>"
         
