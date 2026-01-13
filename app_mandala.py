@@ -179,7 +179,7 @@ def criar_mandala_astrologica(ano, mes, dia, hora_decimal):
             fig.add_trace(go.Scatterpolar(
                 r=[7.3], theta=[p["long_visual"]], 
                 mode='text', 
-                text=[f"<b>{p['sym']}</b>"], # Adicionado Negrito via tag HTML
+                text=[f"{p['sym']}"], # Adicionado Negrito via tag HTML
                 textfont=dict(size=20, color=p["cor"], family="'DejaVu Sans', 'Segoe UI Symbol', 'Apple Symbols', sans-serif"), 
                 showlegend=False, hovertemplate=hover_template
             ))
