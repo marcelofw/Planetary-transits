@@ -274,7 +274,7 @@ data_br = dt_exibicao - timedelta(hours=3)
 
 # Inputs manuais (Sincronizados com o session_state)
 d_input = st.sidebar.date_input("Data", value=data_br, min_value=date(1900, 1, 1), max_value=date(2100, 12, 31))
-t_input = st.sidebar.time_input("Hora", value=data_br)
+t_input = st.sidebar.time_input("Hora", value=st.session_state.data_ref)
 
 col_r, col_a = st.sidebar.columns(2)
 col_r.button("⬅️ -1 Hora", on_click=ajustar_tempo_horas, args=[-1])
