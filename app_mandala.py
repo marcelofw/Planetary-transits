@@ -239,8 +239,9 @@ col1, col2 = st.columns([1.5, 1])
 
 with col1:
     # Passamos a data atualizada para a função
+    placeholder = st.empty()
     fig_mandala = criar_mandala_astrologica(st.session_state.data_ref)
-    st.plotly_chart(fig_mandala, use_container_width=True)
+    placeholder.plotly_chart(fig_mandala, use_container_width=True, config={'displayModeBar': False})
 
 with col2:
     st.write("### Posições Planetárias")
