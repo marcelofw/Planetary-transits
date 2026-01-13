@@ -208,7 +208,7 @@ def criar_mandala_astrologica(dt):
         
         # Anotações Graus
         fig.add_trace(go.Scatterpolar(r=[6.5], theta=[p["long_visual"]], mode='text', text=[f"{p['grau_int']}°"], 
-                                    textfont=dict(size=30, color="black", family="Trebuchet MS"), 
+                                    textfont=dict(size=25, color="black", family="Trebuchet MS"), 
                                     showlegend=False, hovertemplate=hover_template))
         # Anotações Minutos
         fig.add_trace(go.Scatterpolar(r=[5.7], theta=[p["long_visual"]], mode='text', text=[f"{p['min_int']}'"], 
