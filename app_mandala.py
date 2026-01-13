@@ -111,14 +111,14 @@ def criar_mandala_astrologica(dt):
 
     # Lógica anti-sobreposição (ajuste visual dos símbolos)
     posicoes.sort(key=lambda x: x['long'])
-    for _ in range(10):
+    for _ in range(30):
         for i in range(len(posicoes)):
             j = (i + 1) % len(posicoes)
             # Calcula a distância entre o planeta atual e o próximo
             diff = (posicoes[j]['long_visual'] - posicoes[i]['long_visual']) % 360
             
-            # Se estiverem a menos de 10 graus de distância, empurra o próximo
-            distancia_minima = 10 
+            # Se estiverem a menos de 15 graus de distância, empurra o próximo
+            distancia_minima = 15 
             if diff < distancia_minima:
                 posicoes[j]['long_visual'] = (posicoes[i]['long_visual'] + distancia_minima) % 360
 
