@@ -212,7 +212,7 @@ def criar_mandala_astrologica(dt):
 
         # Símbolos dos signos
         fig.add_trace(go.Scatterpolar(
-            r=[9.0], theta=[i * 30 + 15], mode='text', text=[SIMBOLOS_SIGNOS_UNICODE[i]],
+            r=[9.9], theta=[i * 30 + 15], mode='text', text=[SIMBOLOS_SIGNOS_UNICODE[i]],
             textfont=dict(size=50, color="#555", family="DejaVu Sans"), showlegend=False, hoverinfo='none'))
 
     fig.add_trace(go.Scatterpolar(r=[10] * 361, theta=list(range(361)), mode='lines', 
