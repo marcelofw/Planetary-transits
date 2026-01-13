@@ -191,13 +191,20 @@ def criar_mandala_astrologica(dt):
     for p in posicoes:
         hover_template = f"{p['nome']}<br>{p['signo']}<br>{p['grau_int']}º{p['min_int']}'<extra></extra>"
         
+        # Anotações Graus
         fig.add_trace(go.Scatterpolar(r=[6.2], theta=[p["long_visual"]], mode='text', text=[f"{p['grau_int']}°"], 
-                                    textfont=dict(size=20, color="black", family="Trebuchet MS"), 
+                                    textfont=dict(size=16, color="black", family="Trebuchet MS"), 
                                     showlegend=False, hovertemplate=hover_template))
+        # Anotações Minutos
         fig.add_trace(go.Scatterpolar(r=[5.3], theta=[p["long_visual"]], mode='text', text=[f"{p['min_int']}'"], 
-                                    textfont=dict(size=18, color="black", family="Trebuchet MS"), 
+                                    textfont=dict(size=14, color="black", family="Trebuchet MS"), 
                                     showlegend=False, hovertemplate=hover_template))
+        # Marcadores internos
         fig.add_trace(go.Scatterpolar(r=[raio_interno], theta=[p["long"]], mode='markers', 
+                                    marker=dict(size=8, color=p["cor"], line=dict(color='black', width=0)), 
+                                    showlegend=False, hovertemplate=hover_template))
+        # Marcadores externos
+        fig.add_trace(go.Scatterpolar(r=[8.0], theta=[p["long"]], mode='markers', 
                                     marker=dict(size=8, color=p["cor"], line=dict(color='black', width=0)), 
                                     showlegend=False, hovertemplate=hover_template))
         fig.add_trace(go.Scatterpolar(
@@ -208,10 +215,6 @@ def criar_mandala_astrologica(dt):
             showlegend=False, hovertemplate=hover_template
         ))
     
-        fig.add_trace(go.Scatterpolar(r=[8.0], theta=[p["long"]], mode='markers', 
-                                    marker=dict(size=10, color=p["cor"], line=dict(color='black', width=0)), 
-                                    showlegend=False, hovertemplate=hover_template))
-
     # --- LAYOUT FINAL ---
     fig.update_layout(
             width=850, height=850, autosize=False, uirevision="constant",
