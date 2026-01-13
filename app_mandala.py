@@ -211,7 +211,7 @@ def criar_mandala_astrologica(dt):
                                     textfont=dict(size=15, color="black", family="Trebuchet MS"), 
                                     showlegend=False, hovertemplate=hover_template))
         # Anotações Minutos
-        fig.add_trace(go.Scatterpolar(r=[5.3], theta=[p["long_visual"]], mode='text', text=[f"{p['min_int']}'"], 
+        fig.add_trace(go.Scatterpolar(r=[5.7], theta=[p["long_visual"]], mode='text', text=[f"{p['min_int']}'"], 
                                     textfont=dict(size=13, color="black", family="Trebuchet MS"), 
                                     showlegend=False, hovertemplate=hover_template))
         # Marcadores internos
@@ -227,7 +227,7 @@ def criar_mandala_astrologica(dt):
             r=[7.3], theta=[p["long_visual"]], 
             mode='text', 
             text=[f"{p['sym']}"], # Adicionado Negrito via tag HTML
-            textfont=dict(size=20, color=p["cor"], family="'DejaVu Sans', 'Segoe UI Symbol', 'Apple Symbols', sans-serif"), 
+            textfont=dict(size=25, color=p["cor"], family="'DejaVu Sans', 'Segoe UI Symbol', 'Apple Symbols', sans-serif"), 
             showlegend=False, hovertemplate=hover_template
         ))
     
