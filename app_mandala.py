@@ -126,7 +126,7 @@ def criar_mandala_astrologica(ano, mes, dia, hora_decimal):
         # Nomes dos Signos
         fig.add_trace(go.Scatterpolar(
             r=[9.2], theta=[i * 30 + 15], mode='text', text=[SIGNOS[i][:3]],
-            textfont=dict(size=12, color="#555", family="Arial Black"), showlegend=False), hoverinfo='none')
+            textfont=dict(size=12, color="#555", family="Arial Black"), showlegend=False, hoverinfo='none'))
 
     fig.add_trace(go.Scatterpolar(r=[10] * 361, theta=list(range(361)), mode='lines', 
                                   line=dict(color="black", width=2), showlegend=False, hoverinfo='skip'))
