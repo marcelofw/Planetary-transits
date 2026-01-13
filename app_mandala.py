@@ -151,25 +151,7 @@ def criar_mandala_astrologica(dt):
                     showlegend=False, hoverinfo='skip'
                 ))
 
-    # --- 2. ANEL DOS SIGNOS E RÉGUA ---
-    for i in range(12):
-        # Fatias de Signos
-        fig.add_trace(go.Barpolar(
-            r=[2], theta=[i*30+15], width=[30], base=8, 
-            marker_color="white", marker_line_color="black", opacity=0.1, 
-            showlegend=False, hoverinfo='skip'))
-        
-        # RÉGUA: Adiciona 30 pontos por signo
-        graus_signo = list(range(i * 30, (i + 1) * 30))
-        # Criamos traços curtos para cada grau
-        for g in graus_signo:
-            # Traço maior para 0, 10, 20 (decanatos), menor para os outros
-            tamanho_regua = 8.6 if g % 10 == 0 else 8.3
-            fig.add_trace(go.Scatterpolar(
-                r=[8.0, tamanho_regua], theta=[g, g],
-                mode='lines', line=dict(color="black", width=1),
-                showlegend=False, hoverinfo='skip'))
-    
+    # --- 2. ANEL DOS SIGNOS E RÉGUA ---    
     for i, signo in enumerate(SIGNOS):
         centro_polar = i * 30 + 15
         fig.add_trace(go.Barpolar(r=[2], theta=[centro_polar], width=[30], base=8, 
