@@ -139,7 +139,7 @@ def criar_mandala_astrologica(ano, mes, dia, hora_decimal):
 
     # --- LAYOUT FINAL ---
     fig.update_layout(
-        width=500, height=500,
+        width=700, height=700,
         polar=dict(
             radialaxis=dict(visible=False, range=[0, 10]),
             angularaxis=dict(
@@ -167,42 +167,32 @@ hora_decimal = hora_escolhida.hour + (hora_escolhida.minute / 60.0)
 st.title(f"🔭 Mandala Astrológica Interativa")
 st.subheader(f"{data_escolhida.strftime('%d/%m/%Y')} às {hora_escolhida.strftime('%H:%M')}")
 
-# Gerar e mostrar a Mandala
-try:
-    fig_mandala = criar_mandala_astrologica(
-        data_escolhida.year, 
-        data_escolhida.month, 
-        data_escolhida.day, 
-        hora_decimal
-    )
-    st.plotly_chart(fig_mandala, use_container_width=True)
-except Exception as e:
-    st.error(f"Erro ao gerar mandala: {e}")
+col1, col2 = st.columns([1.5, 1])
 
-# Tabela Detalhada
-with st.expander("Ver Posições Planetárias (Tabela)"):
-    # Recalcular JD para a tabela
-    jd_tabela = swe.julday(data_escolhida.year, data_escolhida.month, data_escolhida.day, hora_decimal)
+with col1:
+    fig_mandala = criar_mandala_astrologica(data_escolhida.year, data_escolhida.month, data_escolhida.day, hora_decimal)
+    st.plotly_chart(fig_mandala, use_container_width=False)
+
+with col2:
+    st.write("### Posições Detalhadas")
+    jd = swe.julday(data_escolhida.year, data_escolhida.month, data_escolhida.day, hora_decimal)
+    ids = {"Sol": 0, "Lua": 1, "Mercúrio": 2, "Vênus": 3, "Marte": 4, "Júpiter": 5, "Saturno": 6, "Urano": 7, "Netuno": 8, "Plutão": 9}
     
-    dados_tabela = []
-    # IDs dos planetas para a tabela
-    ids = {
-        "Sol": swe.SUN, "Lua": swe.MOON, "Mercúrio": swe.MERCURY, 
-        "Vénus": swe.VENUS, "Marte": swe.MARS, "Júpiter": swe.JUPITER, 
-        "Saturno": swe.SATURN, "Urano": swe.URANUS, "Netuno": swe.NEPTUNE, "Plutão": swe.PLUTO
-    }
-    
+    dados = []
     for nome, pid in ids.items():
-        res, _ = swe.calc_ut(jd_tabela, pid, swe.FLG_SWIEPH)
+        res, _ = swe.calc_ut(jd, pid, swe.FLG_SWIEPH)
         long_abs = res[0]
-        dados_tabela.append({
+        grau_s = long_abs % 30
+        min_i = int(round((grau_s % 1) * 60))
+        grau_i = int(grau_s)
+        if min_i == 60: min_i = 0; grau_i += 1
+        
+        dados.append({
             "Planeta": nome,
             "Signo": SIGNOS[int(long_abs / 30)],
-            "Grau": int(long_abs % 30),
-            "Minuto": int(((long_abs % 30) % 1) * 60),
-            "Longitude Absoluta": round(long_abs, 2)
+            "Posição": f"{grau_i:02d}°{min_i:02d}'"
         })
     
-    st.table(pd.DataFrame(dados_tabela))
+    st.table(pd.DataFrame(dados))
 
-st.info("Nota: Esta mandala está configurada com Áries no lado esquerdo (Ascendente Natural).")
+st.info(f"Cálculo para {data_escolhida.strftime('%d/%m/%Y')} {hora_escolhida.strftime('%H:%M')}")
