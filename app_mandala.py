@@ -29,7 +29,7 @@ def on_button_click(delta_type, value):
     st.session_state.hora_widget = nova_data.time()
 
 # --- CONFIGURAÇÃO DA PÁGINA ---
-st.set_page_config(page_title="Mandala Astrológica Viva", layout="wide")
+st.set_page_config(page_title="Mandala Astrológica Interativa", layout="wide")
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=DejaVu+Sans&display=swap');
