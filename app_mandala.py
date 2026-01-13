@@ -109,7 +109,7 @@ def criar_mandala_astrologica(dt):
     ]
 
     fig = go.Figure()
-    raio_interno = 3.0
+    raio_interno = 3.5
     
     # --- POSIÇÕES ---
     posicoes = []
