@@ -22,15 +22,13 @@ st.markdown("""
     .main {
         font-family: 'DejaVu Sans', sans-serif;
     }
-    /* Trava o tamanho do container do gráfico */
+    /* Trava o fundo da área do gráfico para não piscar branco */
     .stPlotlyChart {
-        width: 700px !important;
-        height: 700px !important;
-        margin: auto;
+        background-color: black !important;
+        border-radius: 50%; /* Ajuda a focar na mandala */
     }
-    /* Remove a animação de fade (piscada branca) */
-    .stElement {
-        animation: none !important;
+    /* Esconde o efeito de carregamento visual do Streamlit */
+    .stBlock[data-testid="stVerticalBlock"] > div:nth-child(1) > div {
         transition: none !important;
     }
     </style>
@@ -206,27 +204,23 @@ def criar_mandala_astrologica(dt):
 
     # --- LAYOUT FINAL ---
     fig.update_layout(
-        polar=dict(
             width=700, height=700, autosize=False, uirevision="constant",
-            radialaxis=dict(visible=False, range=[0, 10]),
-            angularaxis=dict(
-                direction="counterclockwise", 
-                rotation=180, # Áries à esquerda
-                showgrid=False, 
-                gridcolor="rgba(0,0,0,0.1)",
-                showticklabels=False,
-                categoryorder="array",
-                categoryarray=list(range(360))
+            polar=dict(
+                radialaxis=dict(visible=False, range=[0, 10]),
+                angularaxis=dict(
+                    direction="counterclockwise", 
+                    rotation=180, # Áries à esquerda
+                    showgrid=False, 
+                    gridcolor="rgba(0,0,0,0.1)",
+                    showticklabels=False
             )
         ),
         hoverlabel=dict(bgcolor="black", font_size=14, font_family="Arial"),
         showlegend=False,
-        margin=dict(t=0, b=0, l=0, r=0, pad=0),
+        margin=dict(t=30, b=30, l=30, r=30, pad=0),
         paper_bgcolor="black",
         #plot_bgcolor="black,"
-        dragmode=False,
-        modebar=dict(remove=["zoom2d", "pan2d", "select2d", "lasso2d", "zoomIn2d", "zoomOut2d", "autoScale2d", "resetScale2d"]),
-        transition={'duration': 0}
+        dragmode=False
     )
     return fig
 
@@ -251,17 +245,13 @@ st.subheader(f"{st.session_state.data_ref.strftime('%d/%m/%Y %H:%M')}")
 col1, col2 = st.columns([1.5, 1])
 
 with col1:
-    # Passamos a data atualizada para a função
-    if "chart_placeholder" not in st.session_state:
-        st.session_state.chart_placeholder = st.empty()
-    
     fig_mandala = criar_mandala_astrologica(st.session_state.data_ref)
-    st.session_state.chart_placeholder.plotly_chart(
-                    fig_mandala, 
-                    use_container_width=False,
-                    config={'displayModeBar':False, 'staticPlot':False, 'responsive':False},
-                    key=f"mandala_{st.session_state.data_ref.hour}"
-                    )
+    st.plotly_chart(
+        fig_mandala, 
+        use_container_width=False,
+        key="mandala_principal",
+        config={'displayModeBar':False, 'responsive':False, 'frameMargins': 0}
+        )
 
 with col2:
     st.write("### Posições Planetárias")
