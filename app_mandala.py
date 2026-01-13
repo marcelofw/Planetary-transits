@@ -171,11 +171,19 @@ def criar_mandala_astrologica(dt):
                                   line=dict(color="black", width=2), showlegend=False, hoverinfo='skip'))
 
     # --- 3. PLANETAS E GRAUS ---
-
+    niveis_ocupados = [] 
     for p in posicoes:
-        nivel = niveis[i]
-        r_simbolo = 7.5 - (nivel * 0.9)
-        r_grau = r_simbolo - 0.7
+        nivel = 0
+        # Se houver algum planeta já desenhado a menos de 10 graus, sobe o nível
+        for p_pasto, n_passado in niveis_ocupados:
+            if abs(p['long'] - p_pasto) < 10:
+                nivel = max(nivel, n_passado + 1)
+        
+        niveis_ocupados.append((p['long'], nivel))
+        
+        # Define o raio: Nível 0 é o mais externo (perto da régua)
+        r_simbolo = 7.4 - (nivel * 0.8)
+        r_texto = r_simbolo - 0.5
         
         hover_template = f"{p['nome']}<br>{p['signo']}<br>{p['grau_int']}º{p['min_int']}'<extra></extra>"
         
