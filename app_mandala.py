@@ -274,7 +274,7 @@ st.sidebar.title("🪐 Configurações")
 d_input = st.sidebar.date_input("Data", value=st.session_state.data_ref, min_value=date(1900, 1, 1), max_value=date(2100, 12, 31))
 t_input = st.sidebar.time_input("Hora", value=st.session_state.data_ref, help="Entre com o horário de Brasília.")
 data_usuario = datetime.combine(d_input, t_input)
-data_calculo = data_usuario + timedelta(hours=3)
+st.session_state.data_ref = data_usuario
 
 col_r, col_a = st.sidebar.columns(2)
 col_r.button("⬅️ -1 Hora", on_click=ajustar_tempo_horas, args=[-1])
