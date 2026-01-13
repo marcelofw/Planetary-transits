@@ -6,6 +6,8 @@ import numpy as np
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 import math
+from datetime import datetime, timedelta, timezone
+
 
 if 'data_ref' not in st.session_state:
     st.session_state.data_ref = datetime.now()
@@ -292,8 +294,13 @@ col_a.button("+1 Ano ➡️", on_click=ajustar_tempo_anos, args=[1])
 st.session_state.data_ref = datetime.combine(d_input, t_input)
 
 # --- 6. CONTEÚDO PRINCIPAL ---
-st.title("🔭 Mandala Astrológica Viva")
-st.subheader(f"{st.session_state.data_ref.strftime('%d/%m/%Y %H:%M')}")
+st.title("🔭 Mandala Astrológica Interativa")
+fuso_br = timezone(timedelta(hours=-3))
+if 'data_ref' not in st.session_state:
+    st.session_state.data_ref = datetime.now(timezone.utc).astimezone(fuso_br)
+data_exibicao = st.session_state_ref.astimezone(timezone(timedelta(hours=-3)))
+st.subheader(f"{data_exibicao.strftime('%d/%m/%Y %H:%M')}")
+
 
 col1, col2 = st.columns([1.5, 1])
 
