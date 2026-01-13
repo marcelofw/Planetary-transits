@@ -9,8 +9,8 @@ import math
 from datetime import datetime, timedelta, timezone, date
 
 if 'data_ref' not in st.session_state:
-    hora_atual_br = datetime.now() - timedelta(hours=3)
-    st.session_state.data_ref = hora_atual_br
+    agora_ut = datetime.now()
+    st.session_state.data_ref = agora_ut - timedelta(hours=3)
 
 def ajustar_tempo_horas(horas):
     st.session_state.data_ref += pd.Timedelta(hours=horas)
@@ -271,10 +271,10 @@ def criar_mandala_astrologica(dt):
 st.sidebar.title("🪐 Configurações")
 
 # Inputs manuais (Sincronizados com o session_state)
-d_input = st.sidebar.date_input("Data", value=st.session_state.data_ref, min_value=date(1900, 1, 1), max_value=date(2100, 12, 31))
-t_input = st.sidebar.time_input("Hora", value=st.session_state.data_ref - timedelta(hours=3), help="Entre com o horário de Brasília.")
+d_input = st.sidebar.date_input("Data", value=st.session_state.data_ref, key="data_widget", min_value=date(1900, 1, 1), max_value=date(2100, 12, 31))
+t_input = st.sidebar.time_input("Hora", value=st.session_state.data_ref, key="hora_widget", help="Entre com o horário de Brasília.")
 st.session_state.data_ref = datetime.combine(d_input, t_input)
-data_para_o_motor = st.session_state.data_ref + timedelta(hours=3)
+data_para_o_calculo_ut = st.session_state.data_ref + timedelta(hours=3)
 
 col_r, col_a = st.sidebar.columns(2)
 col_r.button("⬅️ -1 Hora", on_click=ajustar_tempo_horas, args=[-1])
@@ -302,7 +302,7 @@ st.subheader(f"{st.session_state.data_ref.strftime('%d/%m/%Y %H:%M')}")
 col1, col2 = st.columns([1.5, 1])
 
 with col1:
-    fig_mandala = criar_mandala_astrologica(data_para_o_motor)
+    fig_mandala = criar_mandala_astrologica(data_para_o_calculo_ut)
     st.plotly_chart(
         fig_mandala, 
         use_container_width=False,
