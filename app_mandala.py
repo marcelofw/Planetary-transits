@@ -22,6 +22,10 @@ st.markdown("""
     .main {
         font-family: 'DejaVu Sans', sans-serif;
     }
+    /* Remove a animação de fade-in do Streamlit ao atualizar elementos */
+    .stPlotlyChart {
+        transition: none !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -195,8 +199,9 @@ def criar_mandala_astrologica(dt):
 
     # --- LAYOUT FINAL ---
     fig.update_layout(
-        width=700, height=700, autosize=False, uirevision="constant",
         polar=dict(
+            # width=700, height=700, autosize=False, uirevision="constant",
+            domain=dict(x=[0.1, 0.9], y=[0.1, 0.9]),
             radialaxis=dict(visible=False, range=[0, 10]),
             angularaxis=dict(
                 direction="counterclockwise", 
@@ -239,9 +244,12 @@ col1, col2 = st.columns([1.5, 1])
 
 with col1:
     # Passamos a data atualizada para a função
-    placeholder = st.empty()
     fig_mandala = criar_mandala_astrologica(st.session_state.data_ref)
-    placeholder.plotly_chart(fig_mandala, use_container_width=True, config={'displayModeBar': False})
+    st.plotly_chart(fig_mandala, 
+                    use_container_width=False, 
+                    key="mandala_astrologica_fixa",
+                    config={'displayModeBar':False, 'staticPlot':False, 'responsive':False}
+                    )
 
 with col2:
     st.write("### Posições Planetárias")
