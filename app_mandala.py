@@ -325,10 +325,22 @@ with col2:
     for nome, pid in planetas_ids:
         res, _ = swe.calc_ut(jd_tab, pid, swe.FLG_SWIEPH)
         long_abs = res[0]
-        dados_tabela.append({
-            "Planeta": nome,
-            "Signo": SIGNOS[int(long_abs / 30)],
-            "Posição": f"{int(long_abs % 30):02d}°{int((long_abs % 1) * 60):02d}'"
-        })
+        pos_graus = int(long_abs % 30)
+        pos_minutos = int(round((long_abs % 1) * 60))
+        indice_signo = int(long_abs / 30)
+        
+    if pos_minutos == 60:
+        pos_graus += 1
+        post_miuntos = 0
+
+        if pos_graus == 30:
+            pos_graus = 0
+            indice_signo = (indice_signo + 1) % 12
+
+    dados_tabela.append({
+        "Planeta": nome,
+        "Signo": SIGNOS[indice_signo],
+        "Posição": f"{pos_graus:02d}°{pos_minutos:02d}'"
+    })
     
     st.table(pd.DataFrame(dados_tabela))
