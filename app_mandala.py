@@ -273,7 +273,7 @@ dt_exibicao = st.session_state.data_ref
 data_corrigida = dt_exibicao - timedelta(hours=3)
 
 # Inputs manuais (Sincronizados com o session_state)
-d_input = st.sidebar.date_input("Data", value=st.session_state.data_ref)
+d_input = st.sidebar.date_input("Data", value=st.session_state.data_ref, min=1900, max=2100)
 t_input = st.sidebar.time_input("Hora", value=data_corrigida)
 
 col_r, col_a = st.sidebar.columns(2)
@@ -301,7 +301,6 @@ st.title("🔭 Mandala Astrológica Interativa")
 # if 'data_ref' not in st.session_state:
 #     st.session_state.data_ref = datetime.now(timezone.utc).astimezone(fuso_br)
 st.subheader(f"{data_corrigida.strftime('%d/%m/%Y %H:%M')}")
-
 
 col1, col2 = st.columns([1.5, 1])
 
