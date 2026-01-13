@@ -13,6 +13,8 @@ if 'data_ref' not in st.session_state:
     st.session_state.data_ref = agora_ut - timedelta(hours=3)
 
 def on_button_click(delta_type, value):
+    if delta_type == 'minutes':
+        nova_data = st.session_state.data_ref + timedelta(minutes=value)
     if delta_type == 'hours':
         nova_data = st.session_state.data_ref + timedelta(hours=value)
     elif delta_type == 'days':
@@ -23,6 +25,8 @@ def on_button_click(delta_type, value):
         nova_data = st.session_state.data_ref + relativedelta(months=value)
     elif delta_type == 'years':
         nova_data = st.session_state.data_ref + relativedelta(years=value)
+    else:
+        nova_data = st.session_state.data_ref
 
     st.session_state.data_ref = nova_data
     st.session_state.data_widget = nova_data.date()
@@ -311,6 +315,8 @@ st.session_state.data_ref = datetime.combine(d_input, t_input)
 data_para_o_calculo_ut = st.session_state.data_ref + timedelta(hours=3)
 
 col_r, col_a = st.sidebar.columns(2)
+col_r.button("⬅️ -1 Minuto", on_click=on_button_click, args=['minutes', -1])
+col_a.button("+1 Minuto ➡️", on_click=on_button_click, args=['minutes', 1])
 
 col_r.button("⬅️ -1 Hora", on_click=on_button_click, args=['hours', -1])
 col_a.button("+1 Hora ➡️", on_click=on_button_click, args=['hours', 1])
