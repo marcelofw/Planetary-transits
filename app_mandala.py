@@ -47,6 +47,21 @@ st.markdown("""
     .stBlock[data-testid="stVerticalBlock"] > div:nth-child(1) > div {
         transition: none !important;
     }
+            /* Remove o efeito de esmaecimento (fade) ao atualizar */
+    [data-testid="stBlock"] {
+        opacity: 1 !important;
+    }
+
+    /* Remove a animação de pulso/fade especificamente dos gráficos Plotly */
+    .stPlotlyChart {
+        opacity: 1 !important;
+        transition: none !important;
+    }
+
+    /* Garante que a tabela também não mude de opacidade */
+    .stTable, [data-testid="stDataFrame"] {
+        opacity: 1 !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
