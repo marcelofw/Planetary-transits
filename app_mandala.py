@@ -216,20 +216,21 @@ def criar_mandala_astrologica(dt):
 
 # --- INTERFACE STREAMLIT ---
 st.sidebar.title("🪐 Configurações")
-col_r, col_a = st.sidebar.columns(2)
-col_r.button("⬅️ -1 Hora", on_click=ajustar_tempo, args=[-1])
-col_a.button("+1 Hora ➡️", on_click=ajustar_tempo, args=[1])
 
 # Inputs manuais (Sincronizados com o session_state)
 d_input = st.sidebar.date_input("Data", value=st.session_state.data_ref)
 t_input = st.sidebar.time_input("Hora", value=st.session_state.data_ref)
+
+col_r, col_a = st.sidebar.columns(2)
+col_r.button("⬅️ -1 Hora", on_click=ajustar_tempo, args=[-1])
+col_a.button("+1 Hora ➡️", on_click=ajustar_tempo, args=[1])
 
 # Atualização do estado com base no que foi digitado
 st.session_state.data_ref = datetime.combine(d_input, t_input)
 
 # --- 6. CONTEÚDO PRINCIPAL ---
 st.title("🔭 Mandala Astrológica Viva")
-st.subheader(f"Cálculo para: {st.session_state.data_ref.strftime('%d/%m/%Y %H:%M:%S')}")
+st.subheader(f"{st.session_state.data_ref.strftime('%d/%m/%Y %H:%M')}")
 
 col1, col2 = st.columns([1.5, 1])
 
