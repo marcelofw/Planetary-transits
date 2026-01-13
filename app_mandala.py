@@ -73,7 +73,7 @@ def obter_simbolo_aspecto(long1, long2):
     diff = abs(long1 - long2) % 360
     if diff > 180: diff = 360 - diff
     for angulo, (nome, simbolo) in ASPECTOS.items():
-        if abs(diff - angulo) <= 8:  # Orbe de tolerância
+        if abs(diff - angulo) <= 5:  # Orbe de tolerância
             return simbolo
     return ""
 
