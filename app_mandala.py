@@ -228,8 +228,8 @@ def criar_mandala_astrologica(dt):
         hoverlabel=dict(bgcolor="black", font_size=14, font_family="Arial"),
         showlegend=False,
         margin=dict(t=30, b=30, l=30, r=30, pad=0),
-        paper_bgcolor="black",
-        #plot_bgcolor="black,"
+        paper_bgcolor="#0e1117",
+        plot_bgcolor="red",
         dragmode=False
     )
     return fig
