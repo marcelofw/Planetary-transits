@@ -124,7 +124,7 @@ def criar_mandala_astrologica(dt):
         grupos.append(grupo_atual)
 
     # 3. Distribuir cada grupo individualmente
-    dist_min = 5  # Espaço fixo entre textos (ajuste conforme o tamanho da fonte)
+    dist_min = 9  # Espaço fixo entre textos (ajuste conforme o tamanho da fonte)
     
     for grupo in grupos:
         n = len(grupo)
@@ -208,11 +208,11 @@ def criar_mandala_astrologica(dt):
         
         # Anotações Graus
         fig.add_trace(go.Scatterpolar(r=[6.2], theta=[p["long_visual"]], mode='text', text=[f"{p['grau_int']}°"], 
-                                    textfont=dict(size=8, color="black", family="Trebuchet MS"), 
+                                    textfont=dict(size=15, color="black", family="Trebuchet MS"), 
                                     showlegend=False, hovertemplate=hover_template))
         # Anotações Minutos
         fig.add_trace(go.Scatterpolar(r=[5.3], theta=[p["long_visual"]], mode='text', text=[f"{p['min_int']}'"], 
-                                    textfont=dict(size=8, color="black", family="Trebuchet MS"), 
+                                    textfont=dict(size=13, color="black", family="Trebuchet MS"), 
                                     showlegend=False, hovertemplate=hover_template))
         # Marcadores internos
         fig.add_trace(go.Scatterpolar(r=[raio_interno], theta=[p["long"]], mode='markers', 
@@ -227,7 +227,7 @@ def criar_mandala_astrologica(dt):
             r=[7.3], theta=[p["long_visual"]], 
             mode='text', 
             text=[f"{p['sym']}"], # Adicionado Negrito via tag HTML
-            textfont=dict(size=14, color=p["cor"], family="'DejaVu Sans', 'Segoe UI Symbol', 'Apple Symbols', sans-serif"), 
+            textfont=dict(size=20, color=p["cor"], family="'DejaVu Sans', 'Segoe UI Symbol', 'Apple Symbols', sans-serif"), 
             showlegend=False, hovertemplate=hover_template
         ))
     
