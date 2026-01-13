@@ -244,7 +244,7 @@ def criar_mandala_astrologica(dt):
                                     showlegend=False, hovertemplate=hover_template))
         # Anotações Símbolo dos Planetas
         fig.add_trace(go.Scatterpolar(r=[5.7], theta=[p["long_visual"]], mode='text', text=[simbolo_signo_planeta], 
-                                    textfont=dict(size=18, color="black", family="DejaVu Sans"), 
+                                    textfont=dict(size=25, color="black", family="DejaVu Sans"), 
                                     showlegend=False, hovertemplate=hover_template))
         # Marcadores internos
         fig.add_trace(go.Scatterpolar(r=[raio_interno], theta=[p["long"]], mode='markers', 
