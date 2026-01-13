@@ -168,23 +168,23 @@ def criar_mandala_astrologica(dt):
                 mode='lines', line=dict(color="black", width=1),
                 showlegend=False, hoverinfo='skip'))
     
-    for i, signo in enumerate(SIGNOS):
-        centro_polar = i * 30 + 15
-        fig.add_trace(go.Barpolar(r=[2], theta=[centro_polar], width=[30], base=8, 
-                                  marker_color="white", marker_line_color="black", marker_line_width=1, showlegend=False, hoverinfo='skip'))
+    # for i, signo in enumerate(SIGNOS):
+    #     centro_polar = i * 30 + 15
+    #     fig.add_trace(go.Barpolar(r=[2], theta=[centro_polar], width=[30], base=8, 
+    #                               marker_color="white", marker_line_color="black", marker_line_width=1, showlegend=False, hoverinfo='skip'))
 
-        fig.add_trace(go.Barpolar(
-            r=[2], theta=[i * 30 + 15], width=[30], base=8, 
-            marker_color="white", marker_line_color="#333", marker_line_width=1,
-            opacity=0.1, showlegend=False, hoverinfo='skip'))
+    #     fig.add_trace(go.Barpolar(
+    #         r=[2], theta=[i * 30 + 15], width=[30], base=8, 
+    #         marker_color="white", marker_line_color="#333", marker_line_width=1,
+    #         opacity=0.1, showlegend=False, hoverinfo='skip'))
         
-        # Nomes dos Signos
-        fig.add_trace(go.Scatterpolar(
-            r=[9.2], theta=[i * 30 + 15], mode='text', text=[SIGNOS[i][:3]],
-            textfont=dict(size=12, color="#555", family="Arial Black"), showlegend=False, hoverinfo='none'))
+    #     # Nomes dos Signos
+    #     fig.add_trace(go.Scatterpolar(
+    #         r=[9.2], theta=[i * 30 + 15], mode='text', text=[SIGNOS[i][:3]],
+    #         textfont=dict(size=12, color="#555", family="Arial Black"), showlegend=False, hoverinfo='none'))
 
-    fig.add_trace(go.Scatterpolar(r=[10] * 361, theta=list(range(361)), mode='lines', 
-                                  line=dict(color="black", width=2), showlegend=False, hoverinfo='skip'))
+    # fig.add_trace(go.Scatterpolar(r=[10] * 361, theta=list(range(361)), mode='lines', 
+    #                               line=dict(color="black", width=2), showlegend=False, hoverinfo='skip'))
 
     # --- 3. PLANETAS E GRAUS ---
 
