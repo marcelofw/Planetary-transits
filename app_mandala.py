@@ -229,7 +229,6 @@ def criar_mandala_astrologica(dt):
         showlegend=False,
         margin=dict(t=30, b=30, l=30, r=30, pad=0),
         paper_bgcolor="#0e1117",
-        plot_bgcolor="red",
         dragmode=False
     )
     return fig
@@ -245,8 +244,8 @@ col_r, col_a = st.sidebar.columns(2)
 col_r.button("⬅️ -1 Hora", on_click=ajustar_tempo_horas, args=[-1])
 col_a.button("+1 Hora ➡️", on_click=ajustar_tempo_horas, args=[1])
 
-col_r.button("⬅️ -1 Dia", on_click=ajustar_tempo_dias, args=[-1])
-col_a.button("+1 Dia ➡️", on_click=ajustar_tempo_dias, args=[1])
+col_r.button("⬅️  -1 Dia", on_click=ajustar_tempo_dias, args=[-1])
+col_a.button("+1 Dia  ➡️", on_click=ajustar_tempo_dias, args=[1])
 
 col_r.button("⬅️ -1 Mês", on_click=ajustar_tempo_meses, args=[-1])
 col_a.button("+1 Mês ➡️", on_click=ajustar_tempo_meses, args=[1])
