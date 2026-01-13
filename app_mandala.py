@@ -16,10 +16,10 @@ def ajustar_tempo_dias(dias):
     st.session_state.data_ref += pd.Timedelta(days=dias)
 
 def ajustar_tempo_meses(meses):
-    st.session_state.data_ref += pd.Timedelta(months=meses)
+    st.session_state.data_ref += pd.Timedelta(month=meses)
 
 def ajustar_tempo_anos(anos):
-    st.session_state.data_ref += pd.Timedelta(years=anos)
+    st.session_state.data_ref += pd.Timedelta(year=anos)
 
 # --- CONFIGURAÇÃO DA PÁGINA ---
 st.set_page_config(page_title="Mandala Astrológica Viva", layout="wide")
