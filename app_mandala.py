@@ -207,7 +207,7 @@ def criar_mandala_astrologica(dt):
         hover_template = f"{p['nome']}<br>{p['signo']}<br>{p['grau_int']}º{p['min_int']}'<extra></extra>"
         
         # Anotações Graus
-        fig.add_trace(go.Scatterpolar(r=[6.2], theta=[p["long_visual"]], mode='text', text=[f"{p['grau_int']}°"], 
+        fig.add_trace(go.Scatterpolar(r=[7.0], theta=[p["long_visual"]], mode='text', text=[f"{p['grau_int']}°"], 
                                     textfont=dict(size=15, color="black", family="Trebuchet MS"), 
                                     showlegend=False, hovertemplate=hover_template))
         # Anotações Minutos
@@ -224,10 +224,10 @@ def criar_mandala_astrologica(dt):
                                     showlegend=False, hovertemplate=hover_template))
        # Planetas
         fig.add_trace(go.Scatterpolar(
-            r=[7.3], theta=[p["long_visual"]], 
+            r=[7.6], theta=[p["long_visual"]], 
             mode='text', 
             text=[f"{p['sym']}"], # Adicionado Negrito via tag HTML
-            textfont=dict(size=25, color=p["cor"], family="'DejaVu Sans', 'Segoe UI Symbol', 'Apple Symbols', sans-serif"), 
+            textfont=dict(size=27, color=p["cor"], family="'DejaVu Sans', 'Segoe UI Symbol', 'Apple Symbols', sans-serif"), 
             showlegend=False, hovertemplate=hover_template
         ))
     
