@@ -205,5 +205,4 @@ def criar_mandala_astrologica(ano, mes, dia, hora_decimal, pasta_icones):
     )
     return fig
 
-if __name__ == "__main__":
-    fig_m = criar_mandala_astrologica(2026, 1, 1, 12.0)
+criar_mandala_astrologica(2026, 1, 1, 12.0)
