@@ -231,7 +231,9 @@ def criar_mandala_astrologica(dt):
     # --- 3. PLANETAS E GRAUS ---
     for p in posicoes:
         hover_template = f"{p['nome']}<br>{p['signo']}<br>{p['grau_int']}º{p['min_int']}'<extra></extra>"
-        
+        indice_signo_planeta = int(p['long'] / 30) % 12
+        simbolo_signo_planeta = SIMBOLOS_SIGNOS_UNICODE[indice_signo_planeta]
+
         # Anotações Graus
         fig.add_trace(go.Scatterpolar(r=[6.5], theta=[p["long_visual"]], mode='text', text=[f"{p['grau_int']:02d}°"], 
                                     textfont=dict(size=25, color="black", family="Trebuchet MS"), 
@@ -239,6 +241,10 @@ def criar_mandala_astrologica(dt):
         # Anotações Minutos
         fig.add_trace(go.Scatterpolar(r=[5.7], theta=[p["long_visual"]], mode='text', text=[f"{p['min_int']:02d}'"], 
                                     textfont=dict(size=21, color="black", family="Trebuchet MS"), 
+                                    showlegend=False, hovertemplate=hover_template))
+        # Anotações Minutos
+        fig.add_trace(go.Scatterpolar(r=[5.7], theta=[p["long_visual"]], mode='text', text=[simbolo_signo_planeta], 
+                                    textfont=dict(size=18, color="black", family="Trebuchet MS"), 
                                     showlegend=False, hovertemplate=hover_template))
         # Marcadores internos
         fig.add_trace(go.Scatterpolar(r=[raio_interno], theta=[p["long"]], mode='markers', 
