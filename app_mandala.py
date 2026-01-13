@@ -136,25 +136,19 @@ def criar_mandala_astrologica(ano, mes, dia, hora_decimal):
         hover_template = f"<b>{p['nome']}</b><br>{p['signo']} {p['grau_int']}°{p['min_int']}'<extra></extra>"
         
         # Símbolo do Planeta (Centralizado no long_visual)
-        fig.add_trace(go.Scatterpolar(
-            r=[7.3], theta=[p["long_visual"]], mode='text', 
-            text=[f"<b>{p['sym']}</b>"],
-            textfont=dict(size=38, color=p["cor"], family="Arial Black"),
-            hovertext=hover_template, hoverinfo="text", showlegend=False))
-        
-        # Grau e Minuto (Abaixo do símbolo)
-        fig.add_trace(go.Scatterpolar(
-            r=[6.0], theta=[p["long_visual"]], mode='text', 
-            text=[f"{p['grau_int']}°{p['min_int']}'"],
-            textfont=dict(size=14, color="black", family="Trebuchet MS"), 
-            hoverinfo='skip', showlegend=False))
-        
-        # Marcador na régua (Posição real exata)
-        fig.add_trace(go.Scatterpolar(
-            r=[8.0], theta=[p["long"]], mode='markers', 
-            marker=dict(size=8, color=p["cor"], line=dict(color='black', width=1)),
-            hoverinfo='skip', showlegend=False))
-
+        for p in posicoes:
+            hover_template = f"{p['nome']}<br>{p['signo']}<br>{p['grau_int']}º{p['min_int']}'<extra></extra>"
+            
+            fig.add_trace(go.Scatterpolar(r=[6.2], theta=[p["long_visual"]], mode='text', text=[f"{p['grau_int']}°"], 
+                                        textfont=dict(size=30, color="black", family="Trebuchet MS"), 
+                                        showlegend=False, hovertemplate=hover_template))
+            fig.add_trace(go.Scatterpolar(r=[5.3], theta=[p["long_visual"]], mode='text', text=[f"{p['min_int']}'"], 
+                                        textfont=dict(size=26, color="black", family="Trebuchet MS"), 
+                                        showlegend=False, hovertemplate=hover_template))
+            fig.add_trace(go.Scatterpolar(r=[raio_interno], theta=[p["long"]], mode='markers', 
+                                        marker=dict(size=8, color=p["cor"], line=dict(color='black', width=0)), 
+                                        showlegend=False, hovertemplate=hover_template))
+            
     # --- LAYOUT FINAL ---
     fig.update_layout(
         width=700, height=700,
