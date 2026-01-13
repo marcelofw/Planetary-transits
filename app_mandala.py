@@ -297,7 +297,7 @@ st.session_state.data_ref = datetime.combine(d_input, t_input)
 
 # --- 6. CONTEÚDO PRINCIPAL ---
 st.title("🔭 Mandala Astrológica Interativa")
-st.subheader(f"{st.session_state.data_ref.strftime('%d/%m/%Y %H:%M')}")
+st.subheader(f"{st.session_state.data_ref.strftime('%d/%m/%Y %H:%M')} - Horário de Brasília")
 
 col1, col2 = st.columns([1.5, 1])
 
