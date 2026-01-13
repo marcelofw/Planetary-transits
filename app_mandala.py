@@ -111,25 +111,35 @@ def criar_mandala_astrologica(dt):
 
     # Lógica anti-sobreposição (ajuste visual dos símbolos)
     posicoes.sort(key=lambda x: x['long'])
-    for p in posicoes:
-        p['long_visual'] = p['long']
-    
-    distancia_minima = 18
-    k_retorno = 0.1
+    grupos = []
+    if posicoes:
+        grupo_atual = [posicoes[0]]
+        for i in range(1, len(posicoes)):
+            # Se a distância para o anterior for menor que 15 graus, pertence ao grupo
+            if (posicoes[i]['long'] - posicoes[i-1]['long']) % 360 < 15:
+                grupo_atual.append(posicoes[i])
+            else:
+                grupos.append(grupo_atual)
+                grupo_atual = [posicoes[i]]
+        grupos.append(grupo_atual)
 
-    for _ in range(100):
-        for i in range(len(posicoes)):
-            j = (i + 1) % len(posicoes)
-            
-            diff = (posicoes[j]['long_visual'] - posicoes[i]['long_visual']) % 360
-            
-            if diff < distancia_minima:
-                push = (distancia_minima - diff) * 0.5
-                posicoes[i]['long_visual'] = (posicoes[i]['long_visual'] - push) % 360
-                posicoes[j]['long_visual'] = (posicoes[j]['long_visual'] - push) % 360
+    # 3. Distribuir cada grupo individualmente
+    dist_min = 14  # Espaço fixo entre textos (ajuste conforme o tamanho da fonte)
     
-            erro = (posicoes[i]['long'] - posicoes[i]['long_visual'] + 180) % 360 - 180
-            posicoes[i]['long_visual'] = (posicoes[i]['long_visual'] + erro * k_retorno) % 360
+    for grupo in grupos:
+        n = len(grupo)
+        if n > 1:
+            # Calcula o centro real do grupo
+            centro_real = sum(p['long'] for p in grupo) / n
+            # Calcula a largura total que o grupo precisa ocupar
+            largura_total = (n - 1) * dist_min
+            # Ponto inicial para o primeiro planeta do grupo
+            inicio = centro_real - (largura_total / 2)
+            
+            for j, p in enumerate(grupo):
+                p['long_visual'] = (inicio + (j * dist_min)) % 360
+        else:
+            grupo[0]['long_visual'] = grupo[0]['long']
     
     fig.add_trace(go.Scatterpolar(r=[raio_interno] * 361, theta=list(range(361)), fill='toself', 
         fillcolor="rgba(245, 245, 245, 0.2)", line=dict(color="black", width=1.5), showlegend=False, hoverinfo='skip'))
