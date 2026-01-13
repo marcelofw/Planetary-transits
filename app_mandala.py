@@ -270,11 +270,11 @@ def criar_mandala_astrologica(dt):
 # --- INTERFACE STREAMLIT ---
 st.sidebar.title("🪐 Configurações")
 dt_exibicao = st.session_state.data_ref
-data_corrigida = dt_exibicao - timedelta(hours=3)
+data_br = dt_exibicao - timedelta(hours=3)
 
 # Inputs manuais (Sincronizados com o session_state)
-d_input = st.sidebar.date_input("Data", value=st.session_state.data_ref, min_value=1900, max_value=2100)
-t_input = st.sidebar.time_input("Hora", value=data_corrigida)
+d_input = st.sidebar.date_input("Data", value=data_br, min_value=(1900, 1, 1), max_value=(2100, 12, 31))
+t_input = st.sidebar.time_input("Hora", value=data_br)
 
 col_r, col_a = st.sidebar.columns(2)
 col_r.button("⬅️ -1 Hora", on_click=ajustar_tempo_horas, args=[-1])
