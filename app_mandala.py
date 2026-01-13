@@ -111,21 +111,19 @@ def criar_mandala_astrologica(dt):
 
     # Lógica anti-sobreposição (ajuste visual dos símbolos)
     posicoes.sort(key=lambda x: x['long'])
-    for _ in range(30):
-        for i in range(len(posicoes)):
-            j = (i + 1) % len(posicoes)
-            # Calcula a distância entre o planeta atual e o próximo
-            diff = (posicoes[j]['long_visual'] - posicoes[i]['long_visual']) % 360
-            
-            # Se estiverem a menos de 15 graus de distância, empurra o próximo
-            distancia_minima = 15 
-            if diff < distancia_minima:
-                posicoes[j]['long_visual'] = (posicoes[i]['long_visual'] + distancia_minima) % 360
+    niveis = []
+    for i, p in enumerate(posicoes):
+        nivel = 0
+        # Verifica se o planeta atual está muito perto dos anteriores já processados
+        for j in range(max(0, i-3), i): # Olha os últimos 3 planetas
+            dist = (p['long'] - posicoes[j]['long']) % 360
+            if dist < 12: # Se estiver a menos de 12 graus de um vizinho
+                nivel = (niveis[j] + 1) % 3 # Pula para o próximo nível (0, 1 ou 2)
+        niveis.append(nivel)
 
     fig.add_trace(go.Scatterpolar(r=[raio_interno] * 361, theta=list(range(361)), fill='toself', 
         fillcolor="rgba(245, 245, 245, 0.2)", line=dict(color="black", width=1.5), showlegend=False, hoverinfo='skip'))
 
-    
     # --- 4. LINHAS DE ASPECTO COM SÍMBOLOS ---
     CORES_ASPECTOS = {"☌": "green", "☍": "red", "□": "red", "△": "blue", "✶": "blue", "⚼": "orange", "∠": "orange"}
     for i in range(len(posicoes)):
@@ -193,8 +191,15 @@ def criar_mandala_astrologica(dt):
     # --- 3. PLANETAS E GRAUS ---
 
     for p in posicoes:
+        nivel = niveis[i]
+        r_simbolo = 7.5 - (nivel * 0.9)
+        r_grau = r_simbolo - 0.7
+        
         hover_template = f"{p['nome']}<br>{p['signo']}<br>{p['grau_int']}º{p['min_int']}'<extra></extra>"
         
+        fig.add_trace(go.Scatterpolar(
+                                    r=[r_simbolo], theta=[p["long"]], mode='text', text=[p["sym"]],
+                                    textfont=dict(size=25, color=p["cor"]), showlegend=False, hovertemplate=hover_template))
         fig.add_trace(go.Scatterpolar(r=[6.2], theta=[p["long_visual"]], mode='text', text=[f"{p['grau_int']}°"], 
                                     textfont=dict(size=20, color="black", family="Trebuchet MS"), 
                                     showlegend=False, hovertemplate=hover_template))
