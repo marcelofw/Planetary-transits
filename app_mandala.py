@@ -74,8 +74,8 @@ SIGNOS = ["Áries", "Touro", "Gêmeos", "Câncer", "Leão", "Virgem",
           "Libra", "Escorpião", "Sagitário", "Capricórnio", "Aquário", "Peixes"]
 
 SIMBOLOS_SIGNOS_UNICODE = [
-    "♈\ufe0e", "♉\ufe0e", "♊\ufe0e", "♋\ufe0e", "♌\ufe0e", "♍\ufe0e", 
-    "♎\ufe0e", "♏\ufe0e", "♐\ufe0e", "♑\ufe0e", "♒\ufe0e", "♓\ufe0e"
+    "\u2648", "\u2649", "\u264A", "\u264B", "\u264C", "\u264D",
+    "\u264E", "\u264F", "\u2650", "\u2651", "\u2652", "\u2653"
 ]
 
 CORES_SIGNOS = {
