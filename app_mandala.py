@@ -74,8 +74,8 @@ SIGNOS = ["Áries", "Touro", "Gêmeos", "Câncer", "Leão", "Virgem",
           "Libra", "Escorpião", "Sagitário", "Capricórnio", "Aquário", "Peixes"]
 
 SIMBOLOS_SIGNOS_UNICODE = [
-    "\u2648", "\u2649", "\u264A", "\u264B", "\u264C", "\u264D",
-    "\u264E", "\u264F", "\u2650", "\u2651", "\u2652", "\u2653"
+    "♈\ufe0e", "♉\ufe0e", "♊\ufe0e", "♋\ufe0e", "♌\ufe0e", "♍\ufe0e", 
+    "♎\ufe0e", "♏\ufe0e", "♐\ufe0e", "♑\ufe0e", "♒\ufe0e", "♓\ufe0e"
 ]
 
 CORES_SIGNOS = {
@@ -148,7 +148,7 @@ def criar_mandala_astrologica(dt):
 
     # Lógica anti-sobreposição (ajuste visual dos símbolos)
     posicoes.sort(key=lambda x: x['long'])
-    dist_min = 11
+    dist_min = 15
 
     grupos = []
     if posicoes:
