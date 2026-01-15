@@ -148,7 +148,7 @@ def criar_mandala_astrologica(dt):
 
     # Lógica anti-sobreposição (ajuste visual dos símbolos)
     posicoes.sort(key=lambda x: x['long'])
-    dist_min = 13
+    dist_min = 15
 
     grupos = []
     if posicoes:
