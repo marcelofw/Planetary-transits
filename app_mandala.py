@@ -338,7 +338,7 @@ def criar_mandala_astrologica(dt):
         cor_elemento = CORES_SIGNOS.get(simbolo_signo_planeta, "black")
 
         if p.get("is_asc"):
-            tamanho_fonte_principal = 28  # Tamanho menor para o texto "Asc"
+            tamanho_fonte_principal = 32  # Tamanho menor para o texto "Asc"
             texto_para_exibir = "Asc"
             cor_texto = "black"
         else:
