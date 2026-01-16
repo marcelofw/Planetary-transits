@@ -217,7 +217,6 @@ def criar_mandala_astrologica(dt):
         })
 
     # Lógica anti-sobreposição (ajuste visual dos símbolos)
-# 1. Inicializa a posição visual com a posição real
 # 1. Definimos a ordem real uma única vez antes do loop
     posicoes.sort(key=lambda x: x['long'])
     for i, p in enumerate(posicoes):
@@ -350,6 +349,29 @@ def criar_mandala_astrologica(dt):
             showlegend=False, hovertemplate=hover_template
         ))
     
+    #Ascendente
+    if asc_valor is not None:
+        # Linha do Ascendente (Horizonte)
+        fig.add_trace(go.Scatterpolar(
+            r=[0, 4.6], 
+            theta=[asc_valor, asc_valor],
+            mode='lines',
+            line=dict(color='red', width=4),
+            name='Ascendente',
+            showlegend=False
+        ))
+        
+        # Rótulo ASC na borda
+        fig.add_trace(go.Scatterpolar(
+            r=[4.9],
+            theta=[asc_valor],
+            mode='text',
+            text=["<b>ASC</b>"],
+            textfont=dict(size=14, color="red"),
+            showlegend=False
+        ))
+
+
     # --- LAYOUT FINAL ---
     fig.update_layout(
             width=850, height=850, autosize=False, uirevision="constant",
@@ -370,8 +392,6 @@ def criar_mandala_astrologica(dt):
         dragmode=False
     )
     return fig
-
-
 
 # --- 6. CONTEÚDO PRINCIPAL ---
 st.title("🔭 Mandala Astrológica Interativa")
