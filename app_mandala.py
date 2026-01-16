@@ -147,27 +147,27 @@ def criar_mandala_astrologica(dt):
         })
 
     # Lógica anti-sobreposição (ajuste visual dos símbolos)
+# 1. Inicializa a posição visual com a posição real
     for p in posicoes:
         p['long_visual'] = p['long']
 
-    dist_min = 8
+    # 2. Simulação de Repulsão (roda 15 vezes para garantir estabilidade)
+    dist_min = 8  # Espaço mínimo necessário para não sobrepor
     for _ in range(15):
+        # Ordenamos a cada iteração para tratar a vizinhança corretamente
         posicoes.sort(key=lambda x: x['long_visual'])
+        
         for i in range(len(posicoes)):
             for j in range(len(posicoes)):
                 if i == j: continue
                 
+                # Calcula a distância angular curta entre dois planetas
                 p1 = posicoes[i]
                 p2 = posicoes[j]
                 diff = (p2['long_visual'] - p1['long_visual'] + 180) % 360 - 180
                 
                 if abs(diff) < dist_min:
-                    # --- O CHECK DE ORDEM ADICIONADO AQUI ---
-                    # Se p1 tem longitude real MAIOR que p2, ele não pode ser empurrado para trás de p2
-                    if (p1['long'] < p2['long'] and diff < 0) or (p1['long'] > p2['long'] and diff > 0):
-                        continue # Pula esse empurrão para não inverter a ordem
-                    # ----------------------------------------
-
+                    # Se estão sobrepostos, empurra cada um para um lado
                     forca = (dist_min - abs(diff)) / 2
                     direcao = 1 if diff >= 0 else -1
                     
