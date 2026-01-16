@@ -216,6 +216,44 @@ def criar_mandala_astrologica(dt):
             "signo": SIGNOS[id_signo % 12], "long_visual": long_abs 
         })
 
+    # Lógica anti-sobreposição (ajuste visual dos símbolos)
+# 1. Definimos a ordem real uma única vez antes do loop
+    posicoes.sort(key=lambda x: x['long'])
+    for i, p in enumerate(posicoes):
+        p['long_visual'] = p['long']
+        p['id_ordem'] = i # Identificador único de posição na fila
+
+    dist_min = 9 # Aumentei para 10 para garantir legibilidade no celular
+    
+    for _ in range(20): # Mais iterações para estabilizar o bloco
+        # Ordenamos visualmente para o loop de vizinhança
+        posicoes.sort(key=lambda x: x['long_visual'])
+        
+        for i in range(len(posicoes)):
+            for j in range(len(posicoes)):
+                if i == j: continue
+                
+                p1 = posicoes[i]
+                p2 = posicoes[j]
+                
+                # Cálculo da distância curta (mesmo do seu original)
+                diff = (p2['long_visual'] - p1['long_visual'] + 180) % 360 - 180
+                
+                if abs(diff) < dist_min:
+                    # --- A CORREÇÃO DA LÓGICA ---
+                    # Checamos a distância astronômica real para saber quem deve estar na frente
+                    diff_real = (p2['long'] - p1['long'] + 180) % 360 - 180
+                    
+                    # Se a repulsão visual (diff) está tentando colocar os planetas 
+                    # em ordem oposta à real (diff_real), nós forçamos a direção correta.
+                    direcao = 1 if diff_real >= 0 else -1
+                    
+                    # A força agora sempre atua para manter o dist_min na direção da ordem real
+                    forca = (dist_min - abs(diff)) / 2
+                    
+                    p2['long_visual'] = (p2['long_visual'] + forca * direcao) % 360
+                    p1['long_visual'] = (p1['long_visual'] - forca * direcao) % 360
+
     fig.add_trace(go.Scatterpolar(r=[raio_interno] * 361, theta=list(range(361)), fill='toself', 
         fillcolor="rgba(245, 245, 245, 0.2)", line=dict(color="black", width=1.5), showlegend=False, hoverinfo='skip'))
 
