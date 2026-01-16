@@ -365,7 +365,7 @@ def criar_mandala_astrologica(dt):
                                     marker=dict(size=8, color='black', line=dict(color='black', width=0)), 
                                     showlegend=False))
         # Marcadores externos
-        fig.add_trace(go.Scatterpolar(r=[8.0], theta=[[asc_valor]], mode='markers', 
+        fig.add_trace(go.Scatterpolar(r=[8.0], theta=[asc_valor], mode='markers', 
                                     marker=dict(size=8, color='black', line=dict(color='black', width=0)), 
                                     showlegend=False))
         
