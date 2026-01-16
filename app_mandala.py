@@ -148,31 +148,37 @@ def criar_mandala_astrologica(dt):
 
     # Lógica anti-sobreposição (ajuste visual dos símbolos)
 # 1. Inicializa a posição visual com a posição real
-    for p in posicoes:
+# 1. Primeiro, guardamos a ordem original baseada na astronomia real
+    posicoes.sort(key=lambda x: x['long'])
+    for i, p in enumerate(posicoes):
+        p['ordem_original'] = i  # Guarda quem é o 1º, 2º, 3º...
         p['long_visual'] = p['long']
 
     # 2. Simulação de Repulsão (roda 15 vezes para garantir estabilidade)
-    dist_min = 8  # Espaço mínimo necessário para não sobrepor
-    for _ in range(15):
-        # Ordenamos a cada iteração para tratar a vizinhança corretamente
-        posicoes.sort(key=lambda x: x['long_visual'])
+    dist_min = 12 # Sugiro 12 para evitar que os textos se toquem em telas menores
+    
+    for _ in range(20): # Aumentei um pouco as iterações para garantir a ordem
+        # ATENÇÃO: Mantemos a lista sempre ordenada pela ordem original para a lógica funcionar
+        posicoes.sort(key=lambda x: x['ordem_original'])
         
         for i in range(len(posicoes)):
-            for j in range(len(posicoes)):
-                if i == j: continue
+            # Comparamos cada planeta com o próximo na fila (circular)
+            p1 = posicoes[i]
+            p2 = posicoes[(i + 1) % len(posicoes)]
+            
+            # Distância angular (p2 - p1) considerando o círculo
+            diff = (p2['long_visual'] - p1['long_visual']) % 360
+            
+            if diff < dist_min:
+                # Se estão sobrepostos ou a ordem foi invertida (diff ficaria muito grande)
+                # O ajuste empurra p1 para trás e p2 para frente
+                ajuste = (dist_min - diff) / 2
                 
-                # Calcula a distância angular curta entre dois planetas
-                p1 = posicoes[i]
-                p2 = posicoes[j]
-                diff = (p2['long_visual'] - p1['long_visual'] + 180) % 360 - 180
-                
-                if abs(diff) < dist_min:
-                    # Se estão sobrepostos, empurra cada um para um lado
-                    forca = (dist_min - abs(diff)) / 2
-                    direcao = 1 if diff >= 0 else -1
-                    
-                    p2['long_visual'] = (p2['long_visual'] + forca * direcao) % 360
-                    p1['long_visual'] = (p1['long_visual'] - forca * direcao) % 360
+                p1['long_visual'] = (p1['long_visual'] - ajuste) % 360
+                p2['long_visual'] = (p2['long_visual'] + ajuste) % 360
+
+    # 3. Ordenação final apenas para garantir que o Plotly renderize na sequência
+    posicoes.sort(key=lambda x: x['long_visual'])
 
     # posicoes.sort(key=lambda x: x['long'])
     # dist_min = 11
