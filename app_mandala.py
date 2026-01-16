@@ -360,23 +360,23 @@ def criar_mandala_astrologica(dt):
         # Anotações ASC
         fig.add_trace(go.Scatterpolar(r=[7.4], theta=[asc_valor], mode='text', text='Asc', 
                                     textfont=dict(size=26, color='black', family="Trebuchet MS"), 
-                                    showlegend=False), hovertemplate=hover_template_asc)
+                                    showlegend=False, hovertemplate=hover_template_asc))
         # Marcadores internos
         fig.add_trace(go.Scatterpolar(r=[raio_interno], theta=[asc_valor], mode='markers', 
                                     marker=dict(size=8, color='black', line=dict(color='black', width=0)), 
-                                    showlegend=False), hovertemplate=hover_template_asc)
+                                    showlegend=False, hovertemplate=hover_template_asc))
         # Marcadores externos
         fig.add_trace(go.Scatterpolar(r=[8.0], theta=[asc_valor], mode='markers', 
                                     marker=dict(size=8, color='black', line=dict(color='black', width=0)), 
-                                    showlegend=False), hovertemplate=hover_template_asc) 
+                                    showlegend=False, hovertemplate=hover_template_asc))
         # Anotações Graus
         fig.add_trace(go.Scatterpolar(r=[6.3], theta=[asc_valor], mode='text', text=[f"{asc_graus:02d}°"], 
                                     textfont=dict(size=25, color="black", family="Trebuchet MS"), 
-                                    showlegend=False), hovertemplate=hover_template_asc)
+                                    showlegend=False, hovertemplate=hover_template_asc))
         # Anotações Minutos
         fig.add_trace(go.Scatterpolar(r=[4.1], theta=[asc_valor], mode='text', text=[f"{asc_minutos:02d}'"], 
                                     textfont=dict(size=21, color="black", family="Trebuchet MS"), 
-                                    showlegend=False), hovertemplate=hover_template_asc)
+                                    showlegend=False, hovertemplate=hover_template_asc))
 
     # --- LAYOUT FINAL ---
     fig.update_layout(
