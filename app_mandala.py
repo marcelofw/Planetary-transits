@@ -411,5 +411,5 @@ with col1:
         config={'displayModeBar':False, 'responsive':False, 'frameMargins': 0}
         )
 
-with col2:
-    incluir_datas = st.checkbox("Quero encontrar datas", value=False)
+# with col2:
+#     incluir_datas = st.checkbox("Quero encontrar datas", value=False)
