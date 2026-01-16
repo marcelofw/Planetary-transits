@@ -147,7 +147,7 @@ col_a.button("+1 Ano ➡️", on_click=on_button_click, args=['years', 1])
 incluir_ascendente = st.sidebar.checkbox("Quero incluir o Ascendente", value=False)
 asc_valor = None
 if incluir_ascendente:
-    local_nascimento = st.stidebar.text_input("Cidade de Nascimento", "São Paulo, Brasil")
+    local_nascimento = st.sidebar.text_input("Cidade de Nascimento", "São Paulo, Brasil")
 
     lat, lon, endereco = buscar_coordenadas(local_nascimento)
 
