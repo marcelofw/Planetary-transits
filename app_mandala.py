@@ -148,36 +148,41 @@ def criar_mandala_astrologica(dt):
 
     # Lógica anti-sobreposição (ajuste visual dos símbolos)
 # 1. Inicializa a posição visual com a posição real
-# 1. Primeiro, garantimos que a lista está na ordem zodiacal REAL
+# 1. Ordenação inicial rigorosa pela longitude real
     posicoes.sort(key=lambda x: x['long'])
     
-    # Inicializa a posição visual com a real
+    # Inicializa a posição visual
     for p in posicoes:
         p['long_visual'] = p['long']
 
-    # 2. Algoritmo de Repulsão com Preservação de Ordem
+    # 2. Algoritmo de "Empilhamento" Circular
+    # Vamos rodar o ajuste várias vezes para distribuir o espaço sobrando
     dist_min = 13
-    passos = 25 # Aumentamos os passos para maior precisão
-    
-    for _ in range(passos):
+    for _ in range(10):
         for i in range(len(posicoes)):
-            # Comparamos cada planeta apenas com o seu VIZINHO IMEDIATO no zodíaco
-            # Isso evita que eles troquem de lugar
             p1 = posicoes[i]
-            p2 = posicoes[(i + 1) % len(posicoes)] # Vizinho à frente
+            p2 = posicoes[(i + 1) % len(posicoes)]
             
-            # Calcula a distância angular (p2 - p1)
+            # Distância atual entre eles no sentido horário
             diff = (p2['long_visual'] - p1['long_visual']) % 360
             
             if diff < dist_min:
-                # Se estão muito perto, calcula o quanto precisam se afastar
-                ajuste = (dist_min - diff) / 2
-                
-                # Empurra p1 para trás e p2 para frente
-                p1['long_visual'] = (p1['long_visual'] - ajuste) % 360
-                p2['long_visual'] = (p2['long_visual'] + ajuste) % 360
+                # O p2 precisa ser empurrado para frente para respeitar a dist_min
+                empurrao = dist_min - diff
+                p2['long_visual'] = (p2['long_visual'] + empurrao) % 360
 
-    # 3. Re-ordenação final de segurança para garantir que o Plotly desenhe na sequência
+    # 3. Centralização (Opcional): 
+    # Após empurrar, o grupo pode ter se deslocado. 
+    # Vamos re-ajustar para que o centro do grupo visual coincida com o centro real.
+    # (Isso evita que o grupo "corra" muito para um lado do signo)
+    sum_real = sum(p['long'] for p in posicoes)
+    sum_visual = sum(p['long_visual'] for p in posicoes)
+    desvio = (sum_real - sum_visual) / len(posicoes)
+    
+    for p in posicoes:
+        p['long_visual'] = (p['long_visual'] + desvio) % 360
+
+    # 4. Ordenação final para o Plotly
     posicoes.sort(key=lambda x: x['long_visual'])
 
     # posicoes.sort(key=lambda x: x['long'])
