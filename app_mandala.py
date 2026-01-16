@@ -148,26 +148,38 @@ def criar_mandala_astrologica(dt):
 
     # Lógica anti-sobreposição (ajuste visual dos símbolos)
 # 1. Inicializa a posição visual com a posição real
-    for p in posicoes:
+# 1. Definimos a posição visual inicial e salvamos a ORDEM REAL
+    posicoes.sort(key=lambda x: x['long'])
+    for i, p in enumerate(posicoes):
         p['long_visual'] = p['long']
+        p['ordem_zodiacal'] = i # Guarda a posição fixa na fila
 
-    # 2. Simulação de Repulsão (roda 15 vezes para garantir estabilidade)
-    dist_min = 8  # Espaço mínimo necessário para não sobrepor
+    dist_min = 8  
     for _ in range(15):
-        # Ordenamos a cada iteração para tratar a vizinhança corretamente
+        # Mantemos a sua lógica de ordenar para verificar vizinhos
         posicoes.sort(key=lambda x: x['long_visual'])
         
         for i in range(len(posicoes)):
             for j in range(len(posicoes)):
                 if i == j: continue
                 
-                # Calcula a distância angular curta entre dois planetas
                 p1 = posicoes[i]
                 p2 = posicoes[j]
+                
                 diff = (p2['long_visual'] - p1['long_visual'] + 180) % 360 - 180
                 
                 if abs(diff) < dist_min:
-                    # Se estão sobrepostos, empurra cada um para um lado
+                    # --- A ÚNICA ADIÇÃO: TRAVA DE ORDEM ---
+                    # Verificamos se o empurrão faria um planeta 'pular' o outro
+                    # p2 deveria estar DEPOIS de p1 se p2['ordem_zodiacal'] > p1['ordem_zodiacal']
+                    ordem_correta = p2['ordem_zodiacal'] > p1['ordem_zodiacal']
+                    está_na_frente = diff > 0
+                    
+                    # Se a física tentar inverter a fila, ignoramos esse par específico
+                    if ordem_correta != está_na_frente:
+                        continue
+                    # --------------------------------------
+
                     forca = (dist_min - abs(diff)) / 2
                     direcao = 1 if diff >= 0 else -1
                     
