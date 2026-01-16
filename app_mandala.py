@@ -147,9 +147,6 @@ def criar_mandala_astrologica(dt):
         })
 
     # Lógica anti-sobreposição (ajuste visual dos símbolos)
-# 1. Inicializa a posição visual com a posição real
-# 1. Antes do loop, apenas identifique quem é menor que quem (Ordem Real)
-    # Isso serve para o nosso "check" saber quem deve vir antes
     for p in posicoes:
         p['long_visual'] = p['long']
 
@@ -162,20 +159,14 @@ def criar_mandala_astrologica(dt):
                 
                 p1 = posicoes[i]
                 p2 = posicoes[j]
-                
-                # Distância visual atual
                 diff = (p2['long_visual'] - p1['long_visual'] + 180) % 360 - 180
                 
                 if abs(diff) < dist_min:
-                    # --- NOVO CHECK DE ORDEM CIRCULAR ---
-                    # Calcula a distância real astronômica (p2 - p1) no círculo
-                    diff_real = (p2['long'] - p1['long'] + 180) % 360 - 180
-                    
-                    # Se a direção do empurrão (diff) for contrária à ordem astronômica (diff_real), pula.
-                    # Isso garante que a ordem seja mantida mesmo cruzando o 0°/360°
-                    if (diff_real > 0 and diff < 0) or (diff_real < 0 and diff > 0):
-                        continue 
-                    # ------------------------------------
+                    # --- O CHECK DE ORDEM ADICIONADO AQUI ---
+                    # Se p1 tem longitude real MAIOR que p2, ele não pode ser empurrado para trás de p2
+                    if (p1['long'] < p2['long'] and diff < 0) or (p1['long'] > p2['long'] and diff > 0):
+                        continue # Pula esse empurrão para não inverter a ordem
+                    # ----------------------------------------
 
                     forca = (dist_min - abs(diff)) / 2
                     direcao = 1 if diff >= 0 else -1
