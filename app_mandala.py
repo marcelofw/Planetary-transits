@@ -148,31 +148,37 @@ def criar_mandala_astrologica(dt):
 
     # Lógica anti-sobreposição (ajuste visual dos símbolos)
 # 1. Inicializa a posição visual com a posição real
+# 1. Primeiro, garantimos que a lista está na ordem zodiacal REAL
+    posicoes.sort(key=lambda x: x['long'])
+    
+    # Inicializa a posição visual com a real
     for p in posicoes:
         p['long_visual'] = p['long']
 
-    # 2. Simulação de Repulsão (roda 15 vezes para garantir estabilidade)
-    dist_min = 8  # Espaço mínimo necessário para não sobrepor
-    for _ in range(15):
-        # Ordenamos a cada iteração para tratar a vizinhança corretamente
-        posicoes.sort(key=lambda x: x['long_visual'])
-        
+    # 2. Algoritmo de Repulsão com Preservação de Ordem
+    dist_min = 13
+    passos = 25 # Aumentamos os passos para maior precisão
+    
+    for _ in range(passos):
         for i in range(len(posicoes)):
-            for j in range(len(posicoes)):
-                if i == j: continue
+            # Comparamos cada planeta apenas com o seu VIZINHO IMEDIATO no zodíaco
+            # Isso evita que eles troquem de lugar
+            p1 = posicoes[i]
+            p2 = posicoes[(i + 1) % len(posicoes)] # Vizinho à frente
+            
+            # Calcula a distância angular (p2 - p1)
+            diff = (p2['long_visual'] - p1['long_visual']) % 360
+            
+            if diff < dist_min:
+                # Se estão muito perto, calcula o quanto precisam se afastar
+                ajuste = (dist_min - diff) / 2
                 
-                # Calcula a distância angular curta entre dois planetas
-                p1 = posicoes[i]
-                p2 = posicoes[j]
-                diff = (p2['long_visual'] - p1['long_visual'] + 180) % 360 - 180
-                
-                if abs(diff) < dist_min:
-                    # Se estão sobrepostos, empurra cada um para um lado
-                    forca = (dist_min - abs(diff)) / 2
-                    direcao = 1 if diff >= 0 else -1
-                    
-                    p2['long_visual'] = (p2['long_visual'] + forca * direcao) % 360
-                    p1['long_visual'] = (p1['long_visual'] - forca * direcao) % 360
+                # Empurra p1 para trás e p2 para frente
+                p1['long_visual'] = (p1['long_visual'] - ajuste) % 360
+                p2['long_visual'] = (p2['long_visual'] + ajuste) % 360
+
+    # 3. Re-ordenação final de segurança para garantir que o Plotly desenhe na sequência
+    posicoes.sort(key=lambda x: x['long_visual'])
 
     # posicoes.sort(key=lambda x: x['long'])
     # dist_min = 11
