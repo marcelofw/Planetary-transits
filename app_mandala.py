@@ -148,28 +148,39 @@ def criar_mandala_astrologica(dt):
 
     # Lógica anti-sobreposição (ajuste visual dos símbolos)
 # 1. Inicializa a posição visual com a posição real
-    for p in posicoes:
+# 1. Definimos a ordem real uma única vez antes do loop
+    posicoes.sort(key=lambda x: x['long'])
+    for i, p in enumerate(posicoes):
         p['long_visual'] = p['long']
+        p['id_ordem'] = i # Identificador único de posição na fila
 
-    # 2. Simulação de Repulsão (roda 15 vezes para garantir estabilidade)
-    dist_min = 8  # Espaço mínimo necessário para não sobrepor
-    for _ in range(15):
-        # Ordenamos a cada iteração para tratar a vizinhança corretamente
+    dist_min = 10 # Aumentei para 10 para garantir legibilidade no celular
+    
+    for _ in range(20): # Mais iterações para estabilizar o bloco
+        # Ordenamos visualmente para o loop de vizinhança
         posicoes.sort(key=lambda x: x['long_visual'])
         
         for i in range(len(posicoes)):
             for j in range(len(posicoes)):
                 if i == j: continue
                 
-                # Calcula a distância angular curta entre dois planetas
                 p1 = posicoes[i]
                 p2 = posicoes[j]
+                
+                # Cálculo da distância curta (mesmo do seu original)
                 diff = (p2['long_visual'] - p1['long_visual'] + 180) % 360 - 180
                 
                 if abs(diff) < dist_min:
-                    # Se estão sobrepostos, empurra cada um para um lado
+                    # --- A CORREÇÃO DA LÓGICA ---
+                    # Checamos a distância astronômica real para saber quem deve estar na frente
+                    diff_real = (p2['long'] - p1['long'] + 180) % 360 - 180
+                    
+                    # Se a repulsão visual (diff) está tentando colocar os planetas 
+                    # em ordem oposta à real (diff_real), nós forçamos a direção correta.
+                    direcao = 1 if diff_real >= 0 else -1
+                    
+                    # A força agora sempre atua para manter o dist_min na direção da ordem real
                     forca = (dist_min - abs(diff)) / 2
-                    direcao = 1 if diff >= 0 else -1
                     
                     p2['long_visual'] = (p2['long_visual'] + forca * direcao) % 360
                     p1['long_visual'] = (p1['long_visual'] - forca * direcao) % 360
