@@ -351,19 +351,11 @@ def criar_mandala_astrologica(dt):
     
     #Ascendente
     if asc_valor is not None:
-    # Rótulo ASC na borda
-        fig.add_trace(go.Scatterpolar(
-            r=[4.9],
-            theta=[asc_valor],
-            mode='text',
-            text=["<b>ASC</b>"],
-            textfont=dict(size=14, color="red"),
-            showlegend=False
-        ))
-
+        asc_graus = int(asc_valor % 30)
+        asc_minutos = int((asc_valor - int(asc_valor)) * 60)
         # Anotações ASC
-        fig.add_trace(go.Scatterpolar(r=[7.4], theta=[asc_valor], mode='text', text='ASC', 
-                                    textfont=dict(size=32, color='black', family="Trebuchet MS"), 
+        fig.add_trace(go.Scatterpolar(r=[7.4], theta=[asc_valor], mode='text', text='Asc', 
+                                    textfont=dict(size=26, color='black', family="Trebuchet MS"), 
                                     showlegend=False))
         # Marcadores internos
         fig.add_trace(go.Scatterpolar(r=[raio_interno], theta=[asc_valor], mode='markers', 
@@ -372,20 +364,15 @@ def criar_mandala_astrologica(dt):
         # Marcadores externos
         fig.add_trace(go.Scatterpolar(r=[8.0], theta=[asc_valor], mode='markers', 
                                     marker=dict(size=8, color='black', line=dict(color='black', width=0)), 
-                                    showlegend=False))
-        
-        
+                                    showlegend=False)) 
         # Anotações Graus
-        # fig.add_trace(go.Scatterpolar(r=[6.3], theta=[p["asc_valor"]], mode='text', text=[f"{p['grau_int']:02d}°"], 
-        #                             textfont=dict(size=25, color="black", family="Trebuchet MS"), 
-        #                             showlegend=False, hovertemplate=hover_template))
-        # # Anotações Minutos
-        # fig.add_trace(go.Scatterpolar(r=[4.1], theta=[p["asc_valor"]], mode='text', text=[f"{p['min_int']:02d}'"], 
-        #                             textfont=dict(size=21, color="black", family="Trebuchet MS"), 
-        #                             showlegend=False, hovertemplate=hover_template))
-
-
-
+        fig.add_trace(go.Scatterpolar(r=[6.3], theta=[asc_valor], mode='text', text=[f"{asc_graus:02d}°"], 
+                                    textfont=dict(size=25, color="black", family="Trebuchet MS"), 
+                                    showlegend=False))
+        # Anotações Minutos
+        fig.add_trace(go.Scatterpolar(r=[4.1], theta=[asc_valor], mode='text', text=[f"{asc_minutos:02d}'"], 
+                                    textfont=dict(size=21, color="black", family="Trebuchet MS"), 
+                                    showlegend=False))
 
     # --- LAYOUT FINAL ---
     fig.update_layout(
