@@ -360,6 +360,14 @@ def criar_mandala_astrologica(dt):
             textfont=dict(size=14, color="red"),
             showlegend=False
         ))
+        # Marcadores internos
+        fig.add_trace(go.Scatterpolar(r=[raio_interno], theta=[p["asc_valor"]], mode='markers', 
+                                    marker=dict(size=8, color='black', line=dict(color='black', width=0)), 
+                                    showlegend=False))
+        # Marcadores externos
+        fig.add_trace(go.Scatterpolar(r=[8.0], theta=[p["asc_valor"]], mode='markers', 
+                                    marker=dict(size=8, color='black', line=dict(color='black', width=0)), 
+                                    showlegend=False))
         
         
         # Anotações Graus
