@@ -216,6 +216,23 @@ def criar_mandala_astrologica(dt):
             "signo": SIGNOS[id_signo % 12], "long_visual": long_abs 
         })
 
+    if asc_valor is not None:
+        id_signo_asc = int(asc_valor / 30)
+        grau_no_signo_asc = asc_valor % 30
+        min_f_asc, gr_i_asc = math.modf(grau_no_signo_asc)
+        
+        posicoes.append({
+            "nome": "Ascendente", 
+            "long": asc_valor, 
+            "cor": "black", # Ou a cor que preferir
+            "sym": "Asc", 
+            "grau_int": int(gr_i_asc), 
+            "min_int": int(round(min_f_asc * 60)),
+            "signo": SIGNOS[id_signo_asc % 12], 
+            "long_visual": asc_valor,
+            "is_asc": True # Marcador para identificarmos depois
+        })
+        
     # Lógica anti-sobreposição (ajuste visual dos símbolos)
 # 1. Definimos a ordem real uma única vez antes do loop
     posicoes.sort(key=lambda x: x['long'])
