@@ -154,7 +154,7 @@ def criar_mandala_astrologica(dt):
         p['long_visual'] = p['long']
         p['id_ordem'] = i # Identificador único de posição na fila
 
-    dist_min = 10 # Aumentei para 10 para garantir legibilidade no celular
+    dist_min = 9 # Aumentei para 10 para garantir legibilidade no celular
     
     for _ in range(20): # Mais iterações para estabilizar o bloco
         # Ordenamos visualmente para o loop de vizinhança
