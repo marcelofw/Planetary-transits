@@ -337,6 +337,15 @@ def criar_mandala_astrologica(dt):
         simbolo_signo_planeta = SIMBOLOS_SIGNOS_UNICODE[indice_signo_planeta]
         cor_elemento = CORES_SIGNOS.get(simbolo_signo_planeta, "black")
 
+        if p.get("is_asc"):
+            tamanho_fonte_principal = 22  # Tamanho menor para o texto "Asc"
+            texto_para_exibir = "Asc"
+            cor_texto = "black"
+        else:
+            tamanho_fonte_principal = 44  # Tamanho original para os símbolos dos planetas
+            texto_para_exibir = p['sym']
+            cor_texto = p["cor"]
+
         # Anotações Graus
         fig.add_trace(go.Scatterpolar(r=[6.3], theta=[p["long_visual"]], mode='text', text=[f"{p['grau_int']:02d}°"], 
                                     textfont=dict(size=25, color="black", family="Trebuchet MS"), 
@@ -361,8 +370,8 @@ def criar_mandala_astrologica(dt):
         fig.add_trace(go.Scatterpolar(
             r=[7.4], theta=[p["long_visual"]], 
             mode='text', 
-            text=[f"{p['sym']}"], # Adicionado Negrito via tag HTML
-            textfont=dict(size=44, color=p["cor"], family="'DejaVu Sans', 'Segoe UI Symbol', 'Apple Symbols', sans-serif"), 
+            text=[texto_para_exibir], # Adicionado Negrito via tag HTML
+            textfont=dict(size=tamanho_fonte_principal, color=cor_texto, family="'DejaVu Sans', 'Segoe UI Symbol', 'Apple Symbols', sans-serif"), 
             showlegend=False, hovertemplate=hover_template
         ))
 
