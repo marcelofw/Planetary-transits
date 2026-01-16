@@ -360,6 +360,11 @@ def criar_mandala_astrologica(dt):
             textfont=dict(size=14, color="red"),
             showlegend=False
         ))
+
+        # Anotações ASC
+        fig.add_trace(go.Scatterpolar(r=[7.4], theta=[asc_valor], mode='text', text='ASC', 
+                                    textfont=dict(size=32, color='black', family="Trebuchet MS"), 
+                                    showlegend=False))
         # Marcadores internos
         fig.add_trace(go.Scatterpolar(r=[raio_interno], theta=[asc_valor], mode='markers', 
                                     marker=dict(size=8, color='black', line=dict(color='black', width=0)), 
@@ -378,18 +383,8 @@ def criar_mandala_astrologica(dt):
         # fig.add_trace(go.Scatterpolar(r=[4.1], theta=[p["asc_valor"]], mode='text', text=[f"{p['min_int']:02d}'"], 
         #                             textfont=dict(size=21, color="black", family="Trebuchet MS"), 
         #                             showlegend=False, hovertemplate=hover_template))
-        # # Anotações ASC
-        # fig.add_trace(go.Scatterpolar(r=[5.2], theta=[p["asc_valor"]], mode='text', text='ASC', 
-        #                             textfont=dict(size=32, color='black', family="Trebuchet MS"), 
-        #                             showlegend=False, hovertemplate=hover_template))
-        # # Marcadores internos
-        # fig.add_trace(go.Scatterpolar(r=[raio_interno], theta=[p["asc_valor"]], mode='markers', 
-        #                             marker=dict(size=8, color='black', line=dict(color='black', width=0)), 
-        #                             showlegend=False, hovertemplate=hover_template))
-        # # Marcadores externos
-        # fig.add_trace(go.Scatterpolar(r=[8.0], theta=[p["asc_valor"]], mode='markers', 
-        #                             marker=dict(size=8, color='black', line=dict(color='black', width=0)), 
-        #                             showlegend=False, hovertemplate=hover_template))
+
+
 
 
     # --- LAYOUT FINAL ---
