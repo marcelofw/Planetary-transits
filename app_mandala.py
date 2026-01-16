@@ -232,7 +232,7 @@ def criar_mandala_astrologica(dt):
             "long_visual": asc_valor,
             "is_asc": True # Marcador para identificarmos depois
         })
-        
+
     # Lógica anti-sobreposição (ajuste visual dos símbolos)
 # 1. Definimos a ordem real uma única vez antes do loop
     posicoes.sort(key=lambda x: x['long'])
@@ -376,10 +376,10 @@ def criar_mandala_astrologica(dt):
         cor_elemento_asc = CORES_SIGNOS.get(simbolo_signo_asc, "black")
         hover_template_asc = f"Ascendente<br>{nome_signo_asc}<br>{asc_graus}°{asc_minutos}'<extra></extra>"
         
-        # Anotações ASC
-        fig.add_trace(go.Scatterpolar(r=[7.4], theta=[asc_valor], mode='text', text='Asc', 
-                                    textfont=dict(size=26, color='black', family="Trebuchet MS"), 
-                                    showlegend=False, hovertemplate=hover_template_asc))
+        # # Anotações ASC
+        # fig.add_trace(go.Scatterpolar(r=[7.4], theta=[asc_valor], mode='text', text='Asc', 
+        #                             textfont=dict(size=26, color='black', family="Trebuchet MS"), 
+        #                             showlegend=False, hovertemplate=hover_template_asc))
         # Marcadores internos
         fig.add_trace(go.Scatterpolar(r=[raio_interno], theta=[asc_valor], mode='markers', 
                                     marker=dict(size=8, color='black', line=dict(color='black', width=0)), 
@@ -400,6 +400,8 @@ def criar_mandala_astrologica(dt):
         fig.add_trace(go.Scatterpolar(r=[5.2], theta=[asc_valor], mode='text', text=[simbolo_signo_asc], 
                                     textfont=dict(size=32, color=cor_elemento_asc, family="DejaVu Sans"), 
                                     showlegend=False, hovertemplate=hover_template))
+
+
 
     # --- LAYOUT FINAL ---
     fig.update_layout(
