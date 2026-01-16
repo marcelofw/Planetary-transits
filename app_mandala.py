@@ -412,4 +412,4 @@ with col1:
         )
 
 with col2:
-    incluir_datas = st.sidebar.checkbox("Quero encontrar datas", value=False)
+    incluir_datas = st.checkbox("Quero encontrar datas", value=False)
