@@ -147,47 +147,75 @@ def criar_mandala_astrologica(dt):
         })
 
     # Lógica anti-sobreposição (ajuste visual dos símbolos)
-    posicoes.sort(key=lambda x: x['long'])
-    dist_min = 11
+# 1. Inicializa a posição visual com a posição real
+    for p in posicoes:
+        p['long_visual'] = p['long']
 
-    grupos = []
-    if posicoes:
-        grupo_atual = [posicoes[0]]
-        for i in range(1, len(posicoes)):
-            # Se a distância para o anterior for menor que 15 graus, pertence ao grupo
-            if (posicoes[i]['long'] - posicoes[i-1]['long']) % 360 < dist_min:
-                grupo_atual.append(posicoes[i])
-            else:
-                grupos.append(grupo_atual)
-                grupo_atual = [posicoes[i]]
-        grupos.append(grupo_atual)
+    # 2. Simulação de Repulsão (roda 15 vezes para garantir estabilidade)
+    dist_min = 13  # Espaço mínimo necessário para não sobrepor
+    for _ in range(15):
+        # Ordenamos a cada iteração para tratar a vizinhança corretamente
+        posicoes.sort(key=lambda x: x['long_visual'])
+        
+        for i in range(len(posicoes)):
+            for j in range(len(posicoes)):
+                if i == j: continue
+                
+                # Calcula a distância angular curta entre dois planetas
+                p1 = posicoes[i]
+                p2 = posicoes[j]
+                diff = (p2['long_visual'] - p1['long_visual'] + 180) % 360 - 180
+                
+                if abs(diff) < dist_min:
+                    # Se estão sobrepostos, empurra cada um para um lado
+                    forca = (dist_min - abs(diff)) / 2
+                    direcao = 1 if diff >= 0 else -1
+                    
+                    p2['long_visual'] = (p2['long_visual'] + forca * direcao) % 360
+                    p1['long_visual'] = (p1['long_visual'] - forca * direcao) % 360
 
-        if len(grupos) > 1:
-            dist_ponta = (grupos[0][0]['long'] - grupos[-1][-1]['long']) % 360
-            if dist_ponta < dist_min:
-                # Une o primeiro e o último grupo em um só
-                grupo_unido = grupos.pop() + grupos.pop(0)
-                grupos.append(grupo_unido)
+    # posicoes.sort(key=lambda x: x['long'])
+    # dist_min = 11
 
-    # 3. Distribuir cada grupo individualmente
-    # dist_min = 7  # Espaço fixo entre textos (ajuste conforme o tamanho da fonte)
+    # grupos = []
+    # if posicoes:
+    #     grupo_atual = [posicoes[0]]
+    #     for i in range(1, len(posicoes)):
+    #         # Se a distância para o anterior for menor que 15 graus, pertence ao grupo
+    #         if (posicoes[i]['long'] - posicoes[i-1]['long']) % 360 < dist_min:
+    #             grupo_atual.append(posicoes[i])
+    #         else:
+    #             grupos.append(grupo_atual)
+    #             grupo_atual = [posicoes[i]]
+    #     grupos.append(grupo_atual)
+
+    #     if len(grupos) > 1:
+    #         dist_ponta = (grupos[0][0]['long'] - grupos[-1][-1]['long']) % 360
+    #         if dist_ponta < dist_min:
+    #             # Une o primeiro e o último grupo em um só
+    #             grupo_unido = grupos.pop() + grupos.pop(0)
+    #             grupos.append(grupo_unido)
+
+    # # 3. Distribuir cada grupo individualmente
     
-    for grupo in grupos:
-        n = len(grupo)
-        if n > 1:
-            # Para grupos circulares, o cálculo do centro precisa ser angular
-            sum_sin = sum(np.sin(np.radians(p['long'])) for p in grupo)
-            sum_cos = sum(np.cos(np.radians(p['long'])) for p in grupo)
-            centro_real = np.degrees(np.arctan2(sum_sin, sum_cos)) % 360
+    # for grupo in grupos:
+    #     n = len(grupo)
+    #     if n > 1:
+    #         # Para grupos circulares, o cálculo do centro precisa ser angular
+    #         sum_sin = sum(np.sin(np.radians(p['long'])) for p in grupo)
+    #         sum_cos = sum(np.cos(np.radians(p['long'])) for p in grupo)
+    #         centro_real = np.degrees(np.arctan2(sum_sin, sum_cos)) % 360
             
-            largura_total = (n - 1) * dist_min
-            inicio = centro_real - (largura_total / 2)
+    #         largura_total = (n - 1) * dist_min
+    #         inicio = centro_real - (largura_total / 2)
             
-            for j, p in enumerate(grupo):
-                p['long_visual'] = (inicio + (j * dist_min)) % 360
-        else:
-            grupo[0]['long_visual'] = grupo[0]['long']
-    
+    #         for j, p in enumerate(grupo):
+    #             p['long_visual'] = (inicio + (j * dist_min)) % 360
+    #     else:
+    #         grupo[0]['long_visual'] = grupo[0]['long']
+
+
+
     fig.add_trace(go.Scatterpolar(r=[raio_interno] * 361, theta=list(range(361)), fill='toself', 
         fillcolor="rgba(245, 245, 245, 0.2)", line=dict(color="black", width=1.5), showlegend=False, hoverinfo='skip'))
 
