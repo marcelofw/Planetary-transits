@@ -7,6 +7,7 @@ from datetime import datetime
 from dateutil.relativedelta import relativedelta
 import math
 from datetime import datetime, timedelta, timezone, date
+from geopy.geocoders import Nominatim
 
 if 'data_ref' not in st.session_state:
     agora_ut = datetime.now()
@@ -32,6 +33,17 @@ def on_button_click(delta_type, value):
     st.session_state.data_widget = nova_data.date()
     st.session_state.hora_widget = nova_data.time()
 
+@st.cache_data
+def buscar_coordenadas(cidade):
+    try:
+        geolocator = Nominatim(user_agent="meu_app_astrologico_v1")
+        location = geolocator.geocode(cidade, timeout=10)
+        if location:
+            return location.latitude, location.longitude, location.address
+        return None, None, None
+    except:
+        return None, None, None
+    
 # --- CONFIGURAÇÃO DA PÁGINA ---
 st.set_page_config(page_title="Mandala Astrológica Interativa", layout="wide")
 st.markdown("""
@@ -98,6 +110,64 @@ SIMBOLOS_PLANETAS = {
     "MARTE": "♂", "JÚPITER": "♃", "SATURNO": "♄", "URANO": "♅", 
     "NETUNO": "♆", "PLUTÃO": "♇"
 }
+
+# --- INTERFACE STREAMLIT ---
+st.sidebar.title("🪐 Configurações")
+
+# Inputs manuais (Sincronizados com o session_state)
+d_input = st.sidebar.date_input("Data", value=st.session_state.data_ref.date(), key="data_widget", min_value = date(1900, 1, 1), max_value = date(2100, 12, 31))
+t_input = st.sidebar.time_input("Hora", value=st.session_state.data_ref.time(), key="hora_widget", help="Entre com horário de Brasília.")
+
+data_vinda_do_widget = datetime.combine(d_input, t_input)
+if data_vinda_do_widget != st.session_state.data_ref:
+    st.session_state.data_ref = data_vinda_do_widget
+
+data_para_o_calculo_ut = st.session_state.data_ref + timedelta(hours=3)
+
+col_r, col_a = st.sidebar.columns(2)
+col_r.button("⬅️ -1 Minuto", on_click=on_button_click, args=['minutes', -1])
+col_a.button("+1 Minuto ➡️", on_click=on_button_click, args=['minutes', 1])
+
+col_r.button("⬅️ -1 Hora", on_click=on_button_click, args=['hours', -1])
+col_a.button("+1 Hora ➡️", on_click=on_button_click, args=['hours', 1])
+
+col_r.button("⬅️ -1 Dia", on_click=on_button_click, args=['days', -1])
+col_a.button("+1 Dia ➡️", on_click=on_button_click, args=['days', 1])
+
+col_r.button("⬅️ -1 Semana", on_click=on_button_click, args=['weeks', -1])
+col_a.button("+1 Semana ➡️", on_click=on_button_click, args=['weeks', 1])
+
+col_r.button("⬅️ -1 Mês", on_click=on_button_click, args=['months', -1])
+col_a.button("+1 Mês ➡️", on_click=on_button_click, args=['months', 1])
+
+col_r.button("⬅️ -1 Ano", on_click=on_button_click, args=['years', -1])
+col_a.button("+1 Ano ➡️", on_click=on_button_click, args=['years', 1])
+
+#
+incluir_ascendente = st.sidebar.checkbox("Quero incluir o Ascendente", value=False)
+asc_valor = None
+if incluir_ascendente:
+    local_nascimento = st.stidebar.text_input("Cidade de Nascimento", "São Paulo, Brasil")
+
+    lat, lon, endereco = buscar_coordenadas(local_nascimento)
+
+    if lat:
+        # Cálculo do Ascendente usando swisseph
+        # data_para_o_calculo_ut deve ser a sua data já em UTC
+        jd_ut = swe.julday(data_para_o_calculo_ut.year, data_para_o_calculo_ut.month, 
+                        data_para_o_calculo_ut.day, data_para_o_calculo_ut.hour + data_para_o_calculo_ut.minute/60.0)
+        
+        # 'P' para o sistema de casas Placidus
+        cuspides, ascmc = swe.houses(jd_ut, lat, lon, b'P')
+        asc_valor = ascmc[0]
+        
+        st.sidebar.success(f"📍 Localizado!")
+        st.sidebar.caption(f"{endereco}")
+    else:
+        st.sidebar.error("Cidade não encontrada.")
+
+# Atualização do estado com base no que foi digitado
+st.session_state.data_ref = datetime.combine(d_input, t_input)
 
 # --- FUNÇÕES AUXILIARES ---
 def obter_simbolo_aspecto(long1, long2):
@@ -184,48 +254,6 @@ def criar_mandala_astrologica(dt):
                     
                     p2['long_visual'] = (p2['long_visual'] + forca * direcao) % 360
                     p1['long_visual'] = (p1['long_visual'] - forca * direcao) % 360
-
-    # posicoes.sort(key=lambda x: x['long'])
-    # dist_min = 11
-
-    # grupos = []
-    # if posicoes:
-    #     grupo_atual = [posicoes[0]]
-    #     for i in range(1, len(posicoes)):
-    #         # Se a distância para o anterior for menor que 15 graus, pertence ao grupo
-    #         if (posicoes[i]['long'] - posicoes[i-1]['long']) % 360 < dist_min:
-    #             grupo_atual.append(posicoes[i])
-    #         else:
-    #             grupos.append(grupo_atual)
-    #             grupo_atual = [posicoes[i]]
-    #     grupos.append(grupo_atual)
-
-    #     if len(grupos) > 1:
-    #         dist_ponta = (grupos[0][0]['long'] - grupos[-1][-1]['long']) % 360
-    #         if dist_ponta < dist_min:
-    #             # Une o primeiro e o último grupo em um só
-    #             grupo_unido = grupos.pop() + grupos.pop(0)
-    #             grupos.append(grupo_unido)
-
-    # # 3. Distribuir cada grupo individualmente
-    
-    # for grupo in grupos:
-    #     n = len(grupo)
-    #     if n > 1:
-    #         # Para grupos circulares, o cálculo do centro precisa ser angular
-    #         sum_sin = sum(np.sin(np.radians(p['long'])) for p in grupo)
-    #         sum_cos = sum(np.cos(np.radians(p['long'])) for p in grupo)
-    #         centro_real = np.degrees(np.arctan2(sum_sin, sum_cos)) % 360
-            
-    #         largura_total = (n - 1) * dist_min
-    #         inicio = centro_real - (largura_total / 2)
-            
-    #         for j, p in enumerate(grupo):
-    #             p['long_visual'] = (inicio + (j * dist_min)) % 360
-    #     else:
-    #         grupo[0]['long_visual'] = grupo[0]['long']
-
-
 
     fig.add_trace(go.Scatterpolar(r=[raio_interno] * 361, theta=list(range(361)), fill='toself', 
         fillcolor="rgba(245, 245, 245, 0.2)", line=dict(color="black", width=1.5), showlegend=False, hoverinfo='skip'))
@@ -343,40 +371,7 @@ def criar_mandala_astrologica(dt):
     )
     return fig
 
-# --- INTERFACE STREAMLIT ---
-st.sidebar.title("🪐 Configurações")
 
-# Inputs manuais (Sincronizados com o session_state)
-d_input = st.sidebar.date_input("Data", value=st.session_state.data_ref.date(), key="data_widget", min_value = date(1900, 1, 1), max_value = date(2100, 12, 31))
-t_input = st.sidebar.time_input("Hora", value=st.session_state.data_ref.time(), key="hora_widget", help="Entre com horário de Brasília.")
-
-data_vinda_do_widget = datetime.combine(d_input, t_input)
-if data_vinda_do_widget != st.session_state.data_ref:
-    st.session_state.data_ref = data_vinda_do_widget
-
-data_para_o_calculo_ut = st.session_state.data_ref + timedelta(hours=3)
-
-col_r, col_a = st.sidebar.columns(2)
-col_r.button("⬅️ -1 Minuto", on_click=on_button_click, args=['minutes', -1])
-col_a.button("+1 Minuto ➡️", on_click=on_button_click, args=['minutes', 1])
-
-col_r.button("⬅️ -1 Hora", on_click=on_button_click, args=['hours', -1])
-col_a.button("+1 Hora ➡️", on_click=on_button_click, args=['hours', 1])
-
-col_r.button("⬅️ -1 Dia", on_click=on_button_click, args=['days', -1])
-col_a.button("+1 Dia ➡️", on_click=on_button_click, args=['days', 1])
-
-col_r.button("⬅️ -1 Semana", on_click=on_button_click, args=['weeks', -1])
-col_a.button("+1 Semana ➡️", on_click=on_button_click, args=['weeks', 1])
-
-col_r.button("⬅️ -1 Mês", on_click=on_button_click, args=['months', -1])
-col_a.button("+1 Mês ➡️", on_click=on_button_click, args=['months', 1])
-
-col_r.button("⬅️ -1 Ano", on_click=on_button_click, args=['years', -1])
-col_a.button("+1 Ano ➡️", on_click=on_button_click, args=['years', 1])
-
-# Atualização do estado com base no que foi digitado
-st.session_state.data_ref = datetime.combine(d_input, t_input)
 
 # --- 6. CONTEÚDO PRINCIPAL ---
 st.title("🔭 Mandala Astrológica Interativa")
