@@ -339,44 +339,7 @@ def criar_mandala_astrologica(dt):
         fig.add_trace(go.Scatterpolar(r=[4.1], theta=[asc_valor], mode='text', text=[f"{asc_minutos:02d}'"], 
                                     textfont=dict(size=21, color="black", family="Trebuchet MS"), 
                                     showlegend=False, hovertemplate=hover_template_asc))
-    # Lógica anti-sobreposição (ajuste visual dos símbolos)
-# 1. Definimos a ordem real uma única vez antes do loop
-    posicoes.sort(key=lambda x: x['long'])
-    for i, p in enumerate(posicoes):
-        p['long_visual'] = p['long']
-        p['id_ordem'] = i # Identificador único de posição na fila
 
-    dist_min = 9 # Aumentei para 10 para garantir legibilidade no celular
-    
-    for _ in range(20): # Mais iterações para estabilizar o bloco
-        # Ordenamos visualmente para o loop de vizinhança
-        posicoes.sort(key=lambda x: x['long_visual'])
-        
-        for i in range(len(posicoes)):
-            for j in range(len(posicoes)):
-                if i == j: continue
-                
-                p1 = posicoes[i]
-                p2 = posicoes[j]
-                
-                # Cálculo da distância curta (mesmo do seu original)
-                diff = (p2['long_visual'] - p1['long_visual'] + 180) % 360 - 180
-                
-                if abs(diff) < dist_min:
-                    # --- A CORREÇÃO DA LÓGICA ---
-                    # Checamos a distância astronômica real para saber quem deve estar na frente
-                    diff_real = (p2['long'] - p1['long'] + 180) % 360 - 180
-                    
-                    # Se a repulsão visual (diff) está tentando colocar os planetas 
-                    # em ordem oposta à real (diff_real), nós forçamos a direção correta.
-                    direcao = 1 if diff_real >= 0 else -1
-                    
-                    # A força agora sempre atua para manter o dist_min na direção da ordem real
-                    forca = (dist_min - abs(diff)) / 2
-                    
-                    p2['long_visual'] = (p2['long_visual'] + forca * direcao) % 360
-                    p1['long_visual'] = (p1['long_visual'] - forca * direcao) % 360
-                    
     # --- LAYOUT FINAL ---
     fig.update_layout(
             width=850, height=850, autosize=False, uirevision="constant",
