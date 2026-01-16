@@ -148,42 +148,31 @@ def criar_mandala_astrologica(dt):
 
     # Lógica anti-sobreposição (ajuste visual dos símbolos)
 # 1. Inicializa a posição visual com a posição real
-# 1. Ordenação inicial rigorosa pela longitude real
-    posicoes.sort(key=lambda x: x['long'])
-    
-    # Inicializa a posição visual
     for p in posicoes:
         p['long_visual'] = p['long']
 
-    # 2. Algoritmo de "Empilhamento" Circular
-    # Vamos rodar o ajuste várias vezes para distribuir o espaço sobrando
-    dist_min = 13
-    for _ in range(10):
+    # 2. Simulação de Repulsão (roda 15 vezes para garantir estabilidade)
+    dist_min = 8  # Espaço mínimo necessário para não sobrepor
+    for _ in range(15):
+        # Ordenamos a cada iteração para tratar a vizinhança corretamente
+        posicoes.sort(key=lambda x: x['long_visual'])
+        
         for i in range(len(posicoes)):
-            p1 = posicoes[i]
-            p2 = posicoes[(i + 1) % len(posicoes)]
-            
-            # Distância atual entre eles no sentido horário
-            diff = (p2['long_visual'] - p1['long_visual']) % 360
-            
-            if diff < dist_min:
-                # O p2 precisa ser empurrado para frente para respeitar a dist_min
-                empurrao = dist_min - diff
-                p2['long_visual'] = (p2['long_visual'] + empurrao) % 360
-
-    # 3. Centralização (Opcional): 
-    # Após empurrar, o grupo pode ter se deslocado. 
-    # Vamos re-ajustar para que o centro do grupo visual coincida com o centro real.
-    # (Isso evita que o grupo "corra" muito para um lado do signo)
-    sum_real = sum(p['long'] for p in posicoes)
-    sum_visual = sum(p['long_visual'] for p in posicoes)
-    desvio = (sum_real - sum_visual) / len(posicoes)
-    
-    for p in posicoes:
-        p['long_visual'] = (p['long_visual'] + desvio) % 360
-
-    # 4. Ordenação final para o Plotly
-    posicoes.sort(key=lambda x: x['long_visual'])
+            for j in range(len(posicoes)):
+                if i == j: continue
+                
+                # Calcula a distância angular curta entre dois planetas
+                p1 = posicoes[i]
+                p2 = posicoes[j]
+                diff = (p2['long_visual'] - p1['long_visual'] + 180) % 360 - 180
+                
+                if abs(diff) < dist_min:
+                    # Se estão sobrepostos, empurra cada um para um lado
+                    forca = (dist_min - abs(diff)) / 2
+                    direcao = 1 if diff >= 0 else -1
+                    
+                    p2['long_visual'] = (p2['long_visual'] + forca * direcao) % 360
+                    p1['long_visual'] = (p1['long_visual'] - forca * direcao) % 360
 
     # posicoes.sort(key=lambda x: x['long'])
     # dist_min = 11
