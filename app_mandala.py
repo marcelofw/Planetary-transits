@@ -152,7 +152,7 @@ def criar_mandala_astrologica(dt):
         p['long_visual'] = p['long']
 
     # 2. Simulação de Repulsão (roda 15 vezes para garantir estabilidade)
-    dist_min = 13  # Espaço mínimo necessário para não sobrepor
+    dist_min = 8  # Espaço mínimo necessário para não sobrepor
     for _ in range(15):
         # Ordenamos a cada iteração para tratar a vizinhança corretamente
         posicoes.sort(key=lambda x: x['long_visual'])
