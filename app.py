@@ -120,15 +120,12 @@ def obter_simbolo_aspecto(long1, long2):
     return ""
 
 def gerar_texto_relatorio(df, planeta_alvo_nome):
-    """Analisa o dataframe para encontrar múltiplos períodos de influência e força de forma segmentada."""
     col_p = planeta_alvo_nome.upper()
     if col_p not in df.columns:
         return []
 
-    # 1. Identificar onde há qualquer influência (Curva base)
+    # 1. Identifica a curva (qualquer intensidade > 0.01)
     mask = df[col_p] > 0.01
-    
-    # 2. Criar grupos para cada curva isolada (evita unir datas de picos diferentes)
     df_copy = df.copy()
     df_copy['group'] = (mask != mask.shift()).cumsum()
     curvas = df_copy[mask].groupby('group')
@@ -138,23 +135,24 @@ def gerar_texto_relatorio(df, planeta_alvo_nome):
     for _, dados_curva in curvas:
         if len(dados_curva) < 2: continue
         
-        # Datas da curva total (Início e Término onde sai do 0)
+        # Datas da influência total
         data_ini = dados_curva['date'].min().strftime('%d/%m/%Y')
         data_fim = dados_curva['date'].max().strftime('%d/%m/%Y')
         
-        # Pega o signo no pico da intensidade desta curva específica
+        # Encontra o valor máximo DESTA curva
+        valor_max_curva = dados_curva[col_p].max()
         ponto_max = dados_curva.loc[dados_curva[col_p].idxmax()]
         signo_transito = get_signo(ponto_max[f"{col_p}_long"])
-        status_no_pico = ponto_max[f"{col_p}_status"]
         
-        # 3. Análise de Aspecto Forte APENAS dentro desta fatia 'dados_curva'
-        # Usamos 0.88 para representar a transição para forte (aprox. 1° de orbe)
-        dados_fortes = dados_curva[dados_curva[col_p] >= 0.75]
+        # 2. ASPECTO FORTE: Definido como 80% da altura do pico atual
+        # Isso ajusta a sensibilidade para cada planeta individualmente
+        limiar_forte = valor_max_curva * 0.80
+        dados_fortes = dados_curva[dados_curva[col_p] >= limiar_forte]
         
-        texto = f"**{planeta_alvo_nome} em {signo_transito} ({status_no_pico})**: influência de {data_ini} até {data_fim}"
+        texto = f"✅ **{planeta_alvo_nome} em {signo_transito}**: influência de {data_ini} até {data_fim}"
         
         if not dados_fortes.empty:
-            # Agora as datas são limitadas ao intervalo desta curva específica
+            # Datas exatas onde a curva cruza a linha de 80% do topo
             forte_ini = dados_fortes['date'].min().strftime('%d/%m/%Y')
             forte_fim = dados_fortes['date'].max().strftime('%d/%m/%Y')
             texto += f", fazendo aspecto forte entre {forte_ini} até {forte_fim}."
