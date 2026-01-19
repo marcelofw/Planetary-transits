@@ -119,40 +119,47 @@ def obter_simbolo_aspecto(long1, long2):
             return simbolo
     return ""
 
-def gerar_texto_relatorio(df, lista_planetas, planeta_alvo_nome, signo_natal, grau_natal):
-    """Analisa o dataframe para encontrar períodos de influência e força para planetas lentos."""
-    planetas_lentos = ["Júpiter", "Saturno", "Urano", "Netuno", "Plutão"]
-    if planeta_alvo_nome not in planetas_lentos:
-        return None
-
+def gerar_texto_relatorio(df, planeta_alvo_nome):
+    """Analisa o dataframe para encontrar múltiplos períodos de influência e força."""
     col_p = planeta_alvo_nome.upper()
     if col_p not in df.columns:
-        return None
+        return []
 
-    # Identifica onde a curva existe (maior que 0.01)
-    df_influencia = df[df[col_p] > 0.01]
-    if df_influencia.empty:
-        return None
+    # Criar uma máscara booleana para onde há influência (intensidade > 0.01)
+    mask = df[col_p] > 0.01
+    
+    # Identificar blocos contínuos de True (início e fim de cada curva)
+    # Isso detecta quando o planeta entra e sai da orbe de 5 graus
+    df['group'] = (mask != mask.shift()).cumsum()
+    curvas = df[mask].groupby('group')
 
-    # Identifica onde o aspecto é forte (maior que 0.88, que equivale a orbe de ~1°)
-    # Ajustei para 0.8 para pegar uma janela de tempo útil de 'aspecto forte'
-    df_forte = df[df[col_p] >= 0.88]
+    relatorios_planeta = []
 
-    data_ini = df_influencia['date'].min().strftime('%d/%m/%Y')
-    data_fim = df_influencia['date'].max().strftime('%d/%m/%Y')
-    
-    signo_transito = get_signo(df_influencia.iloc[0][f"{col_p}_long"])
-    
-    texto = f"**{planeta_alvo_nome} em {signo_transito}**: influência de {data_ini} até {data_fim}"
-    
-    if not df_forte.empty:
-        forte_ini = df_forte['date'].min().strftime('%d/%m/%Y')
-        forte_fim = df_forte['date'].max().strftime('%d/%m/%Y')
-        texto += f", fazendo aspecto forte entre {forte_ini} até {forte_fim}."
-    else:
-        texto += "."
+    for _, dados_curva in curvas:
+        if len(dados_curva) < 2: continue # Ignora ruídos pontuais
         
-    return texto
+        data_ini = dados_curva['date'].min().strftime('%d/%m/%Y')
+        data_fim = dados_curva['date'].max().strftime('%d/%m/%Y')
+        
+        # Pega o signo no ponto médio da curva para precisão
+        meio_idx = len(dados_curva) // 2
+        signo_transito = get_signo(dados_curva.iloc[meio_idx][f"{col_p}_long"])
+        
+        # Análise de Aspecto Forte dentro DESTA curva específica
+        dados_fortes = dados_curva[dados_curva[col_p] >= 0.88]
+        
+        texto = f"**{planeta_alvo_nome} em {signo_transito}**: influência de {data_ini} até {data_fim}"
+        
+        if not dados_fortes.empty:
+            forte_ini = dados_fortes['date'].min().strftime('%d/%m/%Y')
+            forte_fim = dados_fortes['date'].max().strftime('%d/%m/%Y')
+            texto += f", fazendo aspecto forte entre {forte_ini} até {forte_fim}."
+        else:
+            texto += "."
+            
+        relatorios_planeta.append(texto)
+        
+    return relatorios_planeta
 
 # --- INTERFACE LATERAL ---
 st.sidebar.header("🪐 Configurações")
@@ -365,8 +372,9 @@ fig.update_layout(title=dict(text=f'<b>{p_texto} Natal a {grau_input}° de {s_te
                   yaxis=dict(title='Intensidade', range=[0, 1.3], fixedrange=True), template='plotly_white', hovermode='x unified', dragmode='pan')
 st.plotly_chart(fig, use_container_width=True, config={'scrollZoom': True})
 
+# --- SEÇÃO DE RELATÓRIO (LENTOS) ---
 st.divider()
-col_rel1, col_rel2, col_rel3 = st.columns([1, 2, 3])
+col_rel1, col_rel2, col_rel3 = st.columns([1, 2, 1])
 
 with col_rel2:
     st.markdown("<h2 style='text-align: center;'>📋 Relatório de Impacto (Planetas Lentos)</h2>", unsafe_allow_html=True)
@@ -374,23 +382,19 @@ with col_rel2:
         if planeta_selecionado == "Escolha um planeta" or signo_selecionado == "Escolha um signo":
             st.error("⚠️ Selecione os dados natais na barra lateral.")
         else:
-            relatorios = []
             lentos = ["Júpiter", "Saturno", "Urano", "Netuno", "Plutão"]
+            encontrou_algum = False
             
-            for p_lento in lentos:
-                res_txt = gerar_texto_relatorio(df, lista_planetas, p_lento, signo_selecionado, grau_input)
-                if res_txt:
-                    relatorios.append(res_txt)
-            
-            if relatorios:
-                container_relatorio = ""
-                for item in relatorios:
-                    container_relatorio += f"- {item}\n\n"
+            with st.expander("Visualizar Detalhes dos Ciclos", expanded=True):
+                for p_lento in lentos:
+                    lista_periodos = gerar_texto_relatorio(df, p_lento)
+                    if lista_periodos:
+                        encontrou_algum = True
+                        for periodo_texto in lista_periodos:
+                            st.markdown(f"✅ {periodo_texto}")
                 
-                st.info(f"Análise de ciclos para o ano de {ano}:")
-                st.markdown(container_relatorio)
-            else:
-                st.warning("Não foram encontrados trânsitos de planetas lentos (Júpiter a Plutão) fazendo aspecto com este ponto natal no ano selecionado.")
+                if not encontrou_algum:
+                    st.warning("Não foram encontrados trânsitos de planetas lentos para este ponto natal em {ano}.")
 
 # Chamada da função da seção de IA
 secao_previsao_ia(ano, planeta_selecionado, signo_selecionado, grau_input, long_natal_absoluta_calc)
