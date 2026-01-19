@@ -124,38 +124,50 @@ def gerar_texto_relatorio(df, planeta_alvo_nome):
     if col_p not in df.columns:
         return []
 
-    # 1. Identifica a curva base (Qualquer influência > 0)
-    mask = df[col_p] > 0.001 
+    # 1. Limiares baseados na sua lógica de gráfico (Orbe 5 e Orbe 1)
+    # Intensidade Gaussiana (sigma 1.7): orbe 5 -> ~0.013 | orbe 1 -> 0.841
+    LIMIAR_INFLUENCIA = 0.01
+    LIMIAR_FORTE = 0.841
+
+    # 2. Identifica a Grande Curva (Influência total)
+    mask_inf = df[col_p] > LIMIAR_INFLUENCIA
     df_copy = df.copy()
-    df_copy['group'] = (mask != mask.shift()).cumsum()
-    curvas = df_copy[mask].groupby('group')
+    df_copy['group_inf'] = (mask_inf != mask_inf.shift()).cumsum()
+    curvas_grandes = df_copy[mask_inf].groupby('group_inf')
 
     relatorios_planeta = []
 
-    # O VALOR EXATO DO GRÁFICO: 
-    # Para orbe <= 1 grau, a intensidade Gaussiana com sigma 1.7 é >= 0.841
-    LIMIAR_FORTE = 0.841 
-
-    for _, dados_curva in curvas:
+    for _, dados_curva in curvas_grandes:
         if len(dados_curva) < 2: continue
         
-        # Datas da influência total (Início e Fim da curva no gráfico)
-        data_ini = dados_curva['date'].min().strftime('%d/%m/%Y')
-        data_fim = dados_curva['date'].max().strftime('%d/%m/%Y')
+        data_ini_total = dados_curva['date'].min().strftime('%d/%m/%Y')
+        data_fim_total = dados_curva['date'].max().strftime('%d/%m/%Y')
         
-        # Identifica o signo no ponto de maior aproximação
+        # Pega o signo no ponto máximo da curva total
         ponto_max = dados_curva.loc[dados_curva[col_p].idxmax()]
         signo_transito = get_signo(ponto_max[f"{col_p}_long"])
         
-        # 2. ASPECTO FORTE: Baseado na mesma conta do gráfico (Orbe <= 1°)
-        dados_fortes = dados_curva[dados_curva[col_p] >= LIMIAR_FORTE]
+        # 3. IDENTIFICA SUB-ILHAS DE ASPECTO FORTE
+        # Aqui está o segredo: aplicamos a segmentação dentro dos dados da curva grande
+        mask_forte = dados_curva[col_p] >= LIMIAR_FORTE
+        # Criamos grupos apenas para os momentos em que ele está acima de 0.841
+        grupos_fortes = (mask_forte != mask_forte.shift()).cumsum()
         
-        texto = f"✅ **{planeta_alvo_nome} em {signo_transito}**:\ninfluência de {data_ini} até {data_fim}"
+        # Filtramos apenas os grupos onde a máscara é True
+        ilhas_fortes = dados_curva[mask_forte].groupby(grupos_fortes)
         
-        if not dados_fortes.empty:
-            forte_ini = dados_fortes['date'].min().strftime('%d/%m/%Y')
-            forte_fim = dados_fortes['date'].max().strftime('%d/%m/%Y')
-            texto += f",\nfazendo aspecto forte entre {forte_ini} até {forte_fim}."
+        intervalos_fortes = []
+        for _, ilha in ilhas_fortes:
+            f_ini = ilha['date'].min().strftime('%d/%m/%Y')
+            f_fim = ilha['date'].max().strftime('%d/%m/%Y')
+            intervalos_fortes.append(f"{f_ini} até {f_fim}")
+
+        # 4. Montagem do texto
+        texto = f"✅ **{planeta_alvo_nome} em {signo_transito}**:\ninfluência de {data_ini_total} até {data_fim_total}"
+        
+        if intervalos_fortes:
+            # Se houver mais de um intervalo forte na mesma curva de influência
+            texto += ",\nfazendo aspecto forte entre " + " e entre ".join(intervalos_fortes) + "."
         else:
             texto += "."
             
