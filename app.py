@@ -124,7 +124,7 @@ def gerar_texto_relatorio(df, planeta_alvo_nome):
     if col_p not in df.columns:
         return []
 
-    # Limiares baseados na sua lógica de gráfico
+    # Limiares baseados no gráfico (Orbe 5 -> 0.01 | Orbe 1 -> 0.841)
     LIMIAR_INFLUENCIA = 0.01
     LIMIAR_FORTE = 0.841
 
@@ -139,31 +139,35 @@ def gerar_texto_relatorio(df, planeta_alvo_nome):
     for _, dados_curva in curvas_grandes:
         if len(dados_curva) < 2: continue
         
-        # Datas da influência total
         data_ini_total = dados_curva['date'].min().strftime('%d/%m/%Y')
         data_fim_total = dados_curva['date'].max().strftime('%d/%m/%Y')
         
-        # ENCONTRAR O PICO (Aspecto Exato / Intensidade Máxima)
-        ponto_max = dados_curva.loc[dados_curva[col_p].idxmax()]
-        data_pico = ponto_max['date'].strftime('%d/%m/%Y')
-        signo_transito = get_signo(ponto_max[f"{col_p}_long"])
+        # Signo baseado no ponto máximo da influência total
+        ponto_max_total = dados_curva.loc[dados_curva[col_p].idxmax()]
+        signo_transito = get_signo(ponto_max_total[f"{col_p}_long"])
         
-        # 2. Identifica sub-ilhas de aspecto forte (Orbe <= 1°)
+        # 2. Identifica sub-ilhas de aspecto forte (cada "topo" de montanha)
         mask_forte = dados_curva[col_p] >= LIMIAR_FORTE
+        # Criamos grupos para separar blocos de aspecto forte
         grupos_fortes = (mask_forte != mask_forte.shift()).cumsum()
         ilhas_fortes = dados_curva[mask_forte].groupby(grupos_fortes)
         
-        intervalos_fortes = []
+        intervalos_fortes_texto = []
         for _, ilha in ilhas_fortes:
             f_ini = ilha['date'].min().strftime('%d/%m/%Y')
             f_fim = ilha['date'].max().strftime('%d/%m/%Y')
-            intervalos_fortes.append(f"{f_ini} até {f_fim}")
+            
+            # ENCONTRA O PICO ESPECÍFICO DESTE INTERVALO FORTE
+            ponto_pico_forte = ilha.loc[ilha[col_p].idxmax()]
+            data_pico_forte = ponto_pico_forte['date'].strftime('%d/%m/%Y')
+            
+            intervalos_fortes_texto.append(f"{f_ini} até {f_fim} com pico em {data_pico_forte}")
 
-        # 3. Montagem do texto conforme seu novo modelo
-        texto = f"✅ **{planeta_alvo_nome} em {signo_transito}**:\ninfluência de {data_ini_total} até {data_fim_total} com pico em {data_pico}"
+        # 3. Montagem do texto
+        texto = f"✅ **{planeta_alvo_nome} em {signo_transito}**:\ninfluência de {data_ini_total} até {data_fim_total}"
         
-        if intervalos_fortes:
-            texto += ",\nfazendo aspecto forte entre " + " e entre ".join(intervalos_fortes) + "."
+        if intervalos_fortes_texto:
+            texto += ",\nfazendo aspecto forte entre " + " e entre ".join(intervalos_fortes_texto) + "."
         else:
             texto += "."
             
