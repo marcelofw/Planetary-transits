@@ -124,38 +124,38 @@ def gerar_texto_relatorio(df, planeta_alvo_nome):
     if col_p not in df.columns:
         return []
 
-    # 1. Identifica a curva (qualquer intensidade > 0.01)
-    mask = df[col_p] > 0.01
+    # 1. Identifica a curva base (Qualquer influência > 0)
+    mask = df[col_p] > 0.001 
     df_copy = df.copy()
     df_copy['group'] = (mask != mask.shift()).cumsum()
     curvas = df_copy[mask].groupby('group')
 
     relatorios_planeta = []
 
+    # O VALOR EXATO DO GRÁFICO: 
+    # Para orbe <= 1 grau, a intensidade Gaussiana com sigma 1.7 é >= 0.841
+    LIMIAR_FORTE = 0.841 
+
     for _, dados_curva in curvas:
         if len(dados_curva) < 2: continue
         
-        # Datas da influência total
+        # Datas da influência total (Início e Fim da curva no gráfico)
         data_ini = dados_curva['date'].min().strftime('%d/%m/%Y')
         data_fim = dados_curva['date'].max().strftime('%d/%m/%Y')
         
-        # Encontra o valor máximo DESTA curva
-        valor_max_curva = dados_curva[col_p].max()
+        # Identifica o signo no ponto de maior aproximação
         ponto_max = dados_curva.loc[dados_curva[col_p].idxmax()]
         signo_transito = get_signo(ponto_max[f"{col_p}_long"])
         
-        # 2. ASPECTO FORTE: Definido como 80% da altura do pico atual
-        # Isso ajusta a sensibilidade para cada planeta individualmente
-        limiar_forte = valor_max_curva * 0.80
-        dados_fortes = dados_curva[dados_curva[col_p] >= limiar_forte]
+        # 2. ASPECTO FORTE: Baseado na mesma conta do gráfico (Orbe <= 1°)
+        dados_fortes = dados_curva[dados_curva[col_p] >= LIMIAR_FORTE]
         
-        texto = f"✅ **{planeta_alvo_nome} em {signo_transito}**: influência de {data_ini} até {data_fim}"
+        texto = f"✅ **{planeta_alvo_nome} em {signo_transito}**:\ninfluência de {data_ini} até {data_fim}"
         
         if not dados_fortes.empty:
-            # Datas exatas onde a curva cruza a linha de 80% do topo
             forte_ini = dados_fortes['date'].min().strftime('%d/%m/%Y')
             forte_fim = dados_fortes['date'].max().strftime('%d/%m/%Y')
-            texto += f", fazendo aspecto forte entre {forte_ini} até {forte_fim}."
+            texto += f",\nfazendo aspecto forte entre {forte_ini} até {forte_fim}."
         else:
             texto += "."
             
