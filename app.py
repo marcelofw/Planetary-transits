@@ -149,7 +149,7 @@ def gerar_texto_relatorio(df, planeta_alvo_nome):
         
         # 3. Análise de Aspecto Forte APENAS dentro desta fatia 'dados_curva'
         # Usamos 0.88 para representar a transição para forte (aprox. 1° de orbe)
-        dados_fortes = dados_curva[dados_curva[col_p] >= 0.88]
+        dados_fortes = dados_curva[dados_curva[col_p] >= 0.75]
         
         texto = f"**{planeta_alvo_nome} em {signo_transito} ({status_no_pico})**: influência de {data_ini} até {data_fim}"
         
