@@ -415,6 +415,9 @@ with col_rel2:
             encontrou_algum = False
             
             with st.expander("Visualizar Detalhes dos Ciclos", expanded=True):
+                st.markdown(f"### Planetas em trânsito aspectando {planeta_selecionado} natal a {grau_input}º de {signo_selecionado}")
+                st.write("")
+                
                 for p_lento in lentos:
                     lista_periodos = gerar_texto_relatorio(df, p_lento)
                     if lista_periodos:
