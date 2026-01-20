@@ -119,7 +119,7 @@ def obter_simbolo_aspecto(long1, long2):
             return simbolo
     return ""
 
-def gerar_texto_relatorio(df, planeta_alvo_nome, long_natal_ref):
+def gerar_texto_relatorio(df, planeta_alvo_nome):
     col_p = planeta_alvo_nome.upper()
     if col_p not in df.columns:
         return []
@@ -153,36 +153,33 @@ def gerar_texto_relatorio(df, planeta_alvo_nome, long_natal_ref):
             f_ini = ilha['date'].min().strftime('%d/%m/%Y')
             f_fim = ilha['date'].max().strftime('%d/%m/%Y')
             
+            # LÓGICA DE DETECÇÃO DE PICOS (Múltiplos cumes no mesmo bloco)
+            # Um pico ocorre onde a intensidade é maior que a anterior e a próxima
             valores = ilha[col_p].values
             datas = ilha['date'].values
-            longitudes = ilha[f"{col_p}_long"].values
             
-            picos_detalhes = []
+            picos_da_ilha = []
             
-            # Detecção de picos para pegar a longitude exata de cada um
-            indices_picos = []
+            # Caso especial: se a ilha for muito curta, pega o máximo
             if len(valores) <= 3:
-                indices_picos.append(np.argmax(valores))
+                picos_da_ilha.append(pd.to_datetime(datas[np.argmax(valores)]).strftime('%d/%m/%Y'))
             else:
                 for i in range(1, len(valores) - 1):
                     if valores[i] > valores[i-1] and valores[i] >= valores[i+1]:
-                        indices_picos.append(i)
-                if not indices_picos:
-                    indices_picos.append(np.argmax(valores))
+                        picos_da_ilha.append(pd.to_datetime(datas[i]).strftime('%d/%m/%Y'))
+                
+                # Se não detectou picos por variação (ex: curva só subiu ou só desceu), pega o máximo
+                if not picos_da_ilha:
+                    picos_da_ilha.append(pd.to_datetime(datas[np.argmax(valores)]).strftime('%d/%m/%Y'))
 
-            for idx in indices_picos:
-                dt_pico = pd.to_datetime(datas[idx]).strftime('%d/%m/%Y')
-                # CHAMA SUA FUNÇÃO DE CALCULAR ASPECTO
-                nome_aspecto = calcular_aspecto(longitudes[idx], long_natal_ref)
-                picos_detalhes.append(f"{nome_aspecto} em {dt_pico}")
+            # Formata a string de picos (ex: "pico em X e Y")
+            str_picos = " e ".join(picos_da_ilha)
+            intervalos_fortes_texto.append(f"{f_ini} até {f_fim} com pico em {str_picos}")
 
-            str_picos = " e ".join(picos_detalhes)
-            intervalos_fortes_texto.append(f"{f_ini} até {f_fim} com {str_picos}")
-
-        texto = f"✅ **{planeta_alvo_nome} em {signo_transito}**:\ninfluência de {data_ini_total} até {data_fim_total}"
+        texto = f"**{planeta_alvo_nome} em {signo_transito}**:\ninfluência de {data_ini_total} até {data_fim_total}"
         
         if intervalos_fortes_texto:
-            texto += ",\nfazendo " + " e ".join(intervalos_fortes_texto) + "."
+            texto += ",\nfazendo aspecto forte entre " + " e entre ".join(intervalos_fortes_texto) + "."
         else:
             texto += "."
             
@@ -416,7 +413,7 @@ with col_rel2:
             
             with st.expander("Visualizar Detalhes dos Ciclos", expanded=True):
                 for p_lento in lentos:
-                    lista_periodos = gerar_texto_relatorio(df, p_lento, long_natal_absoluta_calc)
+                    lista_periodos = gerar_texto_relatorio(df, p_lento)
                     if lista_periodos:
                         encontrou_algum = True
                         for periodo_texto in lista_periodos:
