@@ -48,8 +48,8 @@ MESES = {
 }
 
 SIMBOLOS_PLANETAS = {
-    "SOL": "☉", "LUA": "☽", "MERCÚRIO": "☿", "VÊNUS": "♀", "MARTE": "♂",
-    "JÚPITER": "♃", "SATURNO": "♄", "URANO": "♅", "NETUNO": "♆", "PLUTÃO": "♇",
+    "Sol": "☉", "Lua": "☽", "Mercúrio": "☿", "Vênus": "♀", "Marte": "♂",
+    "Júpiter": "♃", "Saturno": "♄", "Urano": "♅", "Netuno": "♆", "Plutão": "♇",
     "Sol": "☉", "Lua": "☽", "Mercúrio": "☿", "Vênus": "♀", "Marte": "♂",
     "Júpiter": "♃", "Saturno": "♄", "Urano": "♅", "Netuno": "♆", "Plutão": "♇"
 }
