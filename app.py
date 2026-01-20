@@ -123,80 +123,66 @@ def obter_simbolo_aspecto(long1, long2):
     return ""
 
 def gerar_texto_relatorio(df, planeta_alvo_nome, long_natal_ref):
-    """
-    Gera o texto do relatório para planetas lentos utilizando a mesma lógica 
-    de precisão da seção de IA e do gráfico.
-    """
     col_p = planeta_alvo_nome.upper()
     
-    # --- 1. TRATAMENTO DE SEGURANÇA (EVITA TYPEERROR) ---
+    # Converte para float de forma ultra-segura
     try:
-        if long_natal_ref is None:
-            return []
-        long_natal_ref = float(long_natal_ref)
-        if long_natal_ref <= 0: # Caso o usuário não tenha selecionado signo/grau
-            return []
-    except (ValueError, TypeError):
+        ln_ref = float(long_natal_ref)
+    except:
         return []
 
     if col_p not in df.columns:
         return []
 
-    # --- 2. CONFIGURAÇÕES DE ASPECTOS (Sincronizado com ASPECTOS global) ---
-    # Criamos um mapa de nomes para símbolos para facilitar a busca
+    # Símbolos baseados no seu dicionário global
     SIMBOLOS_MAP = {nome: simb for ang, (nome, simb) in ASPECTOS.items()}
     
-    # Limiares de intensidade baseados na curva gaussiana do seu gráfico
-    LIMIAR_INFLUENCIA = 0.01  # Quando o planeta começa a se aproximar do aspecto
-    LIMIAR_FORTE = 0.841      # Quando o aspecto entra na orbe de ~1.7 graus (pico forte)
+    # Usamos os mesmos limiares do seu gráfico
+    LIMIAR_INFLUENCIA = 0.01  
+    LIMIAR_FORTE = 0.841      
 
-    # --- 3. IDENTIFICAÇÃO DOS PERÍODOS DE TRÂNSITO ---
-    df_temp = df[['date', col_p, f"{col_p}_long"]].copy()
-    mask_inf = df_temp[col_p] > LIMIAR_INFLUENCIA
-    
+    # Filtramos apenas os dias em que o planeta está no signo/aspecto correto
+    mask_inf = df[col_p] > LIMIAR_INFLUENCIA
     if not mask_inf.any():
         return []
 
-    # Agrupa linhas consecutivas onde há influência para tratar como um único evento
-    df_temp['group'] = (mask_inf != mask_inf.shift()).cumsum()
+    df_temp = df[mask_inf].copy()
+    df_temp['group'] = (df_temp['date'].diff() > pd.Timedelta(days=2)).cumsum()
+    
     relatorios_finais = []
 
-    for _, grupo in df_temp[mask_inf].groupby('group'):
-        if len(grupo) < 2: 
-            continue
-
-        # Dados do Trânsito Total (Toda a extensão da curva no gráfico)
-        d_ini_total = grupo['date'].min().strftime('%d/%m/%Y')
-        d_fim_total = grupo['date'].max().strftime('%d/%m/%Y')
-        
-        # Identifica o Ponto de Intensidade Máxima (Onde o aspecto é mais exato)
+    for _, grupo in df_temp.groupby('group'):
+        # Encontra o ponto máximo de intensidade
         idx_pico = grupo[col_p].idxmax()
         row_pico = grupo.loc[idx_pico]
         long_no_pico = row_pico[f"{col_p}_long"]
         
-        # Estima o Aspecto e o Signo no momento do Pico
-        signo_transito = get_signo(long_no_pico)
-        nome_asp = calcular_aspecto(long_no_pico, long_natal_ref)
-        simbolo_asp = SIMBOLOS_MAP.get(nome_asp, "")
-
-        # Se a lógica de cálculo não retornar um aspecto principal, ignoramos
+        # O cálculo do aspecto deve ser idêntico ao da IA
+        nome_asp = calcular_aspecto(long_no_pico, ln_ref)
+        
+        # Ignora se não for um dos aspectos principais (0, 30, 60, 90, 120, 150, 180)
         if nome_asp == "Outro":
             continue
 
-        # --- 4. DETECTAR O "CORAÇÃO" DO TRÂNSITO (ASPECTO FORTE) ---
+        simbolo_asp = SIMBOLOS_MAP.get(nome_asp, "")
+        signo_transito = get_signo(long_no_pico)
+
+        # Período Total
+        d_ini_total = grupo['date'].min().strftime('%d/%m/%Y')
+        d_fim_total = grupo['date'].max().strftime('%d/%m/%Y')
+
+        # Período Forte (Intensidade > 0.841)
         grupo_forte = grupo[grupo[col_p] >= LIMIAR_FORTE]
-        
         if not grupo_forte.empty:
             f_ini = grupo_forte['date'].min().strftime('%d/%m/%Y')
             f_fim = grupo_forte['date'].max().strftime('%d/%m/%Y')
-            data_pico_str = row_pico['date'].strftime('%d/%m/%Y')
+            data_pico = row_pico['date'].strftime('%d/%m/%Y')
 
-            # Montagem do texto conforme seu exemplo (com quebras de linha para Streamlit)
             texto = (
                 f"✅ **{planeta_alvo_nome} em {signo_transito}**:  \n"
                 f"**Trânsito total**: {d_ini_total} até {d_fim_total};  \n"
                 f"**Trânsito fazendo aspecto forte ({nome_asp} {simbolo_asp})**: entre {f_ini} até {f_fim};  \n"
-                f"**Pico**: {nome_asp} {simbolo_asp}: {data_pico_str}."
+                f"**Pico**: {nome_asp} {simbolo_asp}: {data_pico}."
             )
             relatorios_finais.append(texto)
 
