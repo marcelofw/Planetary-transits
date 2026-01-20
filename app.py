@@ -124,6 +124,8 @@ def gerar_texto_relatorio(df, planeta_alvo_nome, long_natal_ref):
     if col_p not in df.columns:
         return []
 
+    signo_natal = SIGNOS[int(long_natal_ref / 30) % 12]
+
     def calcular_aspecto_simplificada(signo_transito, signo_natal):
         try:
             idx_t = SIGNOS.index(signo_transito)
