@@ -76,55 +76,87 @@ def obter_simbolo_aspecto(long1, long2):
         if abs(diff - angulo) <= 5: return simbolo
     return ""
 
-def gerar_texto_relatorio(df, planeta_alvo_nome, long_natal_ref, planeta_natal_nome):
+def gerar_texto_relatorio(df, planeta_alvo_nome, long_natal_ref):
     col_p = planeta_alvo_nome.upper()
     if col_p not in df.columns or long_natal_ref is None:
         return []
 
-    def obter_simbolo_por_distancia(s_transito, s_natal):
+    # Identifica o aspecto apenas pelo nome
+    def obter_nome_aspecto(s_transito, s_natal):
         try:
             idx_t = SIGNOS.index(s_transito)
             idx_n = SIGNOS.index(s_natal)
-            dist = abs(idx_t - idx_n)
-            if dist > 6: dist = 12 - dist
-            return ASPECTOS.get(dist * 30, ("", ""))[1] # Usa o dicionário ASPECTOS global
-        except: return ""
+            distancia = abs(idx_t - idx_n)
+            if distancia > 6: distancia = 12 - distancia
+            
+            # Busca o nome no seu dicionário ASPECTOS (multiplicando por 30 para converter distância de signos em graus)
+            nome, _ = ASPECTOS.get(distancia * 30, ("Aspecto", ""))
+            return nome
+        except:
+            return "Trânsito"
 
     LIMIAR_INFLUENCIA = 0.01
     LIMIAR_FORTE = 0.841
-    
+
     mask_inf = df[col_p] > LIMIAR_INFLUENCIA
     if not mask_inf.any(): return []
 
     df_copy = df.copy()
     df_copy['group_inf'] = (mask_inf != mask_inf.shift()).cumsum()
-    curvas = df_copy[mask_inf].groupby('group_inf')
+    curvas_grandes = df_copy[mask_inf].groupby('group_inf')
 
-    relatorios = []
-    signo_natal_nome = get_signo(long_natal_ref)
-    simb_p_natal = SIMBOLOS_PLANETAS.get(planeta_natal_nome, "")
-    simb_s_natal = SIMBOLOS_SIGNOS.get(signo_natal_nome, "")
+    relatorios_planeta = []
+    signo_natal = get_signo(long_natal_ref)
 
-    for _, dados in curvas:
-        if len(dados) < 2: continue
+    for _, dados_curva in curvas_grandes:
+        if len(dados_curva) < 2: continue
         
-        d_ini = dados['date'].min().strftime('%d/%m/%Y')
-        d_fim = dados['date'].max().strftime('%d/%m/%Y')
+        data_ini_total = dados_curva['date'].min().strftime('%d/%m/%Y')
+        data_fim_total = dados_curva['date'].max().strftime('%d/%m/%Y')
         
-        p_max = dados.loc[dados[col_p].idxmax()]
-        s_trans_nome = get_signo(p_max[f"{col_p}_long"] if f"{col_p}_long" in p_max else 0) # Ajuste conforme tua lógica de logitude
+        ponto_max_total = dados_curva.loc[dados_curva[col_p].idxmax()]
+        signo_transito = get_signo(ponto_max_total[f"{col_p}_long"])
         
-        # Fallback caso a longitude não esteja no DF (usando o ponto máximo da força)
-        simb_asp = obter_simbolo_por_distancia(s_trans_nome, signo_natal_nome)
-        simb_p_trans = SIMBOLOS_PLANETAS.get(planeta_alvo_nome, "")
-        simb_s_trans = SIMBOLOS_SIGNOS.get(s_trans_nome, "")
+        nome_asp = obter_nome_aspecto(signo_transito, signo_natal)
+        
+        mask_forte = dados_curva[col_p] >= LIMIAR_FORTE
+        intervalos_fortes_texto = []
+        
+        if mask_forte.any():
+            grupos_fortes = (mask_forte != mask_forte.shift()).cumsum()
+            ilhas_fortes = dados_curva[mask_forte].groupby(grupos_fortes)
+            
+            for _, ilha in ilhas_fortes:
+                f_ini = ilha['date'].min().strftime('%d/%m/%Y')
+                f_fim = ilha['date'].max().strftime('%d/%m/%Y')
+                
+                valores = ilha[col_p].values
+                datas = ilha['date'].values
+                picos = []
+                if len(valores) <= 3:
+                    picos.append(pd.to_datetime(datas[np.argmax(valores)]).strftime('%d/%m/%Y'))
+                else:
+                    for i in range(1, len(valores) - 1):
+                        if valores[i] > valores[i-1] and valores[i] >= valores[i+1]:
+                            picos.append(pd.to_datetime(datas[i]).strftime('%d/%m/%Y'))
+                    if not picos:
+                        picos.append(pd.to_datetime(datas[np.argmax(valores)]).strftime('%d/%m/%Y'))
 
-        bloco = f"**{planeta_alvo_nome} em {s_trans_nome} {simb_asp}** \n"
-        bloco += f"Período: {d_ini} a {d_fim}  \n"
-        bloco += f"### {simb_p_natal} {simb_s_natal} {simb_asp} {simb_p_trans} {simb_s_trans}"
-        relatorios.append(bloco)
+                str_picos = " e ".join(list(set(picos)))
+                intervalos_fortes_texto.append(
+                    f"**Trânsito fazendo {nome_asp} forte**: entre {f_ini} até {f_fim}  \n"
+                    f"**Pico**: {str_picos}."
+                )
+
+        texto = (f"**{planeta_alvo_nome} em {signo_transito} ({nome_asp})**:  \n"
+                 f"**Trânsito total**: {data_ini_total} até {data_fim_total}")
         
-    return relatorios
+        if intervalos_fortes_texto:
+            texto += "  \n" + "  \n".join(intervalos_fortes_texto)
+        
+        relatorios_planeta.append(texto)
+        
+    return relatorios_planeta
 
 @st.cache_data(show_spinner=False)
 def calcular_dados_efemerides(ano, mes, usar_lua, alvos, monitorados):
@@ -165,6 +197,7 @@ def calcular_dados_efemerides(ano, mes, usar_lua, alvos, monitorados):
                         int_txt = "Forte" if dist <= 1.0 else "Médio" if dist <= 2.5 else "Fraco"
                         
                         row[p["nome"]] = val
+                        row[f"{p['nome']}_long"] = long_abs
                         row[f"{p['nome']}_info"] = f"{get_signo(long_abs)} {status} {graus_int:02d}°{minutos_int:02d}' - {int_txt} {simb}"
                     else:
                         row[p["nome"]] = np.nan
@@ -350,7 +383,7 @@ if st.session_state.fig_gerada is not None:
             
             if not tem_relatorio:
                 st.write("Nenhum trânsito de planetas lentos identificado para este período.")
-                
+
     st.sidebar.download_button(
         label="📥 Baixar Gráfico Interativo (HTML)",
         data=buf.getvalue(),
