@@ -325,7 +325,7 @@ def fragmento_relatorio_lentos (df, planeta_selecionado, grau_input, signo_selec
             lentos = ["Júpiter", "Saturno", "Urano", "Netuno", "Plutão"]
             encontrou_algum = False
             
-            with st.expander("Visualizar Detalhes dos Ciclos", expanded=True):
+            with st.expander(f"Trânsitos sobre {planeta_selecionado} em {signo_selecionado}", expanded=True):
                 # st.markdown(f"### Planetas de trânsito longo aspectando {planeta_selecionado} natal a {grau_input}º de {signo_selecionado} em {ano}")
                 # st.write("")
 
