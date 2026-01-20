@@ -111,29 +111,6 @@ def calcular_aspecto(long1, long2):
             return nome
     return "Outro"
 
-def calcular_aspecto_simplificada(signo_transito, signo_natal):
-    try:
-        idx_t = SIGNOS.index(signo_transito)
-        idx_n = SIGNOS.index(signo_natal)
-
-        distancia = abs(idx_t - idx_n)
-        if distancia > 6:
-            distancia = 12 - distancia
-        
-        mapa_distancia = {
-            0: "Conjunção",
-            1: "Semi-sêxtil",
-            2: "Sêxtil",     
-            3: "Quadratura",
-            4: "Trígono",
-            5: "Quincúncio",
-            6: "Oposição"
-        }
-
-        return mapa_distancia.get(distancia, "Outro")
-    except:
-        return "Outro"
-
 def obter_simbolo_aspecto(long1, long2):
     diff = abs(long1 - long2) % 360
     if diff > 180: diff = 360 - diff
@@ -146,6 +123,29 @@ def gerar_texto_relatorio(df, planeta_alvo_nome, long_natal_ref):
     col_p = planeta_alvo_nome.upper()
     if col_p not in df.columns:
         return []
+
+    def calcular_aspecto_simplificada(signo_transito, signo_natal):
+        try:
+            idx_t = SIGNOS.index(signo_transito)
+            idx_n = SIGNOS.index(signo_natal)
+
+            distancia = abs(idx_t - idx_n)
+            if distancia > 6:
+                distancia = 12 - distancia
+            
+            mapa_distancia = {
+                0: "Conjunção",
+                1: "Semi-sêxtil",
+                2: "Sêxtil",     
+                3: "Quadratura",
+                4: "Trígono",
+                5: "Quincúncio",
+                6: "Oposição"
+            }
+
+            return mapa_distancia.get(distancia, "Outro")
+        except:
+            return "Outro"
 
     LIMIAR_INFLUENCIA = 0.01
     LIMIAR_FORTE = 0.841
