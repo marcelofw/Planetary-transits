@@ -127,6 +127,11 @@ def gerar_texto_relatorio(df, planeta_alvo_nome, long_natal_ref):
     if col_p not in df.columns:
         return []
 
+    try:
+        long_natal_ref = float(long_natal_ref)
+    except:
+        long_natal_ref = 0.0
+        
     # Dicionário de Símbolos Astrológicos
     SIMBOLOS_ASPECTOS = {
         "Conjunção": "☌",
@@ -234,8 +239,11 @@ elif grau_decimal is None:
 # Cálculo da longitude natal absoluta para uso na função de símbolos
 long_natal_absoluta_calc = 0.0
 if planeta_selecionado != "Escolha um planeta" and signo_selecionado != "Escolha um signo":
-    idx_s = SIGNOS.index(signo_selecionado)
-    long_natal_absoluta_calc = float((idx_s * 30) + grau_decimal)
+    try:
+        idx_s = SIGNOS.index(signo_selecionado)
+        long_natal_absoluta_calc = float((idx_s * 30) + grau_decimal)
+    except:
+        long_natal_absoluta_calc = 0.0
 
 p_texto = planeta_selecionado if planeta_selecionado != "Escolha um planeta" else "Planeta"
 s_texto = signo_selecionado if signo_selecionado != "Escolha um signo" else "Signo"
