@@ -296,7 +296,7 @@ else:
 
 @st.fragment
 def fragmento_relatorio_lentos (df, planeta_selecionado, grau_input, signo_selecionado):
-    st.markdown("<h2 style='text-align: center;'>📋 Relatório de Impacto (Planetas Lentos)</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align: center;'>📋 Relatório de Trânsito dos Planetas Lentos</h2>", unsafe_allow_html=True)
     if st.button("Gerar Relatório de Ciclos Longos", use_container_width=True):
         if planeta_selecionado == "Escolha um planeta" or signo_selecionado == "Escolha um signo":
             st.error("⚠️ Selecione os dados natais na barra lateral.")
@@ -305,7 +305,7 @@ def fragmento_relatorio_lentos (df, planeta_selecionado, grau_input, signo_selec
             encontrou_algum = False
             
             with st.expander("Visualizar Detalhes dos Ciclos", expanded=True):
-                st.markdown(f"### Planetas em trânsito aspectando {planeta_selecionado} natal a {grau_input}º de {signo_selecionado}")
+                st.markdown(f"### Planetas em trânsito aspectando {planeta_selecionado} natal a {grau_input}º de {signo_selecionado} em {ano}")
                 st.write("")
 
                 for p_lento in lentos:
