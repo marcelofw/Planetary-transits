@@ -197,7 +197,6 @@ def calcular_dados_efemerides(ano, mes, usar_lua, alvos, monitorados):
                         int_txt = "Forte" if dist <= 1.0 else "Médio" if dist <= 2.5 else "Fraco"
                         
                         row[p["nome"]] = val
-                        row[f"{p['nome']}_long"] = long_abs
                         row[f"{p['nome']}_info"] = f"{get_signo(long_abs)} {status} {graus_int:02d}°{minutos_int:02d}' - {int_txt} {simb}"
                     else:
                         row[p["nome"]] = np.nan
