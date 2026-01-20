@@ -16,6 +16,10 @@ if 'file_name' not in st.session_state:
 st.set_page_config(page_title="Revolução Planetária", layout="wide")
 st.markdown("""
     <style>
+        .stDateInput label p, .stTextInput label p {
+        font-size: 1.1rem !important;
+        font-weight: bold !important;
+        }
         .stDateInput div div input, .stTextInput div div input {
             font-size: 1.1rem !important;
             height: 45px !important;
