@@ -330,7 +330,7 @@ def fragmento_relatorio_lentos (df, planeta_selecionado, grau_input, signo_selec
                 st.write("")
 
                 for p_lento in lentos:
-                    lista_periodos = gerar_texto_relatorio(df, p_lento)
+                    lista_periodos = gerar_texto_relatorio(df, p_lento, long_natal_absoluta_calc)
                     if lista_periodos:
                         encontrou_algum = True
                         for periodo_texto in lista_periodos:
