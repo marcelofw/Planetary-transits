@@ -119,33 +119,10 @@ def obter_simbolo_aspecto(long1, long2):
             return simbolo
     return ""
 
-def gerar_texto_relatorio(df, planeta_alvo_nome, long_natal_ref):
+def gerar_texto_relatorio(df, planeta_alvo_nome):
     col_p = planeta_alvo_nome.upper()
-    if col_p not in df.columns or long_natal_ref <= 0:
+    if col_p not in df.columns:
         return []
-
-    def calcular_aspecto_simplificada(signo_transito, signo_natal):
-        try:
-            idx_t = SIGNOS.index(signo_transito)
-            idx_n = SIGNOS.index(signo_natal)
-
-            distancia = abs(idx_t - idx_n)
-            if distancia > 6:
-                distancia = 12 - distancia
-            
-            mapa_distancia = {
-                0: ("Conjunção", "☌"),
-                1: ("Semi-sêxtil", "⚺"),
-                2: ("Sêxtil", "✶"),     
-                3: ("Quadratura", "□"),
-                4: ("Trígono", "△"),
-                5: ("Quincúncio", "⚻"),
-                6: ("Oposição", "☍")
-            }
-
-            return mapa_distancia.get(distancia, "Outro", "")
-        except:
-            return ("Outro", "")
 
     LIMIAR_INFLUENCIA = 0.01
     LIMIAR_FORTE = 0.841
@@ -165,18 +142,12 @@ def gerar_texto_relatorio(df, planeta_alvo_nome, long_natal_ref):
         
         ponto_max_total = dados_curva.loc[dados_curva[col_p].idxmax()]
         signo_transito = get_signo(ponto_max_total[f"{col_p}_long"])
-        signo_natal = get_signo(long_natal_ref)
-
+        
         # Identifica blocos de aspecto forte
         mask_forte = dados_curva[col_p] >= LIMIAR_FORTE
         grupos_fortes = (mask_forte != mask_forte.shift()).cumsum()
         ilhas_fortes = dados_curva[mask_forte].groupby(grupos_fortes)
         
-        nome_aspecto, simbolo_aspecto = calcular_aspecto_simplificada(signo_transito, signo_natal)
-
-        if nome_aspecto == "Outro":
-            continue
-
         intervalos_fortes_texto = []
         for _, ilha in ilhas_fortes:
             f_ini = ilha['date'].min().strftime('%d/%m/%Y')
@@ -324,7 +295,7 @@ else:
     file_name_tabela = f"aspectos_{ano}_{planeta_selecionado}_em_{signo_selecionado}_grau_{grau_limpo_file}.xlsx"
 
 @st.fragment
-def fragmento_relatorio_lentos (df, planeta_selecionado, grau_input, signo_selecionado, ano):
+def fragmento_relatorio_lentos (df, planeta_selecionado, grau_input, signo_selecionado):
     st.markdown("<h2 style='text-align: center;'>📋 Relatório de Trânsito dos Planetas Lentos</h2>", unsafe_allow_html=True)
     if st.button("Gerar Relatório de Ciclos Longos", use_container_width=True):
         if planeta_selecionado == "Escolha um planeta" or signo_selecionado == "Escolha um signo":
@@ -338,14 +309,14 @@ def fragmento_relatorio_lentos (df, planeta_selecionado, grau_input, signo_selec
                 st.write("")
 
                 for p_lento in lentos:
-                    lista_periodos = gerar_texto_relatorio(df, p_lento, long_natal_absoluta_calc)
+                    lista_periodos = gerar_texto_relatorio(df, p_lento)
                     if lista_periodos:
                         encontrou_algum = True
                         for periodo_texto in lista_periodos:
                             st.markdown(periodo_texto)
                             st.write("")
                 if not encontrou_algum:
-                    st.warning(f"Não foram encontrados trânsitos de planetas lentos para este ponto natal em {ano}.")
+                    st.warning("Não foram encontrados trânsitos de planetas lentos para este ponto natal em {ano}.")
 
 @st.fragment
 def secao_previsao_ia(ano, planeta_selecionado, signo_selecionado, grau_input, long_natal_absoluta_calc):
@@ -460,7 +431,7 @@ st.divider()
 col_rel1, col_rel2, col_rel3 = st.columns([1, 2, 1])
 
 with col_rel2:
-    fragmento_relatorio_lentos(df, planeta_selecionado, grau_input, signo_selecionado, ano)
+    fragmento_relatorio_lentos(df, planeta_selecionado, grau_input, signo_selecionado)
 
 # Chamada da função da seção de IA
 secao_previsao_ia(ano, planeta_selecionado, signo_selecionado, grau_input, long_natal_absoluta_calc)
