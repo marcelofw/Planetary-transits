@@ -104,8 +104,11 @@ def hex_to_rgba(hex_color, opacity):
     return f'rgba({r}, {g}, {b}, {opacity})'
 
 def calcular_aspecto(long1, long2):
-    diff = abs(long1 - long2) % 360
+    l1 = float(long1)
+    l2 = float(long2)
+    diff = abs(l1 - l2) % 360
     if diff > 180: diff = 360 - diff
+    
     for angulo, (nome, simbolo) in ASPECTOS.items():
         if abs(diff - angulo) <= 5:
             return nome
@@ -229,10 +232,10 @@ elif grau_decimal is None:
     st.stop()
 
 # Cálculo da longitude natal absoluta para uso na função de símbolos
-long_natal_absoluta_calc = 0
+long_natal_absoluta_calc = 0.0
 if planeta_selecionado != "Escolha um planeta" and signo_selecionado != "Escolha um signo":
     idx_s = SIGNOS.index(signo_selecionado)
-    long_natal_absoluta_calc = (idx_s * 30) + grau_decimal
+    long_natal_absoluta_calc = float((idx_s * 30) + grau_decimal)
 
 p_texto = planeta_selecionado if planeta_selecionado != "Escolha um planeta" else "Planeta"
 s_texto = signo_selecionado if signo_selecionado != "Escolha um signo" else "Signo"
