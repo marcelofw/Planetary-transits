@@ -119,10 +119,22 @@ def obter_simbolo_aspecto(long1, long2):
             return simbolo
     return ""
 
-def gerar_texto_relatorio(df, planeta_alvo_nome):
+def gerar_texto_relatorio(df, planeta_alvo_nome, long_natal_ref):
     col_p = planeta_alvo_nome.upper()
     if col_p not in df.columns:
         return []
+
+    # Dicionário de Símbolos Astrológicos
+    SIMBOLOS_ASPECTOS = {
+        "Conjunção": "☌",
+        "Oposição": "☍",
+        "Trígono": "△",
+        "Quadratura": "□",
+        "Sêxtil": "⚹",
+        "Semiquadratura": "∠",
+        "Sesquiquadratura": "⚼",
+        "Quincúncio": "⚄"
+    }
 
     LIMIAR_INFLUENCIA = 0.01
     LIMIAR_FORTE = 0.841
@@ -143,48 +155,54 @@ def gerar_texto_relatorio(df, planeta_alvo_nome):
         ponto_max_total = dados_curva.loc[dados_curva[col_p].idxmax()]
         signo_transito = get_signo(ponto_max_total[f"{col_p}_long"])
         
-        # Identifica blocos de aspecto forte
         mask_forte = dados_curva[col_p] >= LIMIAR_FORTE
         grupos_fortes = (mask_forte != mask_forte.shift()).cumsum()
         ilhas_fortes = dados_curva[mask_forte].groupby(grupos_fortes)
         
-        intervalos_fortes_texto = []
+        detalhes_fortes = []
         for _, ilha in ilhas_fortes:
             f_ini = ilha['date'].min().strftime('%d/%m/%Y')
             f_fim = ilha['date'].max().strftime('%d/%m/%Y')
             
-            # LÓGICA DE DETECÇÃO DE PICOS (Múltiplos cumes no mesmo bloco)
-            # Um pico ocorre onde a intensidade é maior que a anterior e a próxima
             valores = ilha[col_p].values
             datas = ilha['date'].values
+            longitudes = ilha[f"{col_p}_long"].values
             
-            picos_da_ilha = []
+            picos_info = []
+            indices_picos = []
             
-            # Caso especial: se a ilha for muito curta, pega o máximo
-            if len(valores) <= 3:
-                picos_da_ilha.append(pd.to_datetime(datas[np.argmax(valores)]).strftime('%d/%m/%Y'))
+            # Detecção de picos
+            if len(valores) <= 3: indices_picos.append(np.argmax(valores))
             else:
                 for i in range(1, len(valores) - 1):
                     if valores[i] > valores[i-1] and valores[i] >= valores[i+1]:
-                        picos_da_ilha.append(pd.to_datetime(datas[i]).strftime('%d/%m/%Y'))
-                
-                # Se não detectou picos por variação (ex: curva só subiu ou só desceu), pega o máximo
-                if not picos_da_ilha:
-                    picos_da_ilha.append(pd.to_datetime(datas[np.argmax(valores)]).strftime('%d/%m/%Y'))
+                        indices_picos.append(i)
+                if not indices_picos: indices_picos.append(np.argmax(valores))
 
-            # Formata a string de picos (ex: "pico em X e Y")
-            str_picos = " e ".join(picos_da_ilha)
-            bloco = (f"**Trânsito fazendo aspecto forte**: entre {f_ini} até {f_fim}  \n"
-                     f"**Pico**: {str_picos}.")
-            intervalos_fortes_texto.append(bloco)
+            # Nome do Aspecto para o cabeçalho do bloco forte (primeiro pico do bloco)
+            idx_primeiro = indices_picos[0]
+            nome_asp_bloco = calcular_aspecto(longitudes[idx_primeiro], long_natal_ref)
+            simbolo_bloco = SIMBOLOS_ASPECTOS.get(nome_asp_bloco, "")
 
-        texto = (f"**{planeta_alvo_nome} em {signo_transito}**:  \n"
-                 f"**Trânsito total**: {data_ini_total} até {data_fim_total}")
+            for idx in indices_picos:
+                nome_asp = calcular_aspecto(longitudes[idx], long_natal_ref)
+                simbolo = SIMBOLOS_ASPECTOS.get(nome_asp, "")
+                picos_info.append(f"{nome_asp} {simbolo}: {pd.to_datetime(datas[idx]).strftime('%d/%m/%Y')}")
+
+            picos_str = " e ".join(picos_info)
+            # Dois espaços ao final para quebra de linha no Streamlit
+            bloco = (f"**Trânsito fazendo {nome_asp_bloco} {simbolo_bloco} (forte)**: entre {f_ini} até {f_fim};  \n"
+                     f"**Pico**: {picos_str}.")
+            detalhes_fortes.append(bloco)
+
+        texto_final = (f"✅ **{planeta_alvo_nome} em {signo_transito}**:  \n"
+                       f"**Trânsito total**: {data_ini_total} até {data_fim_total};")
         
-        if intervalos_fortes_texto:
-            texto_final = texto + "  \n" + "  \n".join(intervalos_fortes_texto)
+        if detalhes_fortes:
+            for d in detalhes_fortes:
+                texto_final += f"  \n{d}"
         else:
-            texto_final = texto
+            texto_final += "  \n*(Não atinge aspecto forte neste período)*."
             
         relatorios_planeta.append(texto_final)
         
