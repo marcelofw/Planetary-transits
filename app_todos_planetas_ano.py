@@ -6,6 +6,7 @@ from plotly.subplots import make_subplots
 import numpy as np
 from datetime import datetime
 import io
+import re
 
 if 'fig_gerada' not in st.session_state:
     st.session_state.fig_gerada = None
@@ -71,9 +72,30 @@ def get_signo(longitude):
 def dms_to_dec(dms_str):
     if isinstance(dms_str, (int, float)): return float(dms_str)
     try:
+        if not re.match(r"^\d+(\.\d+)?$", str(dms_str)): return None
         parts = str(dms_str).split('.')
-        return float(parts[0]) + (float(parts[1])/60 if len(parts) > 1 else 0)
-    except: return 0.0
+        degrees = float(parts[0])
+        
+        # Validação de minutos (parte decimal)
+        if len(parts) > 1:
+            minutos_raw = parts[1]
+            minutos = float(minutos_raw)
+            
+            if len(minutos_raw) == 1:
+                minutos = float(minutos_raw) * 10
+            else:
+                minutos = float(minutos_raw)
+
+            # REGRA: Minutos não podem ser 60 ou mais
+            if minutos >= 60:
+                return "ERRO_MINUTOS"
+        else:
+            minutos = 0
+            
+        val = degrees + (minutos / 60)
+        return val if 0 <= val <= 30 else None
+    except:
+        return None
 
 def hex_to_rgba(hex_color, opacity):
     hex_color = hex_color.lstrip('#')
