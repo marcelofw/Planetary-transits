@@ -124,72 +124,66 @@ def obter_simbolo_aspecto(long1, long2):
 
 def gerar_texto_relatorio(df, planeta_alvo_nome, long_natal_ref):
     col_p = planeta_alvo_nome.upper()
-    if col_p not in df.columns:
+    # Verifica se a coluna existe e se a longitude natal é válida
+    if col_p not in df.columns or long_natal_ref <= 0:
         return []
 
-    try:
-        long_natal_ref = float(long_natal_ref)
-    except:
-        return []
-
-    # Símbolos para o relatório (extraídos do seu dicionário global)
+    # Mapeamento de símbolos a partir do seu dicionário global
     SIMBOLOS_MAP = {nome: simb for ang, (nome, simb) in ASPECTOS.items()}
     
-    LIMIAR_INFLUENCIA = 0.01
-    LIMIAR_FORTE = 0.841
+    # Parâmetros de detecção (mesmos do seu gráfico)
+    LIMIAR_INFLUENCIA = 0.01  # Começo do trânsito
+    LIMIAR_FORTE = 0.841      # Aspecto exato (orbe estreita)
 
-    mask_inf = df[col_p] > LIMIAR_INFLUENCIA
-    df_copy = df.copy()
-    df_copy['group_inf'] = (mask_inf != mask_inf.shift()).cumsum()
-    curvas_grandes = df_copy[mask_inf].groupby('group_inf')
+    # Criar uma cópia para não afetar o DF original
+    df_temp = df[['date', col_p, f"{col_p}_long"]].copy()
+    
+    # Identifica onde o planeta está influenciando o ponto natal
+    mask_inf = df_temp[col_p] > LIMIAR_INFLUENCIA
+    if not mask_inf.any():
+        return []
 
-    relatorios_planeta = []
+    df_temp['group'] = (mask_inf != mask_inf.shift()).cumsum()
+    periodos = []
 
-    for _, dados_curva in curvas_grandes:
-        if len(dados_curva) < 2: continue
-        
-        data_ini_total = dados_curva['date'].min().strftime('%d/%m/%Y')
-        data_fim_total = dados_curva['date'].max().strftime('%d/%m/%Y')
-        
-        # Ponto de maior intensidade na curva
-        ponto_max_total = dados_curva.loc[dados_curva[col_p].idxmax()]
-        signo_transito = get_signo(ponto_max_total[f"{col_p}_long"])
-        
-        # Blocos de aspecto forte
-        mask_forte = dados_curva[col_p] >= LIMIAR_FORTE
-        if not mask_forte.any(): continue
-        
-        grupos_fortes = (mask_forte != mask_forte.shift()).cumsum()
-        ilhas_fortes = dados_curva[mask_forte].groupby(grupos_fortes)
-        
-        detalhes_fortes = []
-        for _, ilha in ilhas_fortes:
-            f_ini = ilha['date'].min().strftime('%d/%m/%Y')
-            f_fim = ilha['date'].max().strftime('%d/%m/%Y')
-            
-            # Identifica o pico de longitude dentro do bloco forte
-            idx_pico = ilha[col_p].idxmax()
-            long_pico = ilha.loc[idx_pico, f"{col_p}_long"]
-            data_pico = ilha.loc[idx_pico, 'date'].strftime('%d/%m/%Y')
-            
-            # MESMA LÓGICA DA IA:
-            nome_asp = calcular_aspecto(long_pico, long_natal_ref)
-            if nome_asp == "Outro": continue
-            
-            simbolo = SIMBOLOS_MAP.get(nome_asp, "")
+    for _, grupo in df_temp[mask_inf].groupby('group'):
+        if len(grupo) < 2: continue
 
-            bloco = (f"**Trânsito fazendo aspecto forte ({nome_asp} {simbolo})**: entre {f_ini} até {f_fim};  \n"
-                     f"**Pico**: {nome_asp} {simbolo}: {data_pico}.")
-            detalhes_fortes.append(bloco)
-
-        if detalhes_fortes:
-            texto_final = (f"✅ **{planeta_alvo_nome} em {signo_transito}**:  \n"
-                           f"**Trânsito total**: {data_ini_total} até {data_fim_total};")
-            for d in detalhes_fortes:
-                texto_final += f"  \n{d}"
-            relatorios_planeta.append(texto_final)
+        # Dados do Trânsito Total
+        d_ini = grupo['date'].min()
+        d_fim = grupo['date'].max()
         
-    return relatorios_planeta
+        # Encontrar o pico de intensidade (aspecto mais exato)
+        idx_pico = grupo[col_p].idxmax()
+        row_pico = grupo.loc[idx_pico]
+        long_no_pico = row_pico[f"{col_p}_long"]
+        
+        # Identificar Signo e Aspecto no Pico
+        signo_transito = get_signo(long_no_pico)
+        nome_asp = calcular_aspecto(long_no_pico, long_natal_ref)
+        simbolo_asp = SIMBOLOS_MAP.get(nome_asp, "")
+
+        # Só gera relatório se houver um aspecto definido (não for "Outro")
+        if nome_asp == "Outro":
+            continue
+
+        # Verificar período de "Aspecto Forte" (Intensidade > 0.841)
+        grupo_forte = grupo[grupo[col_p] >= LIMIAR_FORTE]
+        
+        if not grupo_forte.empty:
+            f_ini = grupo_forte['date'].min().strftime('%d/%m/%Y')
+            f_fim = grupo_forte['date'].max().strftime('%d/%m/%Y')
+            data_pico = row_pico['date'].strftime('%d/%m/%Y')
+
+            texto = (
+                f"✅ **{planeta_alvo_nome} em {signo_transito}**:\n"
+                f"**Trânsito total**: {d_ini.strftime('%d/%m/%Y')} até {d_fim.strftime('%d/%m/%Y')};\n"
+                f"**Trânsito fazendo aspecto forte ({nome_asp} {simbolo_asp})**: entre {f_ini} até {f_fim};\n"
+                f"**Pico**: {nome_asp} {simbolo_asp}: {data_pico}."
+            )
+            periodos.append(texto)
+
+    return periodos
 
 # --- INTERFACE LATERAL ---
 st.sidebar.header("🪐 Configurações")
