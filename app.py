@@ -127,12 +127,14 @@ def gerar_texto_relatorio(df, planeta_alvo_nome, long_natal_ref):
     if col_p not in df.columns:
         return []
 
-    # Símbolos para o relatório
-    SIMBOLOS = {"Conjunção": "☌", "Sêxtil": "✶", "Quadratura": "□", "Trígono": "△", "Oposição": "☍"}
+    try:
+        long_natal_ref = float(long_natal_ref)
+    except:
+        return []
 
-    # Garantir que a referência natal é numérica
-    long_natal_ref = float(long_natal_ref)
-
+    # Símbolos para o relatório (extraídos do seu dicionário global)
+    SIMBOLOS_MAP = {nome: simb for ang, (nome, simb) in ASPECTOS.items()}
+    
     LIMIAR_INFLUENCIA = 0.01
     LIMIAR_FORTE = 0.841
 
@@ -149,10 +151,14 @@ def gerar_texto_relatorio(df, planeta_alvo_nome, long_natal_ref):
         data_ini_total = dados_curva['date'].min().strftime('%d/%m/%Y')
         data_fim_total = dados_curva['date'].max().strftime('%d/%m/%Y')
         
+        # Ponto de maior intensidade na curva
         ponto_max_total = dados_curva.loc[dados_curva[col_p].idxmax()]
         signo_transito = get_signo(ponto_max_total[f"{col_p}_long"])
         
+        # Blocos de aspecto forte
         mask_forte = dados_curva[col_p] >= LIMIAR_FORTE
+        if not mask_forte.any(): continue
+        
         grupos_fortes = (mask_forte != mask_forte.shift()).cumsum()
         ilhas_fortes = dados_curva[mask_forte].groupby(grupos_fortes)
         
@@ -161,28 +167,27 @@ def gerar_texto_relatorio(df, planeta_alvo_nome, long_natal_ref):
             f_ini = ilha['date'].min().strftime('%d/%m/%Y')
             f_fim = ilha['date'].max().strftime('%d/%m/%Y')
             
-            # Pegar o pico dentro desta ilha forte
+            # Identifica o pico de longitude dentro do bloco forte
             idx_pico = ilha[col_p].idxmax()
-            row_pico = ilha.loc[idx_pico]
+            long_pico = ilha.loc[idx_pico, f"{col_p}_long"]
+            data_pico = ilha.loc[idx_pico, 'date'].strftime('%d/%m/%Y')
             
-            nome_asp = calcular_aspecto(row_pico[f"{col_p}_long"], long_natal_ref)
-            simb_asp = SIMBOLOS.get(nome_asp, "")
-            data_pico = row_pico['date'].strftime('%d/%m/%Y')
-
-            # Montagem das linhas conforme solicitado
-            linha_forte = f"**Trânsito fazendo aspecto forte ({nome_asp} {simb_asp})**: entre {f_ini} até {f_fim};"
-            linha_pico = f"**Pico**: {nome_asp} {simb_asp}: {data_pico}."
+            # MESMA LÓGICA DA IA:
+            nome_asp = calcular_aspecto(long_pico, long_natal_ref)
+            if nome_asp == "Outro": continue
             
-            detalhes_fortes.append(f"{linha_forte}  \n{linha_pico}")
+            simbolo = SIMBOLOS_MAP.get(nome_asp, "")
 
-        # Texto Final
-        cabecalho = f"✅ **{planeta_alvo_nome} em {signo_transito}**:"
-        linha_total = f"**Trânsito total**: {data_ini_total} até {data_fim_total};"
-        
-        corpo_detalhes = "  \n".join(detalhes_fortes) if detalhes_fortes else "*(Sem aspecto forte neste período)*"
-        
-        texto_bloco = f"{cabecalho}  \n{linha_total}  \n{corpo_detalhes}"
-        relatorios_planeta.append(texto_bloco)
+            bloco = (f"**Trânsito fazendo aspecto forte ({nome_asp} {simbolo})**: entre {f_ini} até {f_fim};  \n"
+                     f"**Pico**: {nome_asp} {simbolo}: {data_pico}.")
+            detalhes_fortes.append(bloco)
+
+        if detalhes_fortes:
+            texto_final = (f"✅ **{planeta_alvo_nome} em {signo_transito}**:  \n"
+                           f"**Trânsito total**: {data_ini_total} até {data_fim_total};")
+            for d in detalhes_fortes:
+                texto_final += f"  \n{d}"
+            relatorios_planeta.append(texto_final)
         
     return relatorios_planeta
 
