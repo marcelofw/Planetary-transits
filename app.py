@@ -326,8 +326,8 @@ def fragmento_relatorio_lentos (df, planeta_selecionado, grau_input, signo_selec
             encontrou_algum = False
             
             with st.expander("Visualizar Detalhes dos Ciclos", expanded=True):
-                st.markdown(f"### Planetas de trânsito longo aspectando {planeta_selecionado} natal a {grau_input}º de {signo_selecionado} em {ano}")
-                st.write("")
+                # st.markdown(f"### Planetas de trânsito longo aspectando {planeta_selecionado} natal a {grau_input}º de {signo_selecionado} em {ano}")
+                # st.write("")
 
                 for p_lento in lentos:
                     lista_periodos = gerar_texto_relatorio(df, p_lento, long_natal_absoluta_calc)
