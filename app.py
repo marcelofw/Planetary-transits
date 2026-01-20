@@ -123,67 +123,84 @@ def obter_simbolo_aspecto(long1, long2):
     return ""
 
 def gerar_texto_relatorio(df, planeta_alvo_nome, long_natal_ref):
+    """
+    Gera o texto do relatório para planetas lentos utilizando a mesma lógica 
+    de precisão da seção de IA e do gráfico.
+    """
     col_p = planeta_alvo_nome.upper()
-    # Verifica se a coluna existe e se a longitude natal é válida
-    if col_p not in df.columns or long_natal_ref <= 0:
+    
+    # --- 1. TRATAMENTO DE SEGURANÇA (EVITA TYPEERROR) ---
+    try:
+        if long_natal_ref is None:
+            return []
+        long_natal_ref = float(long_natal_ref)
+        if long_natal_ref <= 0: # Caso o usuário não tenha selecionado signo/grau
+            return []
+    except (ValueError, TypeError):
         return []
 
-    # Mapeamento de símbolos a partir do seu dicionário global
+    if col_p not in df.columns:
+        return []
+
+    # --- 2. CONFIGURAÇÕES DE ASPECTOS (Sincronizado com ASPECTOS global) ---
+    # Criamos um mapa de nomes para símbolos para facilitar a busca
     SIMBOLOS_MAP = {nome: simb for ang, (nome, simb) in ASPECTOS.items()}
     
-    # Parâmetros de detecção (mesmos do seu gráfico)
-    LIMIAR_INFLUENCIA = 0.01  # Começo do trânsito
-    LIMIAR_FORTE = 0.841      # Aspecto exato (orbe estreita)
+    # Limiares de intensidade baseados na curva gaussiana do seu gráfico
+    LIMIAR_INFLUENCIA = 0.01  # Quando o planeta começa a se aproximar do aspecto
+    LIMIAR_FORTE = 0.841      # Quando o aspecto entra na orbe de ~1.7 graus (pico forte)
 
-    # Criar uma cópia para não afetar o DF original
+    # --- 3. IDENTIFICAÇÃO DOS PERÍODOS DE TRÂNSITO ---
     df_temp = df[['date', col_p, f"{col_p}_long"]].copy()
-    
-    # Identifica onde o planeta está influenciando o ponto natal
     mask_inf = df_temp[col_p] > LIMIAR_INFLUENCIA
+    
     if not mask_inf.any():
         return []
 
+    # Agrupa linhas consecutivas onde há influência para tratar como um único evento
     df_temp['group'] = (mask_inf != mask_inf.shift()).cumsum()
-    periodos = []
+    relatorios_finais = []
 
     for _, grupo in df_temp[mask_inf].groupby('group'):
-        if len(grupo) < 2: continue
+        if len(grupo) < 2: 
+            continue
 
-        # Dados do Trânsito Total
-        d_ini = grupo['date'].min()
-        d_fim = grupo['date'].max()
+        # Dados do Trânsito Total (Toda a extensão da curva no gráfico)
+        d_ini_total = grupo['date'].min().strftime('%d/%m/%Y')
+        d_fim_total = grupo['date'].max().strftime('%d/%m/%Y')
         
-        # Encontrar o pico de intensidade (aspecto mais exato)
+        # Identifica o Ponto de Intensidade Máxima (Onde o aspecto é mais exato)
         idx_pico = grupo[col_p].idxmax()
         row_pico = grupo.loc[idx_pico]
         long_no_pico = row_pico[f"{col_p}_long"]
         
-        # Identificar Signo e Aspecto no Pico
+        # Estima o Aspecto e o Signo no momento do Pico
         signo_transito = get_signo(long_no_pico)
         nome_asp = calcular_aspecto(long_no_pico, long_natal_ref)
         simbolo_asp = SIMBOLOS_MAP.get(nome_asp, "")
 
-        # Só gera relatório se houver um aspecto definido (não for "Outro")
+        # Se a lógica de cálculo não retornar um aspecto principal, ignoramos
         if nome_asp == "Outro":
             continue
 
-        # Verificar período de "Aspecto Forte" (Intensidade > 0.841)
+        # --- 4. DETECTAR O "CORAÇÃO" DO TRÂNSITO (ASPECTO FORTE) ---
         grupo_forte = grupo[grupo[col_p] >= LIMIAR_FORTE]
         
         if not grupo_forte.empty:
             f_ini = grupo_forte['date'].min().strftime('%d/%m/%Y')
             f_fim = grupo_forte['date'].max().strftime('%d/%m/%Y')
-            data_pico = row_pico['date'].strftime('%d/%m/%Y')
+            data_pico_str = row_pico['date'].strftime('%d/%m/%Y')
 
+            # Montagem do texto conforme seu exemplo (com quebras de linha para Streamlit)
             texto = (
-                f"✅ **{planeta_alvo_nome} em {signo_transito}**:\n"
-                f"**Trânsito total**: {d_ini.strftime('%d/%m/%Y')} até {d_fim.strftime('%d/%m/%Y')};\n"
-                f"**Trânsito fazendo aspecto forte ({nome_asp} {simbolo_asp})**: entre {f_ini} até {f_fim};\n"
-                f"**Pico**: {nome_asp} {simbolo_asp}: {data_pico}."
+                f"✅ **{planeta_alvo_nome} em {signo_transito}**:  \n"
+                f"**Trânsito total**: {d_ini_total} até {d_fim_total};  \n"
+                f"**Trânsito fazendo aspecto forte ({nome_asp} {simbolo_asp})**: entre {f_ini} até {f_fim};  \n"
+                f"**Pico**: {nome_asp} {simbolo_asp}: {data_pico_str}."
             )
-            periodos.append(texto)
+            relatorios_finais.append(texto)
 
-    return periodos
+    return relatorios_finais
 
 # --- INTERFACE LATERAL ---
 st.sidebar.header("🪐 Configurações")
