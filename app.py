@@ -131,17 +131,16 @@ def gerar_texto_relatorio(df, planeta_alvo_nome, long_natal_ref):
         long_natal_ref = float(long_natal_ref)
     except:
         long_natal_ref = 0.0
-        
+
     # Dicionário de Símbolos Astrológicos
     SIMBOLOS_ASPECTOS = {
-        "Conjunção": "☌",
-        "Oposição": "☍",
-        "Trígono": "△",
-        "Quadratura": "□",
-        "Sêxtil": "⚹",
-        "Semiquadratura": "∠",
-        "Sesquiquadratura": "⚼",
-        "Quincúncio": "⚄"
+        "conjunção": "☌",
+        "oposição": "☍",
+        "trígono": "△",
+        "quadratura": "□",
+        "sêxtil": "⚹",
+        "semi-sêxtil": "⚺",
+        "quincúncio": "⚻"
     }
 
     LIMIAR_INFLUENCIA = 0.01
@@ -199,18 +198,18 @@ def gerar_texto_relatorio(df, planeta_alvo_nome, long_natal_ref):
 
             picos_str = " e ".join(picos_info)
             # Dois espaços ao final para quebra de linha no Streamlit
-            bloco = (f"**Trânsito fazendo {nome_asp_bloco} {simbolo_bloco} (forte)**: entre {f_ini} até {f_fim};  \n"
+            bloco = (f"**Trânsito fazendo aspecto forte ({nome_asp_bloco} {simbolo_bloco})**: entre {f_ini} até {f_fim};  \n"
                      f"**Pico**: {picos_str}.")
             detalhes_fortes.append(bloco)
 
-        texto_final = (f"✅ **{planeta_alvo_nome} em {signo_transito}**:  \n"
+        texto_final = (f"**{planeta_alvo_nome} em {signo_transito}**:  \n"
                        f"**Trânsito total**: {data_ini_total} até {data_fim_total};")
         
         if detalhes_fortes:
             for d in detalhes_fortes:
                 texto_final += f"  \n{d}"
         else:
-            texto_final += "  \n*(Não atinge aspecto forte neste período)*."
+            texto_final += "  \n*(Não faz aspecto forte neste período)*."
             
         relatorios_planeta.append(texto_final)
         
