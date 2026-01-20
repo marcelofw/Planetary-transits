@@ -420,8 +420,8 @@ with col_rel2:
                     if lista_periodos:
                         encontrou_algum = True
                         for periodo_texto in lista_periodos:
-                            st.markdown(f"{periodo_texto}")
-                
+                            st.markdown(periodo_texto)
+                            st.divider()
                 if not encontrou_algum:
                     st.warning("Não foram encontrados trânsitos de planetas lentos para este ponto natal em {ano}.")
 
