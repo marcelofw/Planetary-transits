@@ -197,7 +197,7 @@ def gerar_texto_relatorio(df, planeta_alvo_nome, long_natal_ref):
                 str_picos = " e ".join(list(set(picos)))
                 intervalos_fortes_texto.append(
                     f"**Período de intensidade forte**: entre {f_ini} até {f_fim}  \n"
-                    f"**Pico**: {str_picos}."
+                    f"**Pico**: {str_picos}"
                 )
 
         # Título principal com o símbolo ao lado do signo

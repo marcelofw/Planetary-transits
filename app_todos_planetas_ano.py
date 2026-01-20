@@ -172,7 +172,7 @@ def gerar_texto_relatorio(df, planeta_alvo_nome, long_natal_ref, id_planeta_tran
                 str_picos = " e ".join([dt.strftime('%d/%m/%Y') for dt in sorted(list(set(picos_datas)))])
                 intervalos_fortes_texto.append(
                     f"**Período de intensidade forte**: {f_ini} até {f_fim}  \n"
-                    f"**Pico**: {str_picos}."
+                    f"**Pico**: {str_picos}"
                 )
 
         # Título formatado apenas com o símbolo (ex: JÚPITER em Câncer ✶)
