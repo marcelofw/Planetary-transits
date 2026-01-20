@@ -176,7 +176,7 @@ def gerar_texto_relatorio(df, planeta_alvo_nome, long_natal_ref, id_planeta_tran
                 )
 
         # Título formatado apenas com o símbolo (ex: JÚPITER em Câncer ✶)
-        texto = (f"### {planeta_alvo_nome.title()} em {signo_transito} {simb_asp}  \n"
+        texto = (f"### {planeta_alvo_nome.title()} em {signo_transito} {simb_asp}:  \n"
                  f"**Trânsito total**: {data_ini} até {data_fim}")
         
         if intervalos_fortes_texto:
