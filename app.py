@@ -313,7 +313,7 @@ else:
     file_name_tabela = f"aspectos_{ano}_{planeta_selecionado}_em_{signo_selecionado}_grau_{grau_limpo_file}.xlsx"
 
 @st.fragment
-def fragmento_relatorio_lentos (df, planeta_selecionado, grau_input, signo_selecionado):
+def fragmento_relatorio_lentos (df, long_natal_absoluta_calc, planeta_selecionado, grau_input, signo_selecionado):
     st.markdown("<h2 style='text-align: center;'>📋 Relatório de Trânsito dos Planetas Lentos</h2>", unsafe_allow_html=True)
     if st.button("Gerar Relatório de Ciclos Longos", use_container_width=True):
         if planeta_selecionado == "Escolha um planeta" or signo_selecionado == "Escolha um signo":
@@ -327,7 +327,7 @@ def fragmento_relatorio_lentos (df, planeta_selecionado, grau_input, signo_selec
                 st.write("")
 
                 for p_lento in lentos:
-                    lista_periodos = gerar_texto_relatorio(df, p_lento)
+                    lista_periodos = gerar_texto_relatorio(df, p_lento, long_natal_absoluta_calc)
                     if lista_periodos:
                         encontrou_algum = True
                         for periodo_texto in lista_periodos:
