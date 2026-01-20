@@ -81,23 +81,26 @@ def gerar_texto_relatorio(df, planeta_alvo_nome, long_natal_ref, id_planeta_tran
     if col_p not in df.columns or long_natal_ref is None:
         return []
 
-    # Função interna para calcular o signo exato na data do pico
+    # Função interna para calcular o signo real na data do pico
     def calcular_signo_real(data_pico):
-        # Converte datetime para Julian Day
         jd = swe.julday(data_pico.year, data_pico.month, data_pico.day, data_pico.hour + data_pico.minute/60.0)
         res, _ = swe.calc_ut(jd, id_planeta_transito, swe.FLG_SWIEPH)
-        long_abs = res[0]
-        return SIGNOS[int(long_abs / 30) % 12]
+        return SIGNOS[int(res[0] / 30) % 12]
 
-    def obter_nome_aspecto(s_transito, s_natal):
+    # Função para pegar APENAS o símbolo do aspecto
+    def obter_simbolo_aspecto(s_transito, s_natal):
         try:
             idx_t = SIGNOS.index(s_transito)
             idx_n = SIGNOS.index(s_natal)
             distancia = abs(idx_t - idx_n)
             if distancia > 6: distancia = 12 - distancia
-            nome, _ = ASPECTOS.get(distancia * 30, ("Trânsito", ""))
-            return nome
-        except: return "Trânsito"
+            
+            # Pega o símbolo (índice 1 do valor do dicionário ASPECTOS)
+            # Multiplicamos por 30 para bater com as chaves 0, 30, 60... do seu dicionário
+            _, simbolo = ASPECTOS.get(distancia * 30, ("", ""))
+            return simbolo
+        except:
+            return ""
 
     LIMIAR_INFLUENCIA = 0.01
     LIMIAR_FORTE = 0.841
@@ -110,7 +113,7 @@ def gerar_texto_relatorio(df, planeta_alvo_nome, long_natal_ref, id_planeta_tran
     curvas = df_copy[mask_inf].groupby('group_inf')
 
     relatorios_planeta = []
-    signo_natal = get_signo(long_natal_ref)
+    signo_natal_nome = get_signo(long_natal_ref)
 
     for _, dados_curva in curvas:
         if len(dados_curva) < 2: continue
@@ -118,23 +121,24 @@ def gerar_texto_relatorio(df, planeta_alvo_nome, long_natal_ref, id_planeta_tran
         data_ini = dados_curva['date'].min().strftime('%d/%m/%Y')
         data_fim = dados_curva['date'].max().strftime('%d/%m/%Y')
         
-        # Pegamos o ponto de maior intensidade para definir o signo do trânsito
         ponto_max = dados_curva.loc[dados_curva[col_p].idxmax()]
         signo_transito = calcular_signo_real(ponto_max['date'])
-        nome_asp = obter_nome_aspecto(signo_transito, signo_natal)
         
-        # Lógica de Picos
+        # Obtém apenas o símbolo (ex: ☍, ✶, □)
+        simb_asp = obter_simbolo_aspecto(signo_transito, signo_natal_nome)
+        
         mask_forte = dados_curva[col_p] >= LIMIAR_FORTE
-        intervalos_fortes = []
+        intervalos_fortes_texto = []
         
         if mask_forte.any():
             g_fortes = (mask_forte != mask_forte.shift()).cumsum()
             ilhas = dados_curva[mask_forte].groupby(g_fortes)
+            
             for _, ilha in ilhas:
                 f_ini = ilha['date'].min().strftime('%d/%m/%Y')
                 f_fim = ilha['date'].max().strftime('%d/%m/%Y')
                 
-                # Detectar picos cronologicamente
+                # Lógica de Picos
                 v = ilha[col_p].values
                 d = ilha['date'].values
                 picos_datas = []
@@ -146,15 +150,19 @@ def gerar_texto_relatorio(df, planeta_alvo_nome, long_natal_ref, id_planeta_tran
                             picos_datas.append(pd.to_datetime(d[i]))
                     if not picos_datas:
                         picos_datas.append(pd.to_datetime(d[np.argmax(v)]))
-                
-                str_picos = " e ".join([dt.strftime('%d/%m/%Y') for dt in sorted(list(set(picos_datas)))])
-                intervalos_fortes.append(f"**Período de intensidade forte ({nome_asp})**: {f_ini} até {f_fim}  \n**Pico(s)**: {str_picos}")
 
-        # Texto Final (Sem Símbolos)
-        texto = f"### {planeta_alvo_nome} em {signo_transito} ({nome_asp})  \n"
-        texto += f"**Trânsito total**: {data_ini} até {data_fim}"
-        if intervalos_fortes:
-            texto += "  \n" + "  \n".join(intervalos_fortes)
+                str_picos = " e ".join([dt.strftime('%d/%m/%Y') for dt in sorted(list(set(picos_datas)))])
+                intervalos_fortes_texto.append(
+                    f"**Período de intensidade forte {simb_asp}**: {f_ini} até {f_fim}  \n"
+                    f"**Pico(s)**: {str_picos}."
+                )
+
+        # Título formatado apenas com o símbolo (ex: JÚPITER em Câncer ✶)
+        texto = (f"### {planeta_alvo_nome} em {signo_transito} {simb_asp}  \n"
+                 f"**Trânsito total**: {data_ini} até {data_fim}")
+        
+        if intervalos_fortes_texto:
+            texto += "  \n" + "  \n".join(intervalos_fortes_texto)
         
         relatorios_planeta.append(texto)
         
