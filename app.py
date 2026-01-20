@@ -179,7 +179,7 @@ def gerar_texto_relatorio(df, planeta_alvo_nome):
             intervalos_fortes_texto.append(bloco)
 
         texto = (f"**{planeta_alvo_nome} em {signo_transito}**:  \n"
-                 f"Trânsito total: {data_ini_total} até {data_fim_total}")
+                 f"**Trânsito total**: {data_ini_total} até {data_fim_total}")
         
         if intervalos_fortes_texto:
             texto_final = texto + "  \n" + "  \n".join(intervalos_fortes_texto)
