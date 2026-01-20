@@ -335,7 +335,7 @@ def fragmento_relatorio_lentos (df, planeta_selecionado, grau_input, signo_selec
                         encontrou_algum = True
                         for periodo_texto in lista_periodos:
                             st.markdown(periodo_texto)
-                            st.write("")
+                            st.markdown("---")
                 if not encontrou_algum:
                     st.warning("Não foram encontrados trânsitos de planetas lentos para este ponto natal em {ano}.")
 
