@@ -11,6 +11,8 @@ if 'fig_gerada' not in st.session_state:
     st.session_state.fig_gerada = None
 if 'file_name' not in st.session_state:
     st.session_state.file_name = ""
+if 'resultados_data' not in st.session_state:
+    st.session_state.resultados_data = None
 
 # Configuração da Página
 st.set_page_config(page_title="Revolução Planetária", layout="wide")
@@ -69,26 +71,34 @@ def get_signo(longitude):
     return SIGNOS[int(longitude / 30) % 12]
 
 def dms_to_dec(dms_str):
-    if isinstance(dms_str, (int, float)): 
-        return float(dms_str)
+    if dms_str is None or dms_str == "": return 0.0
+    if isinstance(dms_str, (int, float)): return float(dms_str)
+    
     try:
-        # Remove espaços e troca vírgula por ponto
-        dms_str = str(dms_str).replace(',', '.').strip()
-        if '.' in dms_str:
-            parts = dms_str.split('.')
+        s = str(dms_str).replace(',', '.').strip()
+        if '.' in s:
+            parts = s.split('.')
             graus = float(parts[0])
-            minutos_str = parts[1]
+            minutos_raw = parts[1]
             
-            # Se o usuário digitou .2, tratamos como 20 minutos
-            if len(minutos_str) == 1:
-                minutos = float(minutos_str) * 10
+            # Correção do Pico: .2 vira 20, .02 continua 2
+            if len(minutos_raw) == 1:
+                minutos = float(minutos_raw) * 10
             else:
-                minutos = float(minutos_str)
+                minutos = float(minutos_raw)
+            
+            if minutos >= 60:
+                return "ERRO_MINUTOS"
                 
-            return graus + (minutos / 60.0)
-        return float(dms_str)
+            val = graus + (minutos / 60.0)
+        else:
+            val = float(s)
+            
+        if 0 <= val <= 30:
+            return val
+        return "ERRO_GRAUS"
     except:
-        return 0.0
+        return "ERRO_FORMATO"
 
 def hex_to_rgba(hex_color, opacity):
     hex_color = hex_color.lstrip('#')
@@ -275,6 +285,8 @@ ano_analise = st.sidebar.number_input("Ano da Análise", 1900, 2100, 2026)
 st.sidebar.subheader("Dados Natais", help="Insira os graus no formato Graus.Minutos (Ex: 27.30 para 27°30'). Use ponto como separador decimal.")
 
 alvos_input = []
+erro_detectado = False
+
 for i, alvo in enumerate(ponto_inicial):
     # Anotação acima do par de campos (estilizado em negrito/pequeno)
     st.sidebar.markdown(f"**{alvo['p']}**")
@@ -299,8 +311,18 @@ for i, alvo in enumerate(ponto_inicial):
             label_visibility="collapsed" # Esconde o label interno
         )
     
+    val_check = dms_to_dec(g)
+    if val_check == "ERRO_MINUTOS":
+        st.sidebar.error(f"⚠️ {alvo['p']}: Minutos devem ser < 60")
+        erro_detectado = True
+    elif val_check == "ERRO_GRAUS":
+        st.sidebar.error(f"⚠️ {alvo['p']}: Deve ser entre 0 e 29")
+        erro_detectado = True
+    elif val_check == "ERRO_FORMATO":
+        st.sidebar.error(f"⚠️ {alvo['p']}: Formato inválido")
+        erro_detectado = True
+    
     alvos_input.append({"planeta": alvo['p'], "signo": s, "grau": g})
-    # Espaço opcional entre os blocos de planetas
     st.sidebar.markdown("<div style='margin-bottom: -10px;'></div>", unsafe_allow_html=True)
 
 incluir_lua = st.sidebar.checkbox("Quero analisar a Lua", key="chk_analisar_lua")
