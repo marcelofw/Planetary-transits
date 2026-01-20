@@ -76,24 +76,27 @@ def obter_simbolo_aspecto(long1, long2):
         if abs(diff - angulo) <= 5: return simbolo
     return ""
 
-def gerar_texto_relatorio(df, planeta_alvo_nome, long_natal_ref):
+def gerar_texto_relatorio(df, planeta_alvo_nome, long_natal_ref, id_planeta_transito):
     col_p = planeta_alvo_nome.upper()
     if col_p not in df.columns or long_natal_ref is None:
         return []
 
-    # Identifica o aspecto apenas pelo nome
+    # Função para descobrir o signo do trânsito na data do pico
+    def obter_signo_na_data(data_pico):
+        # Converte a data de volta para Julian Day para consultar o Swiss Eph
+        jd = swe.julday(data_pico.year, data_pico.month, data_pico.day, data_pico.hour)
+        res, _ = swe.calc_ut(jd, id_planeta_transito, swe.FLG_SWIEPH)
+        return get_signo(res[0])
+
     def obter_nome_aspecto(s_transito, s_natal):
         try:
             idx_t = SIGNOS.index(s_transito)
             idx_n = SIGNOS.index(s_natal)
             distancia = abs(idx_t - idx_n)
             if distancia > 6: distancia = 12 - distancia
-            
-            # Busca o nome no seu dicionário ASPECTOS (multiplicando por 30 para converter distância de signos em graus)
             nome, _ = ASPECTOS.get(distancia * 30, ("Aspecto", ""))
             return nome
-        except:
-            return "Trânsito"
+        except: return "Trânsito"
 
     LIMIAR_INFLUENCIA = 0.01
     LIMIAR_FORTE = 0.841
@@ -114,9 +117,12 @@ def gerar_texto_relatorio(df, planeta_alvo_nome, long_natal_ref):
         data_ini_total = dados_curva['date'].min().strftime('%d/%m/%Y')
         data_fim_total = dados_curva['date'].max().strftime('%d/%m/%Y')
         
-        ponto_max_total = dados_curva.loc[dados_curva[col_p].idxmax()]
-        signo_transito = get_signo(ponto_max_total[f"{col_p}_long"])
+        # Ponto de força máxima para determinar o signo e o aspecto
+        ponto_max = dados_curva.loc[dados_curva[col_p].idxmax()]
+        data_pico_max = ponto_max['date']
         
+        # RECALCULA O SIGNO AQUI (Sem precisar da coluna _long)
+        signo_transito = obter_signo_na_data(data_pico_max)
         nome_asp = obter_nome_aspecto(signo_transito, signo_natal)
         
         mask_forte = dados_curva[col_p] >= LIMIAR_FORTE
@@ -132,17 +138,18 @@ def gerar_texto_relatorio(df, planeta_alvo_nome, long_natal_ref):
                 
                 valores = ilha[col_p].values
                 datas = ilha['date'].values
-                picos = []
+                picos_datas = []
+                
                 if len(valores) <= 3:
-                    picos.append(pd.to_datetime(datas[np.argmax(valores)]).strftime('%d/%m/%Y'))
+                    picos_datas.append(pd.to_datetime(datas[np.argmax(valores)]))
                 else:
                     for i in range(1, len(valores) - 1):
                         if valores[i] > valores[i-1] and valores[i] >= valores[i+1]:
-                            picos.append(pd.to_datetime(datas[i]).strftime('%d/%m/%Y'))
-                    if not picos:
-                        picos.append(pd.to_datetime(datas[np.argmax(valores)]).strftime('%d/%m/%Y'))
+                            picos_datas.append(pd.to_datetime(datas[i]))
+                    if not picos_datas:
+                        picos_datas.append(pd.to_datetime(datas[np.argmax(valores)]))
 
-                str_picos = " e ".join(list(set(picos)))
+                str_picos = " e ".join([d.strftime('%d/%m/%Y') for d in sorted(list(set(picos_datas)))])
                 intervalos_fortes_texto.append(
                     f"**Trânsito fazendo {nome_asp} forte**: entre {f_ini} até {f_fim}  \n"
                     f"**Pico**: {str_picos}."
