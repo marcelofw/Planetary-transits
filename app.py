@@ -196,12 +196,12 @@ def gerar_texto_relatorio(df, planeta_alvo_nome, long_natal_ref):
 
                 str_picos = " e ".join(list(set(picos)))
                 intervalos_fortes_texto.append(
-                    f"**Trânsito fazendo aspecto forte {simbolo}**: entre {f_ini} até {f_fim}  \n"
+                    f"**Trânsito fazendo aspecto forte**: entre {f_ini} até {f_fim}  \n"
                     f"**Pico**: {str_picos}."
                 )
 
         # Título principal com o símbolo ao lado do signo
-        texto = (f"✅ **{planeta_alvo_nome} em {signo_transito} {simbolo}**:  \n"
+        texto = (f"**{planeta_alvo_nome} em {signo_transito} {simbolo}**:  \n"
                  f"**Trânsito total**: {data_ini_total} até {data_fim_total}")
         
         if intervalos_fortes_texto:
