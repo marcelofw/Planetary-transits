@@ -119,10 +119,32 @@ def obter_simbolo_aspecto(long1, long2):
             return simbolo
     return ""
 
-def gerar_texto_relatorio(df, planeta_alvo_nome):
+def gerar_texto_relatorio(df, planeta_alvo_nome, long_natal_ref):
     col_p = planeta_alvo_nome.upper()
-    if col_p not in df.columns:
+    if col_p not in df.columns or long_natal_ref <= 0:
         return []
+
+    # 1. Função que retorna APENAS o símbolo baseado na distância de signos
+    def obter_simbolo_por_signo(s_transito, s_natal):
+        try:
+            idx_t = SIGNOS.index(s_transito)
+            idx_n = SIGNOS.index(s_natal)
+            distancia = abs(idx_t - idx_n)
+            if distancia > 6: distancia = 12 - distancia
+            
+            # Mapeamento: Distância -> Símbolo
+            mapa_simbolos = {
+                0: "☌", # Conjunção
+                1: "⚺", # Semi-sêxtil
+                2: "✶", # Sêxtil
+                3: "□", # Quadratura
+                4: "△", # Trígono
+                5: "⚻", # Quincúncio
+                6: "☍"  # Oposição
+            }
+            return mapa_simbolos.get(distancia, "")
+        except:
+            return ""
 
     LIMIAR_INFLUENCIA = 0.01
     LIMIAR_FORTE = 0.841
@@ -133,6 +155,7 @@ def gerar_texto_relatorio(df, planeta_alvo_nome):
     curvas_grandes = df_copy[mask_inf].groupby('group_inf')
 
     relatorios_planeta = []
+    signo_natal = get_signo(long_natal_ref)
 
     for _, dados_curva in curvas_grandes:
         if len(dados_curva) < 2: continue
@@ -143,50 +166,48 @@ def gerar_texto_relatorio(df, planeta_alvo_nome):
         ponto_max_total = dados_curva.loc[dados_curva[col_p].idxmax()]
         signo_transito = get_signo(ponto_max_total[f"{col_p}_long"])
         
+        # Pega apenas o símbolo
+        simbolo = obter_simbolo_por_signo(signo_transito, signo_natal)
+        
         # Identifica blocos de aspecto forte
         mask_forte = dados_curva[col_p] >= LIMIAR_FORTE
-        grupos_fortes = (mask_forte != mask_forte.shift()).cumsum()
-        ilhas_fortes = dados_curva[mask_forte].groupby(grupos_fortes)
-        
         intervalos_fortes_texto = []
-        for _, ilha in ilhas_fortes:
-            f_ini = ilha['date'].min().strftime('%d/%m/%Y')
-            f_fim = ilha['date'].max().strftime('%d/%m/%Y')
+        
+        if mask_forte.any():
+            grupos_fortes = (mask_forte != mask_forte.shift()).cumsum()
+            ilhas_fortes = dados_curva[mask_forte].groupby(grupos_fortes)
             
-            # LÓGICA DE DETECÇÃO DE PICOS (Múltiplos cumes no mesmo bloco)
-            # Um pico ocorre onde a intensidade é maior que a anterior e a próxima
-            valores = ilha[col_p].values
-            datas = ilha['date'].values
-            
-            picos_da_ilha = []
-            
-            # Caso especial: se a ilha for muito curta, pega o máximo
-            if len(valores) <= 3:
-                picos_da_ilha.append(pd.to_datetime(datas[np.argmax(valores)]).strftime('%d/%m/%Y'))
-            else:
-                for i in range(1, len(valores) - 1):
-                    if valores[i] > valores[i-1] and valores[i] >= valores[i+1]:
-                        picos_da_ilha.append(pd.to_datetime(datas[i]).strftime('%d/%m/%Y'))
+            for _, ilha in ilhas_fortes:
+                f_ini = ilha['date'].min().strftime('%d/%m/%Y')
+                f_fim = ilha['date'].max().strftime('%d/%m/%Y')
                 
-                # Se não detectou picos por variação (ex: curva só subiu ou só desceu), pega o máximo
-                if not picos_da_ilha:
-                    picos_da_ilha.append(pd.to_datetime(datas[np.argmax(valores)]).strftime('%d/%m/%Y'))
+                # Lógica de Picos
+                valores = ilha[col_p].values
+                datas = ilha['date'].values
+                picos = []
+                if len(valores) <= 3:
+                    picos.append(pd.to_datetime(datas[np.argmax(valores)]).strftime('%d/%m/%Y'))
+                else:
+                    for i in range(1, len(valores) - 1):
+                        if valores[i] > valores[i-1] and valores[i] >= valores[i+1]:
+                            picos.append(pd.to_datetime(datas[i]).strftime('%d/%m/%Y'))
+                    if not picos:
+                        picos.append(pd.to_datetime(datas[np.argmax(valores)]).strftime('%d/%m/%Y'))
 
-            # Formata a string de picos (ex: "pico em X e Y")
-            str_picos = " e ".join(picos_da_ilha)
-            bloco = (f"**Trânsito fazendo aspecto forte**: entre {f_ini} até {f_fim}  \n"
-                     f"**Pico**: {str_picos}.")
-            intervalos_fortes_texto.append(bloco)
+                str_picos = " e ".join(list(set(picos)))
+                intervalos_fortes_texto.append(
+                    f"**Trânsito fazendo aspecto forte {simbolo}**: entre {f_ini} até {f_fim}  \n"
+                    f"**Pico**: {str_picos}."
+                )
 
-        texto = (f"**{planeta_alvo_nome} em {signo_transito}**:  \n"
+        # Título principal com o símbolo ao lado do signo
+        texto = (f"✅ **{planeta_alvo_nome} em {signo_transito} {simbolo}**:  \n"
                  f"**Trânsito total**: {data_ini_total} até {data_fim_total}")
         
         if intervalos_fortes_texto:
-            texto_final = texto + "  \n" + "  \n".join(intervalos_fortes_texto)
-        else:
-            texto_final = texto
-            
-        relatorios_planeta.append(texto_final)
+            texto += "  \n" + "  \n".join(intervalos_fortes_texto)
+        
+        relatorios_planeta.append(texto)
         
     return relatorios_planeta
 
