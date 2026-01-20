@@ -174,16 +174,19 @@ def gerar_texto_relatorio(df, planeta_alvo_nome):
 
             # Formata a string de picos (ex: "pico em X e Y")
             str_picos = " e ".join(picos_da_ilha)
-            intervalos_fortes_texto.append(f"{f_ini} até {f_fim} com pico em {str_picos}")
+            bloco = (f"**Trânsito fazendo aspecto forte**: entre {f_ini} até {f_fim}\n"
+                     f"**Pico**: {str_picos}.")
+            intervalos_fortes_texto.append(bloco)
 
-        texto = f"**{planeta_alvo_nome} em {signo_transito}**:\n\nTrânsito total: {data_ini_total} até {data_fim_total}"
+        texto = (f"**{planeta_alvo_nome} em {signo_transito}**:\n"
+                 f"Trânsito total: {data_ini_total} até {data_fim_total}")
         
         if intervalos_fortes_texto:
-            texto += ",\n\nTrânsito fazendo aspecto forte: entre " + " e entre ".join(intervalos_fortes_texto) + "."
+            texto_final = texto + "\n" + "\n".join(intervalos_fortes_texto)
         else:
-            texto += "."
+            texto_final = texto
             
-        relatorios_planeta.append(texto)
+        relatorios_planeta.append(texto_final)
         
     return relatorios_planeta
 
