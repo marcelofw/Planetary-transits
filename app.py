@@ -295,6 +295,30 @@ else:
     file_name_tabela = f"aspectos_{ano}_{planeta_selecionado}_em_{signo_selecionado}_grau_{grau_limpo_file}.xlsx"
 
 @st.fragment
+def fragmento_relatorio_lentos (df, planeta_selecionado, grau_input, signo_selecionado):
+    st.markdown("<h2 style='text-align: center;'>📋 Relatório de Impacto (Planetas Lentos)</h2>", unsafe_allow_html=True)
+    if st.button("Gerar Relatório de Ciclos Longos", use_container_width=True):
+        if planeta_selecionado == "Escolha um planeta" or signo_selecionado == "Escolha um signo":
+            st.error("⚠️ Selecione os dados natais na barra lateral.")
+        else:
+            lentos = ["Júpiter", "Saturno", "Urano", "Netuno", "Plutão"]
+            encontrou_algum = False
+            
+            with st.expander("Visualizar Detalhes dos Ciclos", expanded=True):
+                st.markdown(f"### Planetas em trânsito aspectando {planeta_selecionado} natal a {grau_input}º de {signo_selecionado}")
+                st.write("")
+
+                for p_lento in lentos:
+                    lista_periodos = gerar_texto_relatorio(df, p_lento)
+                    if lista_periodos:
+                        encontrou_algum = True
+                        for periodo_texto in lista_periodos:
+                            st.markdown(periodo_texto)
+                            st.write("")
+                if not encontrou_algum:
+                    st.warning("Não foram encontrados trânsitos de planetas lentos para este ponto natal em {ano}.")
+
+@st.fragment
 def secao_previsao_ia(ano, planeta_selecionado, signo_selecionado, grau_input, long_natal_absoluta_calc):
         # --- SEÇÃO DE CONSULTA IA CENTRALIZADA (ABAIXO DO GRÁFICO) ---
     hoje = datetime.now()
@@ -402,31 +426,12 @@ fig.update_layout(title=dict(text=f'<b>{p_texto} Natal a {grau_input}° de {s_te
 st.plotly_chart(fig, use_container_width=True, config={'scrollZoom': True})
 
 # --- SEÇÃO DE RELATÓRIO (LENTOS) ---
+
 st.divider()
 col_rel1, col_rel2, col_rel3 = st.columns([1, 2, 1])
 
 with col_rel2:
-    st.markdown("<h2 style='text-align: center;'>📋 Relatório de Impacto (Planetas Lentos)</h2>", unsafe_allow_html=True)
-    if st.button("Gerar Relatório de Ciclos Longos", use_container_width=True):
-        if planeta_selecionado == "Escolha um planeta" or signo_selecionado == "Escolha um signo":
-            st.error("⚠️ Selecione os dados natais na barra lateral.")
-        else:
-            lentos = ["Júpiter", "Saturno", "Urano", "Netuno", "Plutão"]
-            encontrou_algum = False
-            
-            with st.expander("Visualizar Detalhes dos Ciclos", expanded=True):
-                st.markdown(f"### Planetas em trânsito aspectando {planeta_selecionado} natal a {grau_input}º de {signo_selecionado}")
-                st.write("")
-                
-                for p_lento in lentos:
-                    lista_periodos = gerar_texto_relatorio(df, p_lento)
-                    if lista_periodos:
-                        encontrou_algum = True
-                        for periodo_texto in lista_periodos:
-                            st.markdown(periodo_texto)
-                            st.write("")
-                if not encontrou_algum:
-                    st.warning("Não foram encontrados trânsitos de planetas lentos para este ponto natal em {ano}.")
+    fragmento_relatorio_lentos(df, planeta_selecionado, grau_input, signo_selecionado)
 
 # Chamada da função da seção de IA
 secao_previsao_ia(ano, planeta_selecionado, signo_selecionado, grau_input, long_natal_absoluta_calc)
