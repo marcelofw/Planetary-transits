@@ -364,31 +364,30 @@ if st.session_state.fig_gerada is not None:
 
 # --- NOVO: GERADOR DE RELATÓRIO ABAIXO DO GRÁFICO ---
     st.divider()
-    st.header("📋 Relatório de Trânsitos Longos")
+    st.subheader("📋 Relatório de Trânsitos Longos")
     
-    lentos = ["JÚPITER", "SATURNO", "URANO", "NETUNO", "PLUTÃO"]
+    # Filtramos apenas os lentos da sua lista original planetas_monitorados
+    lentos = [p for p in planetas_monitorados if p["nome"] in ["JÚPITER", "SATURNO", "URANO", "NETUNO", "PLUTÃO"]]
     
     for alvo in alvos_input:
-        with st.expander(f"Trânsitos para {alvo['planeta']} Natal", expanded=False):
+        idx_s_natal = SIGNOS.index(alvo["signo"])
+        long_natal_abs = (idx_s_natal * 30) + dms_to_dec(alvo["grau"])
+        
+        with st.expander(f"Trânsitos sobre {alvo['planeta']} em {alvo['signo']}", expanded=False):
             df_alvo = resultados[alvo["planeta"]]
+            encontrou = False
             
-            # Cálculo da longitude natal absoluta para esta função
-            idx_s = SIGNOS.index(alvo["signo"])
-            long_abs = (idx_s * 30) + dms_to_dec(alvo["grau"])
-            
-            tem_relatorio = False
             for p_lento in lentos:
-                # Nota: Certifica-te que calcular_dados_efemerides guarda a longitude do transito
-                # Se não guardar, a função usar distância entre signos.
-                relatorio = gerar_texto_relatorio(df_alvo, p_lento, long_abs, alvo["planeta"])
+                # Passamos o df, o nome, a longitude natal e o ID do planeta lento
+                relatorio = gerar_texto_relatorio(df_alvo, p_lento["nome"], long_natal_abs, p_lento["id"])
                 if relatorio:
-                    tem_relatorio = True
-                    for item in relatorio:
-                        st.markdown(item)
+                    encontrou = True
+                    for bloco in relatorio:
+                        st.markdown(bloco)
                         st.markdown("---")
             
-            if not tem_relatorio:
-                st.write("Nenhum trânsito de planetas lentos identificado para este período.")
+            if not encontrou:
+                st.write("Nenhum trânsito de planeta lento para este ponto em 2026.")
 
     st.sidebar.download_button(
         label="📥 Baixar Gráfico Interativo (HTML)",
