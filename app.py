@@ -416,7 +416,7 @@ with col_rel2:
             
             with st.expander("Visualizar Detalhes dos Ciclos", expanded=True):
                 for p_lento in lentos:
-                    lista_periodos = gerar_texto_relatorio(df, p_lento)
+                    lista_periodos = gerar_texto_relatorio(df, p_lento, long_natal_absoluta_calc)
                     if lista_periodos:
                         encontrou_algum = True
                         for periodo_texto in lista_periodos:
