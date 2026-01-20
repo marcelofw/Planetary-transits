@@ -174,15 +174,15 @@ def gerar_texto_relatorio(df, planeta_alvo_nome):
 
             # Formata a string de picos (ex: "pico em X e Y")
             str_picos = " e ".join(picos_da_ilha)
-            bloco = (f"**Trânsito fazendo aspecto forte**: entre {f_ini} até {f_fim}\n"
+            bloco = (f"**Trânsito fazendo aspecto forte**: entre {f_ini} até {f_fim}  \n"
                      f"**Pico**: {str_picos}.")
             intervalos_fortes_texto.append(bloco)
 
-        texto = (f"**{planeta_alvo_nome} em {signo_transito}**:\n"
+        texto = (f"**{planeta_alvo_nome} em {signo_transito}**:  \n"
                  f"Trânsito total: {data_ini_total} até {data_fim_total}")
         
         if intervalos_fortes_texto:
-            texto_final = texto + "\n" + "\n".join(intervalos_fortes_texto)
+            texto_final = texto + "  \n" + "  \n".join(intervalos_fortes_texto)
         else:
             texto_final = texto
             
@@ -421,7 +421,7 @@ with col_rel2:
                         encontrou_algum = True
                         for periodo_texto in lista_periodos:
                             st.markdown(periodo_texto)
-                            st.divider()
+                            st.write("")
                 if not encontrou_algum:
                     st.warning("Não foram encontrados trânsitos de planetas lentos para este ponto natal em {ano}.")
 
