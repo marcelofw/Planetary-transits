@@ -317,7 +317,7 @@ else:
 
 @st.fragment
 def fragmento_relatorio_lentos (df, planeta_selecionado, grau_input, signo_selecionado):
-    st.markdown("<h2 style='text-align: center;'>📋 Relatório de Trânsito dos Planetas Lentos</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align: center;'>📋 Relatório de Trânsitos Longos</h2>", unsafe_allow_html=True)
     if st.button("Gerar Relatório de Ciclos Longos", use_container_width=True):
         if planeta_selecionado == "Escolha um planeta" or signo_selecionado == "Escolha um signo":
             st.error("⚠️ Selecione os dados natais na barra lateral.")
