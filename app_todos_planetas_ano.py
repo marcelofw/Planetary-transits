@@ -385,7 +385,7 @@ if st.session_state.fig_gerada is not None:
 
 # --- NOVO: GERADOR DE RELATÓRIO ABAIXO DO GRÁFICO ---
     st.divider()
-    st.markdown("<h2 style='text-align: center;'>📋 Relatório de Trânsitos Longos</h2>", unsafe_allow_html=True)
+    st.subheader("📋 Relatório de Trânsitos Longos")
     
     # Filtramos apenas os lentos da sua lista original planetas_monitorados
     lentos = [p for p in planetas_monitorados if p["nome"] in ["JÚPITER", "SATURNO", "URANO", "NETUNO", "PLUTÃO"]]
