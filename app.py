@@ -124,11 +124,9 @@ def gerar_texto_relatorio(df, planeta_alvo_nome):
     if col_p not in df.columns:
         return []
 
-    # Limiares baseados no gráfico (Orbe 5 -> 0.01 | Orbe 1 -> 0.841)
     LIMIAR_INFLUENCIA = 0.01
     LIMIAR_FORTE = 0.841
 
-    # 1. Identifica a curva de influência total
     mask_inf = df[col_p] > LIMIAR_INFLUENCIA
     df_copy = df.copy()
     df_copy['group_inf'] = (mask_inf != mask_inf.shift()).cumsum()
@@ -142,13 +140,11 @@ def gerar_texto_relatorio(df, planeta_alvo_nome):
         data_ini_total = dados_curva['date'].min().strftime('%d/%m/%Y')
         data_fim_total = dados_curva['date'].max().strftime('%d/%m/%Y')
         
-        # Signo baseado no ponto máximo da influência total
         ponto_max_total = dados_curva.loc[dados_curva[col_p].idxmax()]
         signo_transito = get_signo(ponto_max_total[f"{col_p}_long"])
         
-        # 2. Identifica sub-ilhas de aspecto forte (cada "topo" de montanha)
+        # Identifica blocos de aspecto forte
         mask_forte = dados_curva[col_p] >= LIMIAR_FORTE
-        # Criamos grupos para separar blocos de aspecto forte
         grupos_fortes = (mask_forte != mask_forte.shift()).cumsum()
         ilhas_fortes = dados_curva[mask_forte].groupby(grupos_fortes)
         
@@ -157,13 +153,29 @@ def gerar_texto_relatorio(df, planeta_alvo_nome):
             f_ini = ilha['date'].min().strftime('%d/%m/%Y')
             f_fim = ilha['date'].max().strftime('%d/%m/%Y')
             
-            # ENCONTRA O PICO ESPECÍFICO DESTE INTERVALO FORTE
-            ponto_pico_forte = ilha.loc[ilha[col_p].idxmax()]
-            data_pico_forte = ponto_pico_forte['date'].strftime('%d/%m/%Y')
+            # LÓGICA DE DETECÇÃO DE PICOS (Múltiplos cumes no mesmo bloco)
+            # Um pico ocorre onde a intensidade é maior que a anterior e a próxima
+            valores = ilha[col_p].values
+            datas = ilha['date'].values
             
-            intervalos_fortes_texto.append(f"{f_ini} até {f_fim} com pico em {data_pico_forte}")
+            picos_da_ilha = []
+            
+            # Caso especial: se a ilha for muito curta, pega o máximo
+            if len(valores) <= 3:
+                picos_da_ilha.append(pd.to_datetime(datas[np.argmax(valores)]).strftime('%d/%m/%Y'))
+            else:
+                for i in range(1, len(valores) - 1):
+                    if valores[i] > valores[i-1] and valores[i] >= valores[i+1]:
+                        picos_da_ilha.append(pd.to_datetime(datas[i]).strftime('%d/%m/%Y'))
+                
+                # Se não detectou picos por variação (ex: curva só subiu ou só desceu), pega o máximo
+                if not picos_da_ilha:
+                    picos_da_ilha.append(pd.to_datetime(datas[np.argmax(valores)]).strftime('%d/%m/%Y'))
 
-        # 3. Montagem do texto
+            # Formata a string de picos (ex: "pico em X e Y")
+            str_picos = " e ".join(picos_da_ilha)
+            intervalos_fortes_texto.append(f"{f_ini} até {f_fim} com pico em {str_picos}")
+
         texto = f"✅ **{planeta_alvo_nome} em {signo_transito}**:\ninfluência de {data_ini_total} até {data_fim_total}"
         
         if intervalos_fortes_texto:
