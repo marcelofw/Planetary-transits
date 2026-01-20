@@ -134,13 +134,13 @@ def gerar_texto_relatorio(df, planeta_alvo_nome, long_natal_ref):
 
     # Dicionário de Símbolos Astrológicos
     SIMBOLOS_ASPECTOS = {
-        "conjunção": "☌",
-        "oposição": "☍",
-        "trígono": "△",
-        "quadratura": "□",
-        "sêxtil": "⚹",
-        "semi-sêxtil": "⚺",
-        "quincúncio": "⚻"
+        "Conjunção": "☌",
+        "Oposição": "☍",
+        "Trígono": "△",
+        "Quadratura": "□",
+        "Sêxtil": "⚹",
+        "Semi-sêxtil": "⚺",
+        "Quincúncio": "⚻"
     }
 
     LIMIAR_INFLUENCIA = 0.01
