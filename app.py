@@ -104,11 +104,8 @@ def hex_to_rgba(hex_color, opacity):
     return f'rgba({r}, {g}, {b}, {opacity})'
 
 def calcular_aspecto(long1, long2):
-    l1 = float(long1)
-    l2 = float(long2)
-    diff = abs(l1 - l2) % 360
+    diff = abs(long1 - long2) % 360
     if diff > 180: diff = 360 - diff
-    
     for angulo, (nome, simbolo) in ASPECTOS.items():
         if abs(diff - angulo) <= 5:
             return nome
@@ -122,71 +119,76 @@ def obter_simbolo_aspecto(long1, long2):
             return simbolo
     return ""
 
-def gerar_texto_relatorio(df, planeta_alvo_nome, long_natal_ref):
+def gerar_texto_relatorio(df, planeta_alvo_nome):
     col_p = planeta_alvo_nome.upper()
-    
-    # Converte para float de forma ultra-segura
-    try:
-        ln_ref = float(long_natal_ref)
-    except:
-        return []
-
     if col_p not in df.columns:
         return []
 
-    # Símbolos baseados no seu dicionário global
-    SIMBOLOS_MAP = {nome: simb for ang, (nome, simb) in ASPECTOS.items()}
-    
-    # Usamos os mesmos limiares do seu gráfico
-    LIMIAR_INFLUENCIA = 0.01  
-    LIMIAR_FORTE = 0.841      
+    LIMIAR_INFLUENCIA = 0.01
+    LIMIAR_FORTE = 0.841
 
-    # Filtramos apenas os dias em que o planeta está no signo/aspecto correto
     mask_inf = df[col_p] > LIMIAR_INFLUENCIA
-    if not mask_inf.any():
-        return []
+    df_copy = df.copy()
+    df_copy['group_inf'] = (mask_inf != mask_inf.shift()).cumsum()
+    curvas_grandes = df_copy[mask_inf].groupby('group_inf')
 
-    df_temp = df[mask_inf].copy()
-    df_temp['group'] = (df_temp['date'].diff() > pd.Timedelta(days=2)).cumsum()
-    
-    relatorios_finais = []
+    relatorios_planeta = []
 
-    for _, grupo in df_temp.groupby('group'):
-        # Encontra o ponto máximo de intensidade
-        idx_pico = grupo[col_p].idxmax()
-        row_pico = grupo.loc[idx_pico]
-        long_no_pico = row_pico[f"{col_p}_long"]
+    for _, dados_curva in curvas_grandes:
+        if len(dados_curva) < 2: continue
         
-        # O cálculo do aspecto deve ser idêntico ao da IA
-        nome_asp = calcular_aspecto(long_no_pico, ln_ref)
+        data_ini_total = dados_curva['date'].min().strftime('%d/%m/%Y')
+        data_fim_total = dados_curva['date'].max().strftime('%d/%m/%Y')
         
-        # Ignora se não for um dos aspectos principais (0, 30, 60, 90, 120, 150, 180)
-        if nome_asp == "Outro":
-            continue
+        ponto_max_total = dados_curva.loc[dados_curva[col_p].idxmax()]
+        signo_transito = get_signo(ponto_max_total[f"{col_p}_long"])
+        
+        # Identifica blocos de aspecto forte
+        mask_forte = dados_curva[col_p] >= LIMIAR_FORTE
+        grupos_fortes = (mask_forte != mask_forte.shift()).cumsum()
+        ilhas_fortes = dados_curva[mask_forte].groupby(grupos_fortes)
+        
+        intervalos_fortes_texto = []
+        for _, ilha in ilhas_fortes:
+            f_ini = ilha['date'].min().strftime('%d/%m/%Y')
+            f_fim = ilha['date'].max().strftime('%d/%m/%Y')
+            
+            # LÓGICA DE DETECÇÃO DE PICOS (Múltiplos cumes no mesmo bloco)
+            # Um pico ocorre onde a intensidade é maior que a anterior e a próxima
+            valores = ilha[col_p].values
+            datas = ilha['date'].values
+            
+            picos_da_ilha = []
+            
+            # Caso especial: se a ilha for muito curta, pega o máximo
+            if len(valores) <= 3:
+                picos_da_ilha.append(pd.to_datetime(datas[np.argmax(valores)]).strftime('%d/%m/%Y'))
+            else:
+                for i in range(1, len(valores) - 1):
+                    if valores[i] > valores[i-1] and valores[i] >= valores[i+1]:
+                        picos_da_ilha.append(pd.to_datetime(datas[i]).strftime('%d/%m/%Y'))
+                
+                # Se não detectou picos por variação (ex: curva só subiu ou só desceu), pega o máximo
+                if not picos_da_ilha:
+                    picos_da_ilha.append(pd.to_datetime(datas[np.argmax(valores)]).strftime('%d/%m/%Y'))
 
-        simbolo_asp = SIMBOLOS_MAP.get(nome_asp, "")
-        signo_transito = get_signo(long_no_pico)
+            # Formata a string de picos (ex: "pico em X e Y")
+            str_picos = " e ".join(picos_da_ilha)
+            bloco = (f"**Trânsito fazendo aspecto forte**: entre {f_ini} até {f_fim}  \n"
+                     f"**Pico**: {str_picos}.")
+            intervalos_fortes_texto.append(bloco)
 
-        # Período Total
-        d_ini_total = grupo['date'].min().strftime('%d/%m/%Y')
-        d_fim_total = grupo['date'].max().strftime('%d/%m/%Y')
-
-        # Período Forte (Intensidade > 0.841)
-        grupo_forte = grupo[grupo[col_p] >= LIMIAR_FORTE]
-        if not grupo_forte.empty:
-            f_ini = grupo_forte['date'].min().strftime('%d/%m/%Y')
-            f_fim = grupo_forte['date'].max().strftime('%d/%m/%Y')
-            data_pico = row_pico['date'].strftime('%d/%m/%Y')
-
-            texto = (
-                f"✅ **{planeta_alvo_nome} em {signo_transito}**:  \n"
-                f"**Trânsito total**: {d_ini_total} até {d_fim_total};  \n"
-                f"**Trânsito fazendo aspecto forte ({nome_asp} {simbolo_asp})**: entre {f_ini} até {f_fim};  \n"
-                f"**Pico**: {nome_asp} {simbolo_asp}: {data_pico}."
-            )
-            relatorios_finais.append(texto)
-
-    return relatorios_finais
+        texto = (f"**{planeta_alvo_nome} em {signo_transito}**:  \n"
+                 f"**Trânsito total**: {data_ini_total} até {data_fim_total}")
+        
+        if intervalos_fortes_texto:
+            texto_final = texto + "  \n" + "  \n".join(intervalos_fortes_texto)
+        else:
+            texto_final = texto
+            
+        relatorios_planeta.append(texto_final)
+        
+    return relatorios_planeta
 
 # --- INTERFACE LATERAL ---
 st.sidebar.header("🪐 Configurações")
@@ -209,13 +211,10 @@ elif grau_decimal is None:
     st.stop()
 
 # Cálculo da longitude natal absoluta para uso na função de símbolos
-long_natal_absoluta_calc = 0.0
+long_natal_absoluta_calc = 0
 if planeta_selecionado != "Escolha um planeta" and signo_selecionado != "Escolha um signo":
-    try:
-        idx_s = SIGNOS.index(signo_selecionado)
-        long_natal_absoluta_calc = float((idx_s * 30) + grau_decimal)
-    except:
-        long_natal_absoluta_calc = 0.0
+    idx_s = SIGNOS.index(signo_selecionado)
+    long_natal_absoluta_calc = (idx_s * 30) + grau_decimal
 
 p_texto = planeta_selecionado if planeta_selecionado != "Escolha um planeta" else "Planeta"
 s_texto = signo_selecionado if signo_selecionado != "Escolha um signo" else "Signo"
@@ -296,7 +295,7 @@ else:
     file_name_tabela = f"aspectos_{ano}_{planeta_selecionado}_em_{signo_selecionado}_grau_{grau_limpo_file}.xlsx"
 
 @st.fragment
-def fragmento_relatorio_lentos (df, long_natal_absoluta_calc, planeta_selecionado, grau_input, signo_selecionado, ano):
+def fragmento_relatorio_lentos (df, planeta_selecionado, grau_input, signo_selecionado):
     st.markdown("<h2 style='text-align: center;'>📋 Relatório de Trânsito dos Planetas Lentos</h2>", unsafe_allow_html=True)
     if st.button("Gerar Relatório de Ciclos Longos", use_container_width=True):
         if planeta_selecionado == "Escolha um planeta" or signo_selecionado == "Escolha um signo":
@@ -310,14 +309,14 @@ def fragmento_relatorio_lentos (df, long_natal_absoluta_calc, planeta_selecionad
                 st.write("")
 
                 for p_lento in lentos:
-                    lista_periodos = gerar_texto_relatorio(df, p_lento, long_natal_absoluta_calc)
+                    lista_periodos = gerar_texto_relatorio(df, p_lento)
                     if lista_periodos:
                         encontrou_algum = True
                         for periodo_texto in lista_periodos:
                             st.markdown(periodo_texto)
                             st.write("")
                 if not encontrou_algum:
-                    st.warning(f"Não foram encontrados trânsitos de planetas lentos para este ponto natal em {ano}.")
+                    st.warning("Não foram encontrados trânsitos de planetas lentos para este ponto natal em {ano}.")
 
 @st.fragment
 def secao_previsao_ia(ano, planeta_selecionado, signo_selecionado, grau_input, long_natal_absoluta_calc):
@@ -432,7 +431,7 @@ st.divider()
 col_rel1, col_rel2, col_rel3 = st.columns([1, 2, 1])
 
 with col_rel2:
-    fragmento_relatorio_lentos(df, planeta_selecionado, grau_input, signo_selecionado, long_natal_absoluta_calc, ano)
+    fragmento_relatorio_lentos(df, planeta_selecionado, grau_input, signo_selecionado)
 
 # Chamada da função da seção de IA
 secao_previsao_ia(ano, planeta_selecionado, signo_selecionado, grau_input, long_natal_absoluta_calc)
