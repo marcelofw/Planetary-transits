@@ -459,10 +459,10 @@ col_rel1, col_rel2, col_rel3 = st.columns([1, 2, 1])
 with col_rel2:
     fragmento_relatorio_lentos(df, planeta_selecionado, grau_input, signo_selecionado)
 
-st.divider()
-
 # Chamada da função da seção de IA
 secao_previsao_ia(ano, planeta_selecionado, signo_selecionado, grau_input, long_natal_absoluta_calc)
+
+st.divider()
 
 # # --- LÓGICA DA TABELA DE ASPECTOS ---
 # eventos_aspectos = []
