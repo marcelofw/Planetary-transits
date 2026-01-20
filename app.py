@@ -176,10 +176,10 @@ def gerar_texto_relatorio(df, planeta_alvo_nome):
             str_picos = " e ".join(picos_da_ilha)
             intervalos_fortes_texto.append(f"{f_ini} até {f_fim} com pico em {str_picos}")
 
-        texto = f"**{planeta_alvo_nome} em {signo_transito}**:\nTrânsito total: {data_ini_total} até {data_fim_total}"
+        texto = f"**{planeta_alvo_nome} em {signo_transito}**:\n\nTrânsito total: {data_ini_total} até {data_fim_total}"
         
         if intervalos_fortes_texto:
-            texto += "\nTrânsito fazendo aspecto forte: entre " + " e entre ".join(intervalos_fortes_texto) + "."
+            texto += ",\n\nTrânsito fazendo aspecto forte: entre " + " e entre ".join(intervalos_fortes_texto) + "."
         else:
             texto += "."
             
