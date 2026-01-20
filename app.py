@@ -87,6 +87,11 @@ def dms_to_dec(dms_str):
             minutos_raw = parts[1]
             minutos = float(minutos_raw)
             
+            if len(minutos_raw) == 1:
+                minutos = float(minutos_raw) * 10
+            else:
+                minutos = float(minutos_raw)
+
             # REGRA: Minutos não podem ser 60 ou mais
             if minutos >= 60:
                 return "ERRO_MINUTOS"
