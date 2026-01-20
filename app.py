@@ -121,7 +121,7 @@ def obter_simbolo_aspecto(long1, long2):
 
 def gerar_texto_relatorio(df, planeta_alvo_nome, long_natal_ref):
     col_p = planeta_alvo_nome.upper()
-    if col_p not in df.columns:
+    if col_p not in df.columns or long_natal_ref <= 0:
         return []
 
     signo_natal = SIGNOS[int(long_natal_ref / 30) % 12]
@@ -136,18 +136,18 @@ def gerar_texto_relatorio(df, planeta_alvo_nome, long_natal_ref):
                 distancia = 12 - distancia
             
             mapa_distancia = {
-                0: "Conjunção",
-                1: "Semi-sêxtil",
-                2: "Sêxtil",     
-                3: "Quadratura",
-                4: "Trígono",
-                5: "Quincúncio",
-                6: "Oposição"
+                0: ("Conjunção", "☌"),
+                1: ("Semi-sêxtil", "⚺"),
+                2: ("Sêxtil", "✶"),     
+                3: ("Quadratura", "□"),
+                4: ("Trígono", "△"),
+                5: ("Quincúncio", "⚻"),
+                6: ("Oposição", "☍")
             }
 
-            return mapa_distancia.get(distancia, "Outro")
+            return mapa_distancia.get(distancia, "Outro", "")
         except:
-            return "Outro"
+            return ("Outro", "")
 
     LIMIAR_INFLUENCIA = 0.01
     LIMIAR_FORTE = 0.841
