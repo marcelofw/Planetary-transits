@@ -33,17 +33,30 @@ def on_button_click(delta_type, value):
     st.session_state.data_widget = nova_data.date()
     st.session_state.hora_widget = nova_data.time()
 
+# @st.cache_resource
+# def carregar_geo_db():
+#     gc = geonamescache.GeonamesCache()
+#     return gc.get_cities()
+
 @st.cache_resource
-def carregar_geo_db():
+def obter_lista_cidades():
     gc = geonamescache.GeonamesCache()
-    return gc.get_cities()
+    cidades = gc.get_cities()
+    # Criamos uma lista formatada: "Nome da Cidade, BR"
+    lista_formatada = [
+        f"{c['name']}, {c['countrycode']}" 
+        for c in cidades.values()
+    ]
+    return sorted(lista_formatada), cidades
+
+lista_nomes, dicionario_cidades = obter_lista_cidades()
 
 def buscar_coordenadas_offline(nome_cidade):
     # 1. Limpeza do nome
     nome_cidade = nome_cidade.split(',')[0].strip().title()
     
     # 2. Busca na base local
-    cidades = carregar_geo_db()
+    cidades = obter_lista_cidades()
     
     # Procura cidades que contenham o nome digitado
     # Prioriza cidades com maior população para evitar homônimos pequenos
@@ -157,22 +170,42 @@ col_a.button("+1 Ano ➡️", on_click=on_button_click, args=['years', 1])
 incluir_ascendente = st.sidebar.checkbox("Quero incluir o Ascendente", value=False)
 asc_valor = None
 if incluir_ascendente:
-    local_nascimento = st.sidebar.text_input("Cidade de Nascimento", "São Paulo, Brasil")
+    # Em vez de text_input, usamos selectbox para o autocompletar
+    escolha_cidade = st.sidebar.selectbox(
+        "Digite ou selecione a cidade:",
+        options=lista_nomes,
+        index=lista_nomes.index("São Paulo, BR") if "São Paulo, BR" in lista_nomes else 0,
+        help="Comece a digitar o nome da sua cidade."
+    )
 
-    lat, lon, endereco = buscar_coordenadas_offline(local_nascimento)
+    # 2. Extrair coordenadas da escolha
+    # Pegamos o nome antes da vírgula
+    nome_puro = escolha_cidade.split(',')[0]
+    cod_pais = escolha_cidade.split(',')[1].strip()
+    
+    # Busca rápida no dicionário para pegar Lat/Lon
+    dados_cidade = [
+        c for c in dicionario_cidades.values() 
+        if c['name'] == nome_puro and c['countrycode'] == cod_pais
+    ]
+    
+    if dados_cidade:
+        cidade_fina = dados_cidade[0]
+        lat = cidade_fina['latitude']
+        lon = cidade_fina['longitude']
+        endereco = f"{cidade_fina['name']}, {cidade_fina['countrycode']}"
 
-    if lat:
-        jd_ut = swe.julday(data_para_o_calculo_ut.year, data_para_o_calculo_ut.month, 
-                        data_para_o_calculo_ut.day, data_para_o_calculo_ut.hour + data_para_o_calculo_ut.minute/60.0)
+        # 3. Cálculo do Ascendente (sempre atualiza com os botões de tempo)
+        jd_ut = swe.julday(
+            data_para_o_calculo_ut.year, data_para_o_calculo_ut.month, 
+            data_para_o_calculo_ut.day, 
+            data_para_o_calculo_ut.hour + data_para_o_calculo_ut.minute/60.0
+        )
         
-        # 'P' para o sistema de casas Placidus
         cuspides, ascmc = swe.houses(jd_ut, lat, lon, b'P')
         asc_valor = ascmc[0]
         
-        st.sidebar.success(f"📍 Localizado!")
-        st.sidebar.caption(f"{endereco}")
-    else:
-        st.sidebar.error("Cidade não encontrada.")
+        st.sidebar.success(f"📍 Coordenadas: {lat:.2f}, {lon:.2f}")
 
 # Atualização do estado com base no que foi digitado
 st.session_state.data_ref = datetime.combine(d_input, t_input)
