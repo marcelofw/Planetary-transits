@@ -205,7 +205,7 @@ if incluir_ascendente:
         cuspides, ascmc = swe.houses(jd_ut, lat, lon, b'P')
         asc_valor = ascmc[0]
         
-        st.sidebar.success(f"📍 Coordenadas: {lat:.2f}, {lon:.2f}")
+        st.sidebar.success(f"📍Cidade Encontrada.")
 
 # Atualização do estado com base no que foi digitado
 st.session_state.data_ref = datetime.combine(d_input, t_input)
