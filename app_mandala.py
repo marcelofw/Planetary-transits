@@ -33,7 +33,7 @@ def on_button_click(delta_type, value):
     st.session_state.data_widget = nova_data.date()
     st.session_state.hora_widget = nova_data.time()
 
-@st.cache_data
+@st.cache_data(ttl=3600)
 def buscar_coordenadas(cidade):
     try:
         geolocator = Nominatim(user_agent="meu_app_astrologico_v1")
@@ -41,7 +41,8 @@ def buscar_coordenadas(cidade):
         if location:
             return location.latitude, location.longitude, location.address
         return None, None, None
-    except:
+    except Exception as e:
+        print(f"Erro na geolocação: {e}")
         return None, None, None
     
 # --- CONFIGURAÇÃO DA PÁGINA ---
