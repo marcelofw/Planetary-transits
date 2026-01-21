@@ -7,7 +7,7 @@ from datetime import datetime
 from dateutil.relativedelta import relativedelta
 import math
 from datetime import datetime, timedelta, timezone, date
-from geopy.geocoders import Nominatim
+import geonamescache
 
 if 'data_ref' not in st.session_state:
     agora_ut = datetime.now()
@@ -33,17 +33,26 @@ def on_button_click(delta_type, value):
     st.session_state.data_widget = nova_data.date()
     st.session_state.hora_widget = nova_data.time()
 
-@st.cache_data(ttl=3600)
-def buscar_coordenadas(cidade):
-    try:
-        geolocator = Nominatim(user_agent="meu_app_astrologico_v1")
-        location = geolocator.geocode(cidade, timeout=10)
-        if location:
-            return location.latitude, location.longitude, location.address
-        return None, None, None
-    except Exception as e:
-        print(f"Erro na geolocação: {e}")
-        return None, None, None
+@st.cache_resource
+def carregar_geo_db():
+    gc = geonamescache.GeonamesCache()
+    return gc.get_cities()
+
+def buscar_coordenadas_offline(nome_cidade):
+    # 1. Limpeza do nome
+    nome_cidade = nome_cidade.split(',')[0].strip().title()
+    
+    # 2. Busca na base local
+    cidades = carregar_geo_db()
+    
+    # Procura cidades que contenham o nome digitado
+    # Prioriza cidades com maior população para evitar homônimos pequenos
+    resultados = [c for c in cidades.values() if c['name'] == nome_cidade]
+    
+    if resultados:
+        # Ordena por população e pega a maior
+        cidade_fina = sorted(resultados, key=lambda x: x['population'], reverse=True)[0]
+        return cidade_fina['latitude'], cidade_fina['longitude'], f"{cidade_fina['name']}, {cidade_fina['countrycode']}"
     
 # --- CONFIGURAÇÃO DA PÁGINA ---
 st.set_page_config(page_title="Mandala Astrológica Interativa", layout="wide")
@@ -150,11 +159,9 @@ asc_valor = None
 if incluir_ascendente:
     local_nascimento = st.sidebar.text_input("Cidade de Nascimento", "São Paulo, Brasil")
 
-    lat, lon, endereco = buscar_coordenadas(local_nascimento)
+    lat, lon, endereco = buscar_coordenadas_offline(local_nascimento)
 
     if lat:
-        # Cálculo do Ascendente usando swisseph
-        # data_para_o_calculo_ut deve ser a sua data já em UTC
         jd_ut = swe.julday(data_para_o_calculo_ut.year, data_para_o_calculo_ut.month, 
                         data_para_o_calculo_ut.day, data_para_o_calculo_ut.hour + data_para_o_calculo_ut.minute/60.0)
         
