@@ -425,7 +425,7 @@ if st.session_state.fig_gerada is not None:
     st.subheader("📋 Relatório de Trânsitos Longos")
     
     # Filtramos apenas os lentos da sua lista original planetas_monitorados
-    lentos = [p for p in planetas_monitorados if p["nome"] in ["SOL", "MERCÚRIO", "VÊNUS", "MARTE", "JÚPITER", "SATURNO", "URANO", "NETUNO", "PLUTÃO"]]
+    lentos = [p for p in planetas_monitorados if p["nome"] in ["SOL", "MERCÚRIO", "VÊNUS", "JÚPITER", "SATURNO", "URANO", "NETUNO", "PLUTÃO"]]
     
     for alvo in alvos_input:
         idx_s_natal = SIGNOS.index(alvo["signo"])
